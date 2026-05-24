@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <chrono>
 #include <queue>
+#include <cmath>
 
 namespace bttb {
 
@@ -118,7 +119,19 @@ bool compareDirEntries(const std::unique_ptr<DirEntry>& a, const std::unique_ptr
 
 // Backtracking solver
 bool BttbSolver::findAWay(int64_t currentSectors, int poz) {
+    exploredStates++;
     if (stopRequested || searchTimedOut) return false;
+    
+    if (poz >= 0 && (itemsToSplit[poz]->prefixSumSectors + currentSectors < currentBestSectors)) {
+        prunedStates++;
+        if (enableTrace && (prunedStates % 200000 == 0)) {
+            logNotify("[TRACE] Pruning branch at index " + std::to_string(poz) + " (" + itemsToSplit[poz]->relativePath + "): currentBest=" + std::to_string(currentBestSectors) + " sectors", 0);
+        }
+    }
+    
+    if (enableTrace && (exploredStates % 500000 == 0)) {
+        logNotify("[TRACE] Explored: " + std::to_string(exploredStates) + " states, Pruned: " + std::to_string(prunedStates) + " branches...", 0);
+    }
     
     if (poz < 0 || (itemsToSplit[poz]->prefixSumSectors + currentSectors < currentBestSectors)) {
         return false;
@@ -195,6 +208,32 @@ void BttbSolver::run() {
     // Convert capacities to sectors
     maxSectors = mediumInfo.capacityBytes / mediumInfo.sectorSize;
     slackSectors = mediumInfo.slackBytes / mediumInfo.sectorSize;
+    
+    exploredStates = 0;
+    prunedStates = 0;
+    
+    // Estimation process
+    int64_t totalBytes = 0;
+    for (const auto& item : itemsToSplit) {
+        totalBytes += item->sizeBytes;
+    }
+    double totalMB = (double)totalBytes / (1024.0 * 1024.0);
+    double mediumMB = (double)mediumInfo.capacityBytes / (1024.0 * 1024.0);
+    int estimatedVolumes = std::max<int>(1, std::ceil((double)totalBytes / mediumInfo.capacityBytes));
+    
+    logNotify("--- Volume Packing Estimation ---", 3);
+    logNotify("Total items found: " + std::to_string(itemsToSplit.size()), 0);
+    logNotify("Total dataset size: " + std::to_string(totalBytes) + " bytes (" + std::to_string(totalMB) + " MB)", 0);
+    logNotify("Target volume capacity: " + std::to_string(mediumInfo.capacityBytes) + " bytes (" + std::to_string(mediumMB) + " MB)", 0);
+    logNotify("Theoretical minimum volumes required: " + std::to_string(estimatedVolumes), 1);
+    
+    if (enableTrace) {
+        logNotify("[TRACE] Detailed estimation breakdown:", 0);
+        logNotify("[TRACE]  - Dataset to medium ratio: " + std::to_string((double)totalBytes / mediumInfo.capacityBytes), 0);
+        logNotify("[TRACE]  - Solver backtracking sector limit: " + std::to_string(maxSectors) + " sectors", 0);
+        logNotify("[TRACE]  - Sector size cluster alignment: " + std::to_string(mediumInfo.sectorSize) + " bytes", 0);
+        logNotify("[TRACE]  - Slack tolerance: " + std::to_string(mediumInfo.slackBytes) + " bytes (" + std::to_string(slackSectors) + " sectors)", 0);
+    }
     
     logNotify("Medium Capacity: " + std::to_string(maxSectors) + " sectors (" + std::to_string(mediumInfo.capacityBytes) + " bytes)", 0);
     
@@ -311,6 +350,14 @@ void BttbSolver::run() {
     
     if (moveFiles && !targetDirectory.empty()) {
         logNotify("Completed file organization.", 1);
+    }
+    
+    if (enableTrace) {
+        logNotify("\r\n[TRACE] Backtracking search performance summary:", 3);
+        logNotify("[TRACE]  - Total states explored: " + std::to_string(exploredStates), 0);
+        logNotify("[TRACE]  - Total branches pruned: " + std::to_string(prunedStates), 0);
+        double efficiency = exploredStates > 0 ? ((double)prunedStates / exploredStates * 100.0) : 0.0;
+        logNotify("[TRACE]  - Backtracking pruning efficiency: " + std::to_string(efficiency) + "%", 1);
     }
 }
 

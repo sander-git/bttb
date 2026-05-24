@@ -62,6 +62,9 @@ public:
     CDInfo mediumInfo;
     std::vector<GroupRule> groupingRules;
     std::vector<PackedVolume> packedVolumes;
+    bool enableTrace = false;
+    uint64_t exploredStates = 0;
+    uint64_t prunedStates = 0;
 
     // Control
     std::atomic<bool> stopRequested{false};
