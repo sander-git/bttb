@@ -33,6 +33,7 @@
 #define ID_CHK_SPAN        1009
 #define ID_BTN_PREFS       1010
 #define ID_CHK_TRACE       1011
+#define ID_BTN_ABOUT       1012
 
 // ISO Dialog Control IDs
 #define ID_BTN_ISO_SRC_BROWSE  2001
@@ -694,11 +695,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             
             y += 175;
             
-            // Control Action Buttons
-            g_btnStart = CreateWindow("BUTTON", "Start Optimal Solving", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 20, y, 160, 30, hwnd, (HMENU)ID_BTN_START, NULL, NULL);
-            g_btnStop = CreateWindow("BUTTON", "Stop", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 190, y, 70, 30, hwnd, (HMENU)ID_BTN_STOP, NULL, NULL);
-            CreateWindow("BUTTON", "Preferences...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 270, y, 110, 30, hwnd, (HMENU)ID_BTN_PREFS, NULL, NULL);
-            g_btnCreateIso = CreateWindow("BUTTON", "Create ISO image...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 390, y, 130, 30, hwnd, (HMENU)ID_BTN_CREATE_ISO, NULL, NULL);
+            g_btnStart = CreateWindow("BUTTON", "Start", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 20, y, 120, 30, hwnd, (HMENU)ID_BTN_START, NULL, NULL);
+            g_btnStop = CreateWindow("BUTTON", "Stop", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 150, y, 60, 30, hwnd, (HMENU)ID_BTN_STOP, NULL, NULL);
+            CreateWindow("BUTTON", "Preferences...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 220, y, 100, 30, hwnd, (HMENU)ID_BTN_PREFS, NULL, NULL);
+            g_btnCreateIso = CreateWindow("BUTTON", "Create ISO...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 330, y, 120, 30, hwnd, (HMENU)ID_BTN_CREATE_ISO, NULL, NULL);
+            CreateWindow("BUTTON", "About...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 460, y, 60, 30, hwnd, (HMENU)ID_BTN_ABOUT, NULL, NULL);
             
             EnableWindow(g_btnStop, FALSE);
             
@@ -855,6 +856,23 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 }
             }
             
+            if (wmId == ID_BTN_ABOUT) {
+                std::string aboutText = 
+                    "Burn to the Brim (BTTB)\r\n"
+                    "Version 3.1.2\r\n\r\n"
+                    "Authors:\r\n"
+                    "Sander Raaijmakers, Elwin Oost and the Burn to the Brim team\r\n\r\n"
+                    "Licensing:\r\n"
+                    "This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2 of the License (GPLv2).\r\n\r\n"
+                    "Features in v3.1.2:\r\n"
+                    "- Platform-agnostic knapsack subset-sum solver\r\n"
+                    "- Multi-volume spanning and folder split depth control\r\n"
+                    "- Highly optimized early-slack termination\r\n"
+                    "- Wildcard & regular expression rules grouping\r\n"
+                    "- Real-time visual progress and solver thinking trace";
+                MessageBox(hwnd, aboutText.c_str(), "About Burn to the Brim", MB_OK | MB_ICONINFORMATION);
+            }
+            
             break;
         }
         
@@ -922,6 +940,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
     wc.lpszClassName = "BttbWin32GUI";
+    wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(1));
+    wc.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
     
     if (!RegisterClassEx(&wc)) {
         MessageBox(NULL, "Window Registration Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
@@ -937,6 +957,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wcIso.hCursor = LoadCursor(NULL, IDC_ARROW);
     wcIso.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
     wcIso.lpszClassName = "BttbWin32ISODialog";
+    wcIso.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(1));
+    wcIso.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
     
     if (!RegisterClassEx(&wcIso)) {
         MessageBox(NULL, "ISO Dialog Registration Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
@@ -952,6 +974,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wcPref.hCursor = LoadCursor(NULL, IDC_ARROW);
     wcPref.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
     wcPref.lpszClassName = "BttbWin32PrefDialog";
+    wcPref.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(1));
+    wcPref.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
     
     if (!RegisterClassEx(&wcPref)) {
         MessageBox(NULL, "Preferences Dialog Registration Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);

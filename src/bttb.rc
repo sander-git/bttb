@@ -1,0 +1,39 @@
+#include <windows.h>
+
+// Icon
+1 ICON "bttb.ico"
+
+// Version Information
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION 3,1,2,0
+PRODUCTVERSION 3,1,2,0
+FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+FILEFLAGS 0x1L
+#else
+FILEFLAGS 0x0L
+#endif
+FILEOS 0x40004L
+FILETYPE 0x1L
+FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "CompanyName", "BurnToTheBrim Team"
+            VALUE "FileDescription", "Burn to the Brim C++ Win32 Native Desktop Application"
+            VALUE "FileVersion", "3.1.2"
+            VALUE "InternalName", "bttb_win32"
+            VALUE "LegalCopyright", "Copyright (C) 2001-2004 Sander Raaijmakers, Elwin Oost and the Burn to the Brim team"
+            VALUE "OriginalFilename", "bttb_win32.exe"
+            VALUE "ProductName", "Burn to the Brim"
+            VALUE "ProductVersion", "3.1.2"
+            VALUE "Comments", "Licensed under GNU GPLv2"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

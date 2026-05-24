@@ -49,6 +49,46 @@ MainWindow::MainWindow(GtkApplication* app) {
         IsoDialog::run(GTK_WINDOW(self->window), src);
     }), this);
     
+    // About button
+    GtkWidget* about_btn = gtk_button_new_from_icon_name("help-about");
+    gtk_widget_set_tooltip_text(about_btn, "About Burn to the Brim");
+    gtk_header_bar_pack_start(GTK_HEADER_BAR(header), about_btn);
+    
+    g_signal_connect(about_btn, "clicked", G_CALLBACK(+[](GtkWidget* btn, gpointer user_data) {
+        auto* self = static_cast<MainWindow*>(user_data);
+        
+        GtkWidget* about = gtk_about_dialog_new();
+        gtk_window_set_transient_for(GTK_WINDOW(about), GTK_WINDOW(self->window));
+        
+        gtk_about_dialog_set_program_name(GTK_ABOUT_DIALOG(about), "Burn to the Brim");
+        gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(about), "3.1.2");
+        gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(about), "Copyright \u00a9 2001-2004 Sander Raaijmakers, Elwin Oost and the Burn to the Brim team");
+        gtk_about_dialog_set_license_type(GTK_ABOUT_DIALOG(about), GTK_LICENSE_GPL_2_0);
+        gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(about), "https://sourceforge.net/projects/bttb/");
+        gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(about), 
+            "Burn to the Brim (BTTB) is a modern C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums (CDs, DVDs, Blu-rays, or USBs).\n\n"
+            "Authors: Sander Raaijmakers, Elwin Oost and the Burn to the Brim team");
+            
+        // Load and set logo texture
+        GFile* file = g_file_new_for_path("src/bttb.png");
+        GdkTexture* texture = gdk_texture_new_from_file(file, NULL);
+        g_object_unref(file);
+        if (texture) {
+            gtk_about_dialog_set_logo(GTK_ABOUT_DIALOG(about), GDK_PAINTABLE(texture));
+            g_object_unref(texture);
+        } else {
+            file = g_file_new_for_path("bttb.png");
+            texture = gdk_texture_new_from_file(file, NULL);
+            g_object_unref(file);
+            if (texture) {
+                gtk_about_dialog_set_logo(GTK_ABOUT_DIALOG(about), GDK_PAINTABLE(texture));
+                g_object_unref(texture);
+            }
+        }
+
+        gtk_window_present(GTK_WINDOW(about));
+    }), this);
+    
     // Start / Stop buttons
     start_button = gtk_button_new_with_label("Start");
     gtk_widget_add_css_class(start_button, "suggested-action");
