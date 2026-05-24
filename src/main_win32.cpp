@@ -32,6 +32,7 @@
 #define ID_CHK_MOVE        1006
 #define ID_BTN_CREATE_ISO  1007
 #define ID_CHK_EMPTY       1008
+#define ID_CHK_SPAN        1009
 
 // ISO Dialog Control IDs
 #define ID_BTN_ISO_SRC_BROWSE  2001
@@ -44,6 +45,7 @@ HWND g_hwndMain = NULL;
 HWND g_editSrc = NULL;
 HWND g_editDest = NULL;
 HWND g_chkMove = NULL;
+HWND g_chkSpan = NULL;
 HWND g_comboMedia = NULL;
 HWND g_editCap = NULL;
 HWND g_editClus = NULL;
@@ -332,7 +334,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             int y = 16;
             
             // Group 1: Folders Selection
-            CreateWindow("BUTTON", "Directories setup", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 12, y, 510, 115, hwnd, NULL, NULL, NULL);
+            CreateWindow("BUTTON", "Directories setup", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 12, y, 510, 138, hwnd, NULL, NULL, NULL);
             
             CreateWindow("STATIC", "Source folder:", WS_CHILD | WS_VISIBLE, 24, y + 26, 100, 20, hwnd, NULL, NULL, NULL);
             g_editSrc = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 130, y + 24, 270, 22, hwnd, NULL, NULL, NULL);
@@ -343,18 +345,25 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             CreateWindow("BUTTON", "Browse...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 410, y + 54, 90, 25, hwnd, (HMENU)ID_BTN_DEST_BROWSE, NULL, NULL);
             
             g_chkMove = CreateWindow("BUTTON", "Move/organize fitted folders/files to target folder", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 130, y + 84, 350, 20, hwnd, (HMENU)ID_CHK_MOVE, NULL, NULL);
+            g_chkSpan = CreateWindow("BUTTON", "Span across multiple volumes (Volume_1, Volume_2, etc.)", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 130, y + 106, 360, 20, hwnd, (HMENU)ID_CHK_SPAN, NULL, NULL);
             
-            y += 130;
+            y += 150;
             
             // Group 2: Media and Algorithm Settings
             CreateWindow("BUTTON", "Medium & Solver settings", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 12, y, 510, 140, hwnd, NULL, NULL, NULL);
             
             CreateWindow("STATIC", "Select Medium:", WS_CHILD | WS_VISIBLE, 24, y + 26, 100, 20, hwnd, NULL, NULL, NULL);
-            g_comboMedia = CreateWindow("COMBOBOX", "", WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST, 130, y + 24, 120, 150, hwnd, (HMENU)ID_COMBO_MEDIA, NULL, NULL);
+            g_comboMedia = CreateWindow("COMBOBOX", "", WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST, 130, y + 24, 120, 250, hwnd, (HMENU)ID_COMBO_MEDIA, NULL, NULL);
             SendMessage(g_comboMedia, CB_ADDSTRING, 0, (LPARAM)"CD (650 MB)");
             SendMessage(g_comboMedia, CB_ADDSTRING, 0, (LPARAM)"CD (700 MB)");
             SendMessage(g_comboMedia, CB_ADDSTRING, 0, (LPARAM)"DVD (4.7 GB)");
             SendMessage(g_comboMedia, CB_ADDSTRING, 0, (LPARAM)"DVD DL (8.5 GB)");
+            SendMessage(g_comboMedia, CB_ADDSTRING, 0, (LPARAM)"BD (25 GB)");
+            SendMessage(g_comboMedia, CB_ADDSTRING, 0, (LPARAM)"BD DL (50 GB)");
+            SendMessage(g_comboMedia, CB_ADDSTRING, 0, (LPARAM)"USB (8 GB)");
+            SendMessage(g_comboMedia, CB_ADDSTRING, 0, (LPARAM)"USB (16 GB)");
+            SendMessage(g_comboMedia, CB_ADDSTRING, 0, (LPARAM)"USB (32 GB)");
+            SendMessage(g_comboMedia, CB_ADDSTRING, 0, (LPARAM)"USB (64 GB)");
             SendMessage(g_comboMedia, CB_ADDSTRING, 0, (LPARAM)"Custom Capacity");
             SendMessage(g_comboMedia, CB_SETCURSEL, 1, 0); // Default CD 700MB
             
@@ -413,15 +422,43 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 int index = SendMessage(g_comboMedia, CB_GETCURSEL, 0, 0);
                 if (index == 0) { // CD 650
                     SetWindowText(g_editCap, "681574400");
+                    SetWindowText(g_editClus, "2048");
                     EnableWindow(g_editCap, FALSE);
                 } else if (index == 1) { // CD 700
                     SetWindowText(g_editCap, "734003200");
+                    SetWindowText(g_editClus, "2048");
                     EnableWindow(g_editCap, FALSE);
                 } else if (index == 2) { // DVD 4.7
                     SetWindowText(g_editCap, "4700000000");
+                    SetWindowText(g_editClus, "2048");
                     EnableWindow(g_editCap, FALSE);
                 } else if (index == 3) { // DVD DL 8.5
                     SetWindowText(g_editCap, "8500000000");
+                    SetWindowText(g_editClus, "2048");
+                    EnableWindow(g_editCap, FALSE);
+                } else if (index == 4) { // BD 25
+                    SetWindowText(g_editCap, "25000000000");
+                    SetWindowText(g_editClus, "2048");
+                    EnableWindow(g_editCap, FALSE);
+                } else if (index == 5) { // BD DL 50
+                    SetWindowText(g_editCap, "50000000000");
+                    SetWindowText(g_editClus, "2048");
+                    EnableWindow(g_editCap, FALSE);
+                } else if (index == 6) { // USB 8
+                    SetWindowText(g_editCap, "8000000000");
+                    SetWindowText(g_editClus, "4096");
+                    EnableWindow(g_editCap, FALSE);
+                } else if (index == 7) { // USB 16
+                    SetWindowText(g_editCap, "16000000000");
+                    SetWindowText(g_editClus, "4096");
+                    EnableWindow(g_editCap, FALSE);
+                } else if (index == 8) { // USB 32
+                    SetWindowText(g_editCap, "32000000000");
+                    SetWindowText(g_editClus, "4096");
+                    EnableWindow(g_editCap, FALSE);
+                } else if (index == 9) { // USB 64
+                    SetWindowText(g_editCap, "64000000000");
+                    SetWindowText(g_editClus, "4096");
                     EnableWindow(g_editCap, FALSE);
                 } else { // Custom
                     EnableWindow(g_editCap, TRUE);
@@ -458,6 +495,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 g_solver.targetDirectory = dest;
                 g_solver.moveFiles = (IsDlgButtonChecked(hwnd, ID_CHK_MOVE) == BST_CHECKED);
                 g_solver.skipEmpty = (IsDlgButtonChecked(hwnd, ID_CHK_EMPTY) == BST_CHECKED);
+                g_solver.spanMultipleVolumes = (IsDlgButtonChecked(hwnd, ID_CHK_SPAN) == BST_CHECKED);
                 
                 char buf[32];
                 GetWindowText(g_editCap, buf, 32);
@@ -479,6 +517,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 // Disable UI inputs
                 EnableWindow(g_btnStart, FALSE);
                 EnableWindow(g_btnStop, TRUE);
+                EnableWindow(g_chkMove, FALSE);
+                EnableWindow(g_chkSpan, FALSE);
+                EnableWindow(g_chkEmpty, FALSE);
+                EnableWindow(g_comboMedia, FALSE);
                 
                 // Wire thread safe UI messages
                 g_solver.logNotify = [hwnd](const std::string& msg, int type) {
@@ -579,9 +621,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case WM_SOLVER_FINISHED: {
             AppendTextToLog(g_editLog, "\nSolver processing complete.");
             
-            // Re-enable start
+            // Re-enable start and control inputs
             EnableWindow(g_btnStart, TRUE);
             EnableWindow(g_btnStop, FALSE);
+            EnableWindow(g_chkMove, TRUE);
+            EnableWindow(g_chkSpan, TRUE);
+            EnableWindow(g_chkEmpty, TRUE);
+            EnableWindow(g_comboMedia, TRUE);
             
             if (g_solver_thread.joinable()) {
                 g_solver_thread.join();
@@ -641,7 +687,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         "BttbWin32GUI",
         "Burn to the Brim (Native Win32 GUI)",
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
-        CW_USEDEFAULT, CW_USEDEFAULT, 550, 600,
+        CW_USEDEFAULT, CW_USEDEFAULT, 550, 630,
         NULL, NULL, hInstance, NULL
     );
     

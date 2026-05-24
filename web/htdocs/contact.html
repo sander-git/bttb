@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Burn to the Brim: Contact</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+        :root {
+            --bg-main: #0B0F19;
+            --bg-card: #151D30;
+            --bg-sidebar: #0D1424;
+            --accent: #6366F1;
+            --accent-hover: #4F46E5;
+            --text-primary: #F3F4F6;
+            --text-secondary: #9CA3AF;
+            --border-color: #24324F;
+            --success: #10B981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar navigation */
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .logo-img {
+            filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.4));
+            transition: transform 0.3s ease;
+        }
+
+        .logo-img:hover {
+            transform: scale(1.08);
+        }
+
+        .logo-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-top: 15px;
+            background: linear-gradient(135deg, #A5B4FC, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-item a {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .nav-item.active a,
+        .nav-item a:hover {
+            color: var(--text-primary);
+            background-color: rgba(99, 102, 241, 0.15);
+            border-color: rgba(99, 102, 241, 0.25);
+        }
+
+        .nav-item.active a {
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+        }
+
+        .sf-logo {
+            margin-top: auto;
+            padding-top: 30px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .sf-logo img {
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+        }
+
+        .sf-logo img:hover {
+            opacity: 1;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 40px 50px;
+            max-width: 1200px;
+        }
+
+        .section-header {
+            margin-bottom: 40px;
+        }
+
+        .section-header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #FFF, #A5B4FC);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .section-header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Contact Options Grid */
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            margin-bottom: 50px;
+        }
+
+        .contact-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 28px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .contact-card h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--accent);
+        }
+
+        .contact-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            flex-grow: 1;
+        }
+
+        .btn-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: color 0.2s ease;
+        }
+
+        .btn-link:hover {
+            color: var(--accent-hover);
+            text-decoration: underline;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border-color);
+            padding: 25px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 900px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                padding: 20px;
+            }
+            .logo-container {
+                margin-bottom: 20px;
+                flex-direction: row;
+                gap: 15px;
+                align-items: center;
+            }
+            .logo-title {
+                margin-top: 0;
+            }
+            .nav-links {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .nav-item a {
+                padding: 8px 12px;
+                font-size: 0.85rem;
+            }
+            .sf-logo {
+                display: none;
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar navigation -->
+    <div class="sidebar">
+        <div class="logo-container">
+            <img class="logo-img" src="BTTBIcon.gif" height="64" width="64" alt="BTTB Logo">
+            <div class="logo-title">Burn to the Brim</div>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item"><a href="index.html">Home</a></li>
+            <li class="nav-item"><a href="overview.html">Overview</a></li>
+            <li class="nav-item"><a href="news.html">News</a></li>
+            <li class="nav-item"><a href="history.html">History</a></li>
+            <li class="nav-item"><a href="http://sourceforge.net/project/showfiles.php?group_id=49999" target="_blank">Download</a></li>
+            <li class="nav-item"><a href="https://sourceforge.net/forum/forum.php?forum_id=164745" target="_blank">Forum</a></li>
+            <li class="nav-item active"><a href="contact.html">Contact</a></li>
+            <li class="nav-item"><a href="elwin.html">About us</a></li>
+            <li class="nav-item"><a href="Help">Help/FAQ</a></li>
+        </ul>
+        <div class="sf-logo">
+            <a href="https://sourceforge.net/projects/bttb/" target="_blank">
+                <img src="http://sourceforge.net/sflogo.php?group_id=49999&type=1" width="88" height="31" border="0" alt="SourceForge.net Logo">
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        
+        <div class="section-header">
+            <h1>Contact & Support</h1>
+            <p>Connect with the BTTB developers and find assistance for bug reporting or feature requests.</p>
+        </div>
+
+        <div class="contact-grid">
+            
+            <!-- Forum -->
+            <div class="contact-card">
+                <h2>BTTB COMMUNITY FORUM</h2>
+                <p>
+                    The forum is our primary hub for general discussions, compiling questions, and platform assistance. Discuss archiving optimizations and new version integrations directly with other users.
+                </p>
+                <a href="https://sourceforge.net/forum/forum.php?forum_id=164745" class="btn-link" target="_blank">Visit the Forum &rarr;</a>
+            </div>
+
+            <!-- Bug Reporting -->
+            <div class="contact-card">
+                <h2>REPORTING BUGS</h2>
+                <p>
+                    Discovered an unexpected issue? First, verify it's not a newly introduced feature and doublecheck our History logs. If it's a bug, submit it on our official tracker. Be as descriptive as possible.
+                </p>
+                <a href="https://sourceforge.net/tracker/?func=add&group_id=49999&atid=458238" class="btn-link" target="_blank">Report a Bug &rarr;</a>
+            </div>
+
+            <!-- Features -->
+            <div class="contact-card">
+                <h2>REQUESTING FEATURES</h2>
+                <p>
+                    Lying in bed and had a brilliant inspiration for BTTB? File a feature request detailing your proposal, and we will assess it for our subsequent C++20 releases.
+                </p>
+                <a href="https://sourceforge.net/tracker/?func=add&group_id=49999&atid=458241" class="btn-link" target="_blank">Request a Feature &rarr;</a>
+            </div>
+
+            <!-- Support email -->
+            <div class="contact-card">
+                <h2>EMAIL CONTACT & LISTS</h2>
+                <p>
+                    For low-traffic updates on BTTB releases, subscribe to our email alert list. For other inquiries, reach out directly via the support list address.
+                </p>
+                <div style="display:flex; flex-direction:column; gap: 8px;">
+                    <a href="https://lists.sourceforge.net/lists/listinfo/bttb-news" class="btn-link" target="_blank">Join News List &rarr;</a>
+                    <a href="mailto:bttb-info@lists.sourceforge.net" class="btn-link">Email support &rarr;</a>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <span>&copy; BTTB Team. All rights reserved.</span>
+            <span>Support channels</span>
+        </footer>
+
+    </div>
+
+</body>
+</html>

@@ -26,22 +26,45 @@ static void on_media_changed(GtkComboBox* combo, gpointer user_data) {
     auto* data = static_cast<DialogData*>(user_data);
     int active = gtk_combo_box_get_active(combo);
     
-    // Disable capacity edit unless "Custom" is chosen (index 4)
     if (active == 0) { // CD 650MB
-        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "681574400"); // 650 * 1024 * 1024
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "681574400");
         gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "2048");
         gtk_widget_set_sensitive(data->capacity_entry, FALSE);
     } else if (active == 1) { // CD 700MB
-        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "734003200"); // 700 * 1024 * 1024
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "734003200");
         gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "2048");
         gtk_widget_set_sensitive(data->capacity_entry, FALSE);
     } else if (active == 2) { // DVD 4.7GB
-        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "4700000000"); // 4.7 GB
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "4700000000");
         gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "2048");
         gtk_widget_set_sensitive(data->capacity_entry, FALSE);
     } else if (active == 3) { // DVD DL 8.5GB
         gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "8500000000");
         gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "2048");
+        gtk_widget_set_sensitive(data->capacity_entry, FALSE);
+    } else if (active == 4) { // BD 25GB
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "25000000000");
+        gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "2048");
+        gtk_widget_set_sensitive(data->capacity_entry, FALSE);
+    } else if (active == 5) { // BD DL 50GB
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "50000000000");
+        gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "2048");
+        gtk_widget_set_sensitive(data->capacity_entry, FALSE);
+    } else if (active == 6) { // USB 8GB
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "8000000000");
+        gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "4096");
+        gtk_widget_set_sensitive(data->capacity_entry, FALSE);
+    } else if (active == 7) { // USB 16GB
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "16000000000");
+        gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "4096");
+        gtk_widget_set_sensitive(data->capacity_entry, FALSE);
+    } else if (active == 8) { // USB 32GB
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "32000000000");
+        gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "4096");
+        gtk_widget_set_sensitive(data->capacity_entry, FALSE);
+    } else if (active == 9) { // USB 64GB
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "64000000000");
+        gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "4096");
         gtk_widget_set_sensitive(data->capacity_entry, FALSE);
     } else { // Custom
         gtk_widget_set_sensitive(data->capacity_entry, TRUE);
@@ -114,6 +137,12 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "CD (700 MB)");
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "DVD (4.7 GB)");
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "DVD DL (8.5 GB)");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "BD (25 GB)");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "BD DL (50 GB)");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "USB (8 GB)");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "USB (16 GB)");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "USB (32 GB)");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "USB (64 GB)");
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "Custom Size");
     gtk_grid_attach(GTK_GRID(grid), data->media_combo, 1, 0, 1, 1);
     
@@ -262,11 +291,17 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     }
     
     // Select custom/standard size default index
-    int combo_index = 4; // Custom
+    int combo_index = 10; // Custom Size
     if (solver.mediumInfo.capacityBytes == 681574400) combo_index = 0;
     else if (solver.mediumInfo.capacityBytes == 734003200) combo_index = 1;
-    else if (solver.mediumInfo.capacityBytes == 4700000000) combo_index = 2;
-    else if (solver.mediumInfo.capacityBytes == 8500000000) combo_index = 3;
+    else if (solver.mediumInfo.capacityBytes == 4700000000LL) combo_index = 2;
+    else if (solver.mediumInfo.capacityBytes == 8500000000LL) combo_index = 3;
+    else if (solver.mediumInfo.capacityBytes == 25000000000LL) combo_index = 4;
+    else if (solver.mediumInfo.capacityBytes == 50000000000LL) combo_index = 5;
+    else if (solver.mediumInfo.capacityBytes == 8000000000LL) combo_index = 6;
+    else if (solver.mediumInfo.capacityBytes == 16000000000LL) combo_index = 7;
+    else if (solver.mediumInfo.capacityBytes == 32000000000LL) combo_index = 8;
+    else if (solver.mediumInfo.capacityBytes == 64000000000LL) combo_index = 9;
     
     gtk_combo_box_set_active(GTK_COMBO_BOX(data->media_combo), combo_index);
     on_media_changed(GTK_COMBO_BOX(data->media_combo), data);

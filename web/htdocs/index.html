@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Burn to the Brim: Announcing Version 3.1.0</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+        :root {
+            --bg-main: #0B0F19;
+            --bg-card: #151D30;
+            --bg-sidebar: #0D1424;
+            --accent: #6366F1;
+            --accent-hover: #4F46E5;
+            --text-primary: #F3F4F6;
+            --text-secondary: #9CA3AF;
+            --border-color: #24324F;
+            --success: #10B981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar navigation */
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .logo-img {
+            filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.4));
+            transition: transform 0.3s ease;
+        }
+
+        .logo-img:hover {
+            transform: scale(1.08);
+        }
+
+        .logo-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-top: 15px;
+            background: linear-gradient(135deg, #A5B4FC, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-item a {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .nav-item.active a,
+        .nav-item a:hover {
+            color: var(--text-primary);
+            background-color: rgba(99, 102, 241, 0.15);
+            border-color: rgba(99, 102, 241, 0.25);
+        }
+
+        .nav-item.active a {
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+        }
+
+        .sf-logo {
+            margin-top: auto;
+            padding-top: 30px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .sf-logo img {
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+        }
+
+        .sf-logo img:hover {
+            opacity: 1;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 40px 50px;
+            max-width: 1200px;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.15), transparent), linear-gradient(180deg, var(--bg-card), rgba(21, 29, 48, 0.5));
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .version-badge {
+            background-color: var(--success);
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 99px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+        }
+
+        .hero h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.75rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+            line-height: 1.2;
+            background: linear-gradient(135deg, #FFF, #A5B4FC);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            color: var(--text-secondary);
+            font-size: 1.15rem;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            max-width: 800px;
+        }
+
+        .cta-group {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background-color: var(--accent);
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(255,255,255,0.05);
+            border-color: var(--text-secondary);
+            transform: translateY(-2px);
+        }
+
+        /* Feature Cards Grid */
+        .features-section {
+            margin-bottom: 50px;
+        }
+
+        .section-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background-color: var(--border-color);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .feature-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.1);
+        }
+
+        .feature-icon {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+
+        .feature-card h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* Screenshots Carousel/Section */
+        .screenshots-section {
+            margin-bottom: 50px;
+        }
+
+        .screenshots-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .screenshot-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .screenshot-card.reverse {
+            flex-direction: row-reverse;
+        }
+
+        .screenshot-img-wrapper {
+            flex: 1.2;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            background: #060911;
+        }
+
+        .screenshot-img {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .screenshot-card:hover .screenshot-img {
+            transform: scale(1.03);
+        }
+
+        .screenshot-info {
+            flex: 1;
+            padding: 35px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-left: 1px solid var(--border-color);
+        }
+
+        .screenshot-card.reverse .screenshot-info {
+            border-left: none;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .screenshot-platform {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent);
+            margin-bottom: 10px;
+        }
+
+        .screenshot-info h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .screenshot-info p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* Warnings and Notes */
+        .alerts-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 50px;
+        }
+
+        .alert-card {
+            background: linear-gradient(90deg, rgba(99,102,241,0.05), rgba(99,102,241,0.01));
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--accent);
+            border-radius: 8px;
+            padding: 20px 24px;
+        }
+
+        .alert-card.warning {
+            border-left-color: #F59E0B;
+            background: linear-gradient(90deg, rgba(245,158,11,0.05), rgba(245,158,11,0.01));
+        }
+
+        .alert-card h4 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .alert-card p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .alert-card a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .alert-card a:hover {
+            text-decoration: underline;
+        }
+
+        .note-text {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            background-color: rgba(255,255,255,0.02);
+            padding: 15px 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .note-text a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .note-text a:hover {
+            text-decoration: underline;
+        }
+
+        /* Awards / Kudos Section */
+        .kudos-section {
+            margin-bottom: 50px;
+        }
+
+        .awards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .award-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.2s ease;
+        }
+
+        .award-card:hover {
+            border-color: rgba(255,255,255,0.15);
+            background-color: rgba(255,255,255,0.02);
+            transform: scale(1.02);
+        }
+
+        .award-badge-wrapper {
+            width: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .award-badge-wrapper img {
+            max-width: 100%;
+            height: auto;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+
+        .award-text {
+            font-size: 0.85rem;
+            line-height: 1.4;
+            color: var(--text-primary);
+        }
+
+        .award-text a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .award-text a:hover {
+            text-decoration: underline;
+        }
+
+        .award-text cite {
+            font-style: italic;
+            color: var(--text-secondary);
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border-color);
+            padding: 25px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 900px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                padding: 20px;
+            }
+            .logo-container {
+                margin-bottom: 20px;
+                flex-direction: row;
+                gap: 15px;
+                align-items: center;
+            }
+            .logo-title {
+                margin-top: 0;
+            }
+            .nav-links {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .nav-item a {
+                padding: 8px 12px;
+                font-size: 0.85rem;
+            }
+            .sf-logo {
+                display: none;
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 30px 20px;
+            }
+            .screenshot-card, .screenshot-card.reverse {
+                flex-direction: column;
+            }
+            .screenshot-info {
+                border-left: none;
+                border-top: 1px solid var(--border-color);
+            }
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar navigation -->
+    <div class="sidebar">
+        <div class="logo-container">
+            <img class="logo-img" src="BTTBIcon.gif" height="64" width="64" alt="BTTB Logo">
+            <div class="logo-title">Burn to the Brim</div>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item active"><a href="index.html">Home</a></li>
+            <li class="nav-item"><a href="overview.html">Overview</a></li>
+            <li class="nav-item"><a href="news.html">News</a></li>
+            <li class="nav-item"><a href="history.html">History</a></li>
+            <li class="nav-item"><a href="http://sourceforge.net/project/showfiles.php?group_id=49999" target="_blank">Download</a></li>
+            <li class="nav-item"><a href="https://sourceforge.net/forum/forum.php?forum_id=164745" target="_blank">Forum</a></li>
+            <li class="nav-item"><a href="contact.html">Contact</a></li>
+            <li class="nav-item"><a href="elwin.html">About us</a></li>
+            <li class="nav-item"><a href="Help">Help/FAQ</a></li>
+        </ul>
+        <div class="sf-logo">
+            <a href="https://sourceforge.net/projects/bttb/" target="_blank">
+                <img src="http://sourceforge.net/sflogo.php?group_id=49999&type=1" width="88" height="31" border="0" alt="SourceForge.net Logo">
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        
+        <!-- Hero Section -->
+        <div class="hero">
+            <span class="version-badge">Version 3.1.0 Released</span>
+            <h1>Announcing BTTB v3.1.0: BD/USB & Spanning Engine</h1>
+            <p>
+                Burn to the Brim (BTTB) has been fully upgraded to v3.1.0! Experience iterative, optimal Multi-Volume Spanning across multiple disks or flash drives, plus native presets for Blu-ray discs and USB drives. Dual modern native graphical interfaces for both Linux and Windows compile cleanly and package without licensing dependencies.
+            </p>
+            <div class="cta-group">
+                <a href="http://sourceforge.net/project/showfiles.php?group_id=49999" class="btn btn-primary" target="_blank">Download BTTB 3.1.0</a>
+                <a href="overview.html" class="btn btn-secondary">Learn More</a>
+            </div>
+        </div>
+
+        <!-- Features Grid -->
+        <div class="features-section">
+            <h2 class="section-title">New C++20 Core Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Recursive Backtracking</h3>
+                    <p>Calculates optimal subset-sum selections in milliseconds using a completely responsive, thread-safe background architecture.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📂</div>
+                    <h3>Split-Depth Control</h3>
+                    <p>Establish recursive traversal waterlevels, giving you exact command over atomic vs granular directory mappings.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>RegEx Rule Groupings</h3>
+                    <p>Compile matching files or folders together on specific mediums utilizing standard wildcards or powerful regular expressions.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💻</div>
+                    <h3>Native Windows GUI</h3>
+                    <p>A super lightweight ~160KB standalone binary that runs with zero external DLL requirements, remaining 100% license-compliant.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screenshots Section -->
+        <div class="screenshots-section">
+            <h2 class="section-title">Visual Showcase</h2>
+            <div class="screenshots-container">
+                
+                <!-- Linux GUI -->
+                <div class="screenshot-card">
+                    <div class="screenshot-img-wrapper">
+                        <img class="screenshot-img" src="bttb3_linux_main.png" alt="Linux GTK 4 interface mockup">
+                    </div>
+                    <div class="screenshot-info">
+                        <div class="screenshot-platform">Linux GUI</div>
+                        <h3>Modern GTK 4 Desktop</h3>
+                        <p>
+                            Designed utilizing modern GNOME Adwaita aesthetics. Integrates HeaderBars, dynamic results trees, visual capacity progress bars, and highly detailed colored execution logs.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Windows GUI -->
+                <div class="screenshot-card reverse">
+                    <div class="screenshot-img-wrapper">
+                        <img class="screenshot-img" src="bttb3_windows_main.png" alt="Windows native GUI mockup">
+                    </div>
+                    <div class="screenshot-info">
+                        <div class="screenshot-platform">Windows GUI</div>
+                        <h3>Ultra-lightweight Win32</h3>
+                        <p>
+                            A pure native Win32 SDK desktop application compiling to a single statically-linked binary. Features responsive shell directory lookups and an integrated, modal ISO creation window.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Alerts and General Information -->
+        <div class="alerts-section">
+            
+            <div class="alert-card">
+                <h4>ISO Generation Integration</h4>
+                <p>
+                    Create ISO 9660, Joliet, and Rock Ridge backup images directly within the application! On Windows, BTTB features automatic PATH fallbacks and displays easy Scoop, Chocolatey, Cygwin, or MSYS2 installation instructions to get you going instantly.
+                </p>
+            </div>
+
+            <div class="alert-card warning">
+                <h4>Notice for Legacy Users</h4>
+                <p>
+                    BTTB 3.1.0 completely replaces the old 2.9.0 Delphi version. You no longer need to worry about installing ASPI drivers on modern Windows systems!
+                </p>
+            </div>
+
+            <div class="note-text">
+                <a name="Note"></a>
+                <strong>Environmental Goal Note</strong>: BTTB is freeware, but if you enjoy the program, please consider donating whatever you think it's worth, or (perhaps even better) take some real action for an <a href="http://www.greenhousenet.org/action/action.html" target="_blank">environmental goal</a>! That would be highly appreciated.
+            </div>
+
+        </div>
+
+        <!-- Awards / Kudos -->
+        <div class="kudos-section">
+            <h2 class="section-title">Awards & Featured Recognition</h2>
+            <div class="awards-grid">
+                
+                <div class="award-card">
+                    <div class="award-badge-wrapper"><img src="http://www.heise.de/ct/icons/ct_logo.gif" alt="c't Logo"></div>
+                    <div class="award-text">
+                        Featured in the renowned German <a href="http://www.heise.de/ct/shareware/default.shtml?prg=11409&T=brim&os=15&l_sw=1&l_aw=1" target="_blank">c't magazine (21/2002)</a>.
+                    </div>
+                </div>
+
+                <div class="award-card">
+                    <div class="award-badge-wrapper"><img src="si_editorspick.png" alt="Softlandmark Badge"></div>
+                    <div class="award-text">
+                        <a href="http://www.softlandmark.com/CDRWSoft2.htm" target="_blank">Softlandmark</a> Editors Pick (5 Stars).
+                    </div>
+                </div>
+
+                <div class="award-card">
+                    <div class="award-badge-wrapper"><img src="http://www.wintotalserver.de/images/toptip.gif" alt="WinTotal Logo"></div>
+                    <div class="award-text">
+                        <a href="http://www.wintotal.de/softw" target="_blank">Wintotal</a> Top Tip / 6 of 6 points.
+                    </div>
+                </div>
+
+                <div class="award-card">
+                    <div class="award-badge-wrapper"><img src="hodnoc5.gif" alt="Slunecnice Badge"></div>
+                    <div class="award-text">
+                        <a href="http://www.slunecnice.cz/product/BurntotheBrim/" target="_blank">Slunecnice</a> Editor's Tip / 5 Sunflowers (Czech).
+                    </div>
+                </div>
+
+                <div class="award-card">
+                    <div class="award-badge-wrapper"><img src="5.gif" alt="CFS Doves"></div>
+                    <div class="award-text">
+                        <a href="http://www.completelyfreesoftware.com/general_programs4_w95.html" target="_blank">CompletelyFreeSoftware</a> awarded BTTB 5 Doves.
+                    </div>
+                </div>
+
+                <div class="award-card">
+                    <div class="award-badge-wrapper"><img src="5webattack.gif" alt="WebAttack Logo"></div>
+                    <div class="award-text">
+                        <a href="http://www.webattack.com/get/burntorim.shtml" target="_blank">WebAttack</a> Editor's Pick.
+                    </div>
+                </div>
+
+                <div class="award-card">
+                    <div class="award-badge-wrapper"><img src="5emotsh.gif" alt="RocketDownload Badge"></div>
+                    <div class="award-text">
+                        <a href="http://www.rocketdownload.com/Details/Musi/bttb.htm" target="_blank">Rocket Download</a> 5 Smileys.
+                    </div>
+                </div>
+
+                <div class="award-card">
+                    <div class="award-badge-wrapper"><img src="softonic_essential.png" alt="Softonic Logo"></div>
+                    <div class="award-text">
+                        <a href="http://www.softonic.com/informacion_extendida.phtml?n_id=14841&amp;plat=1" target="_blank">Softonic</a> ¡Excelente! / Essential in class (Spanish).
+                    </div>
+                </div>
+
+                <div class="award-card">
+                    <div class="award-badge-wrapper"><img src="Nonags-5.gif" alt="Nonags Badge"></div>
+                    <div class="award-text">
+                        <a href="http://www.nonags.com/nonags/cdr.html#Burn to the Brim" target="_blank">Nonags</a> 5 Duckies.
+                    </div>
+                </div>
+
+                <div class="award-card">
+                    <div class="award-badge-wrapper"><img src="lockerlink.gif" alt="Lockergnome Badge"></div>
+                    <div class="award-text">
+                        <a href="http://www.lockergnome.com/issues/daily/20010507.html" target="_blank">Lockergnome</a>:
+                        <cite>"... I haven't been this excited about burning things since those days on the sidewalk with the ants..."</cite>
+                    </div>
+                </div>
+
+                <div class="award-card">
+                    <div class="award-badge-wrapper"><img src="digifreq.png" alt="DigiFreq Logo"></div>
+                    <div class="award-text">
+                        <a href="http://www.digifreq.com/digifreq/" target="_blank">DigiFreq</a>: Featured program <cite>"...Best of the best..."</cite>
+                    </div>
+                </div>
+
+                <div class="award-card">
+                    <div class="award-badge-wrapper"><img src="tucowsbutton.gif" alt="Tucows Logo"></div>
+                    <div class="award-text">
+                        <a href="http://www.tucows.com/preview/176884.html" target="_blank">Tucows</a>: <cite>"... A must-have if you spend a lot of time moving files around ..."</cite>
+                    </div>
+                </div>
+
+            </div>
+            
+            <div class="note-text" style="margin-top: 25px;">
+                <strong>Note about Lockergnome's comment</strong>: <i>I take this quote in jest. I suggest you do the same, as Lockergnome assured me it was. I've literally never in my life intentionally harmed an animal (with the exception of quick and painless deaths of parasites) and have been a vegetarian for about a decade, and still enjoyed it. If no one were allowed to make any politically incorrect statement I feel the world would become a very boring place. This statement is so politically incorrect I didn't think anyone would take it seriously, but I was wrong :)</i>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <span>&copy; BTTB Team. All rights reserved.</span>
+            <span>Redesigned for version 3.1.0</span>
+        </footer>
+
+    </div>
+
+</body>
+</html>

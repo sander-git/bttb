@@ -1,0 +1,76 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><!-- InstanceBegin template="/Templates/BTTB MAIN.dwt" codeOutsideHTMLIsLocked="false" -->
+<head>
+<!-- InstanceBeginEditable name="doctitle" -->
+<title>Burn To The Brim Help</title>
+<!-- InstanceEndEditable --> 
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!-- InstanceBeginEditable name="head" --><!-- InstanceEndEditable -->
+</head>
+
+<body bgcolor="#FFFFCC" text="#000000" link="#0066CC" vlink="#0066CC" alink="#0066CC">
+<table width="100%" height="100%" border="0" cellpadding="0" cellspacing="0">
+  <tr> 
+    <td width="5%" height="35" bgcolor="#FFCCCC"><font color="#000000" size="+1" face="Verdana, Arial, Helvetica, sans-serif"><a href="index.html"><img src="bttbicon.gif" width="40" height="36" border="0"></a></font></td>
+    <td width="91%" bgcolor="#FFCCCC"> <div align="center"><font color="#000000" size="+1" face="Verdana, Arial, Helvetica, sans-serif">Burn 
+        To The Brim Help</font></div></td>
+    <td width="4%" bgcolor="#FFCCCC">&nbsp;</td>
+  </tr>
+  <tr> 
+    <td height="347" bgcolor="#FFCCCC">&nbsp;</td>
+    <td valign="top"><!-- InstanceBeginEditable name="EditRegion0" --> 
+      <p><font face="Arial, Helvetica, sans-serif">With folder splitting, you 
+        can instruct BTTB to split up folders to a certain level, on which the 
+        folders are kept intact. </font></p>
+      <p><font face="Arial, Helvetica, sans-serif">Let's take a simple example, 
+        illustrated in the picture below - the green boxes are folders, subfolders 
+        and files:</font></p>
+      <font face="Arial, Helvetica, sans-serif"> 
+      <p><img src="dirstructure.gif" width="300" height="418">&nbsp;</p>
+      <p>Say you want to burn all folders and subfolders.<br>
+        If you would start from the lowest directory level (depth 0), BTTB will take each 
+        file/folder inside it (<strong>root a, root b</strong>) as an <em>undivideable 
+        whole </em>and will try to fit each of these <em>entities </em>on the 
+        CD. This is illustrated in the figure below. The yellow boxes are the 
+        <em>undivideable entities</em> that BTTB will try to write to CD. Of course, 
+        chances are this won't fit. </p>
+      <p><img src="depth0.gif" width="531" height="432"></p>
+      <p>When you enter a splitting depth of 1, BTTB will split up the <strong>root 
+        a and root b </strong> folders and only keep the files/folders within 
+        <strong>sub b</strong> together, as illustrated below. BTTB now has 3 
+        <em>undivideable entities</em> that it can put on different CD's. The 
+        chances that this will fit are better.</p>
+      <p><img src="depth1.gif" width="635" height="494"></p>
+      <p>Now, if this still doesn't bring a proper solution, we can even go one 
+        depth below that:</p>
+      <p><img src="depth2.gif" width="682" height="494"></p>
+      <p>BTTB now has 4 <em>undivideable entities</em> it can choose among. It 
+        will have less trouble finding a solution. The result could be something 
+        like illustrated below:</p>
+      <p>&nbsp;<img src="fillcds.gif" width="500" height="461"></p>
+      <p>Each of the <em>entities</em> can end up on different CD's. If you want 
+        certain files in one subfolder to stay together, such as <strong>file 
+        b and file c </strong>in this example, you could have a problem. There 
+        is a way to customize BTTB a little more however, telling it to keep certain 
+        files together <strong>at all costs</strong>. Look at the chapter on <strong><a href="bttb_groupcreation.html">group 
+        creation</a></strong> for a further explanation.</p>
+      <p>By selecting <a href="bttb_keepsplitted.html">Keep splitted folders</a>, 
+        in combination with the <a href="bttb_movetofolder.html">Move to folder 
+        </a>option, the folders are kept in their original splitted root folders. 
+        This has no effect on <a href="bttb_createiso.html">creating ISO's</a>, 
+        whereby files and folders are <em>always</em> stored under their complete 
+        paths (ie. &quot;<strong>root a \ sub b \ file b</strong>&quot;).</p>
+      <p>We strongly recommend to first play with this to make sure you understand 
+        it, making sure <a href="bttb_movetofolder.html">Move to folder</a> is 
+        not checked.</p>
+      </font><!-- InstanceEndEditable --></td>
+    <td>&nbsp;</td>
+  </tr>
+  <tr> 
+    <td bgcolor="#FFCCCC">&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+  </tr>
+</table>
+</body>
+<!-- InstanceEnd --></html>

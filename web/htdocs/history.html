@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Burn to the Brim: History</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+        :root {
+            --bg-main: #0B0F19;
+            --bg-card: #151D30;
+            --bg-sidebar: #0D1424;
+            --accent: #6366F1;
+            --accent-hover: #4F46E5;
+            --text-primary: #F3F4F6;
+            --text-secondary: #9CA3AF;
+            --border-color: #24324F;
+            --success: #10B981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar navigation */
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .logo-img {
+            filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.4));
+            transition: transform 0.3s ease;
+        }
+
+        .logo-img:hover {
+            transform: scale(1.08);
+        }
+
+        .logo-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-top: 15px;
+            background: linear-gradient(135deg, #A5B4FC, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-item a {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .nav-item.active a,
+        .nav-item a:hover {
+            color: var(--text-primary);
+            background-color: rgba(99, 102, 241, 0.15);
+            border-color: rgba(99, 102, 241, 0.25);
+        }
+
+        .nav-item.active a {
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+        }
+
+        .sf-logo {
+            margin-top: auto;
+            padding-top: 30px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .sf-logo img {
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+        }
+
+        .sf-logo img:hover {
+            opacity: 1;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 40px 50px;
+            max-width: 1200px;
+        }
+
+        .section-header {
+            margin-bottom: 40px;
+        }
+
+        .section-header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #FFF, #A5B4FC);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .section-header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* History Timeline */
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .timeline-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 30px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        }
+
+        .timeline-card.major {
+            border-left: 4px solid var(--accent);
+            background: linear-gradient(180deg, rgba(99,102,241,0.02), transparent), var(--bg-card);
+        }
+
+        .version-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--text-primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .version-date {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .changes-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .change-item {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: var(--text-secondary);
+            display: flex;
+            gap: 10px;
+        }
+
+        .change-type {
+            font-weight: 700;
+            width: 25px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .change-type.plus { color: var(--success); }
+        .change-type.minus { color: #EF4444; }
+        .change-type.star { color: #F59E0B; }
+
+        /* Legend */
+        .legend-card {
+            background-color: rgba(255,255,255,0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 20px;
+            font-size: 0.85rem;
+        }
+
+        .legend-item {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border-color);
+            padding: 25px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 900px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                padding: 20px;
+            }
+            .logo-container {
+                margin-bottom: 20px;
+                flex-direction: row;
+                gap: 15px;
+                align-items: center;
+            }
+            .logo-title {
+                margin-top: 0;
+            }
+            .nav-links {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .nav-item a {
+                padding: 8px 12px;
+                font-size: 0.85rem;
+            }
+            .sf-logo {
+                display: none;
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar navigation -->
+    <div class="sidebar">
+        <div class="logo-container">
+            <img class="logo-img" src="BTTBIcon.gif" height="64" width="64" alt="BTTB Logo">
+            <div class="logo-title">Burn to the Brim</div>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item"><a href="index.html">Home</a></li>
+            <li class="nav-item"><a href="overview.html">Overview</a></li>
+            <li class="nav-item"><a href="news.html">News</a></li>
+            <li class="nav-item active"><a href="history.html">History</a></li>
+            <li class="nav-item"><a href="http://sourceforge.net/project/showfiles.php?group_id=49999" target="_blank">Download</a></li>
+            <li class="nav-item"><a href="https://sourceforge.net/forum/forum.php?forum_id=164745" target="_blank">Forum</a></li>
+            <li class="nav-item"><a href="contact.html">Contact</a></li>
+            <li class="nav-item"><a href="elwin.html">About us</a></li>
+            <li class="nav-item"><a href="Help">Help/FAQ</a></li>
+        </ul>
+        <div class="sf-logo">
+            <a href="https://sourceforge.net/projects/bttb/" target="_blank">
+                <img src="http://sourceforge.net/sflogo.php?group_id=49999&type=1" width="88" height="31" border="0" alt="SourceForge.net Logo">
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        
+        <div class="section-header">
+            <h1>Release History</h1>
+            <p>A detailed chronological timeline of Burn to the Brim development and updates.</p>
+        </div>
+
+        <div class="legend-card">
+            <div class="legend-item"><span class="change-type plus">+</span> New Feature</div>
+            <div class="legend-item"><span class="change-type minus">-</span> Bug Fixed</div>
+            <div class="legend-item"><span class="change-type star">*</span> Improvement</div>
+        </div>
+
+        <div class="timeline">
+            
+            <!-- v3.1.0 -->
+            <div class="timeline-card major">
+                <div class="version-title">
+                    <span>v3.1.0 &mdash; High-Capacity BD/USB Support & Spanning Engine</span>
+                    <span class="version-date">May 24, 2026</span>
+                </div>
+                <ul class="changes-list">
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div>Added native built-in capacity presets for Blu-ray discs (BD 25 GB and BD DL 50 GB) using 2048-byte sector dimensions.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div>Added native presets for USB Flash Drives (8 GB, 16 GB, 32 GB, and 64 GB) configured automatically to 4096-byte clusters.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div>Implemented Multi-Volume Spanning Engine in the C++20 backtracking solver, iteratively packing large folder structures into optimal Volume subsets.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type star">*</span>
+                        <div>Redesigned the Linux GTK 4 results tree list to group files dynamically under nested volume parent nodes.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type star">*</span>
+                        <div>Upgraded Windows Win32 native GUI layout to dynamically adjust dimensions and prevent overlapping controls with the new Spanning settings.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div>Packaged standalone Windows native release zip and unified source release zip for SourceForge.</div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- v3.0.0 -->
+            <div class="timeline-card major">
+                <div class="version-title">
+                    <span>v3.0.0 &mdash; Complete C++20 Redesign</span>
+                    <span class="version-date">May 24, 2026</span>
+                </div>
+                <ul class="changes-list">
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div>Blazing-fast, thread-safe recursive backtracking solver rewritten in standard C++20.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div>New modern Linux desktop GUI utilizing the GTK 4 (GNOME Adwaita) visual framework.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div>New lightweight, statically-linked Windows Win32 SDK GUI (~160KB standalone executable, 100% GPL license-compliant).</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div>Added directory split-depth parameters to control granular scanning boundaries.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div>Implemented regex-based rule grouping configurations to compile related files and folders.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div>Fully integrated native modal ISO Image Creation utilities using genisoimage/mkisofs pipeline runs.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type star">*</span>
+                        <div>Retired legacy ASPI driver dependencies, completely eliminating startup crashes on modern 64-bit systems.</div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- v2.3 -->
+            <div class="timeline-card">
+                <div class="version-title">
+                    <span>v2.3 &mdash; DVD Support</span>
+                    <span class="version-date">Delphi Legacy</span>
+                </div>
+                <ul class="changes-list">
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div>BTTB supports GB sizes to organize files natively on DVD media.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type star">*</span>
+                        <div>Comprehensive source code cleanup and memory optimization.</div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- v2.2 -->
+            <div class="timeline-card">
+                <div class="version-title">
+                    <span>v2.2 &mdash; BTTB goes GPL!</span>
+                    <span class="version-date">Delphi Legacy</span>
+                </div>
+                <ul class="changes-list">
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div>Released as open source under the GNU GPL umbrella! Project uploaded to <a href="http://sourceforge.net/projects/bttb/" target="_blank">SourceForge</a>.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type minus">-</span>
+                        <div>Resolved an issue where physical file deletion via hotkey failed on specific directory boundaries.</div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- v2.0 -->
+            <div class="timeline-card">
+                <div class="version-title">
+                    <span>v2.0 &mdash; Drag & Burn / Groups</span>
+                    <span class="version-date">Delphi Legacy</span>
+                </div>
+                <ul class="changes-list">
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div>Drag and drop selections from BTTB straight into your burning software.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div>Group items dynamically by filename matching or MP3 Genre tags.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div>CD autodetection capability to read available disk bytes.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type star">*</span>
+                        <div>Redesigned, detailed help file.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type minus">-</span>
+                        <div>Workaround for directory moving issues caused by Windows SHFileOp API boundaries.</div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- v1.2 -->
+            <div class="timeline-card">
+                <div class="version-title">
+                    <span>v1.2 &mdash; Nice GUI & Moving</span>
+                    <span class="version-date">Delphi Legacy</span>
+                </div>
+                <ul class="changes-list">
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div>Switched from simple console output to a multi-window GUI.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div>Added file moving and folder segregation options.</div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- v1.0 -->
+            <div class="timeline-card">
+                <div class="version-title">
+                    <span>v1.0 &mdash; Initial Launch</span>
+                    <span class="version-date">Delphi Legacy</span>
+                </div>
+                <ul class="changes-list">
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div>Initial published command-line version with standard CD74 matching.</div>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <span>&copy; BTTB Team. All rights reserved.</span>
+            <span>Version History</span>
+        </footer>
+
+    </div>
+
+</body>
+</html>

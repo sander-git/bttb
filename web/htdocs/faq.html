@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Burn to the Brim: Help & FAQ</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+        :root {
+            --bg-main: #0B0F19;
+            --bg-card: #151D30;
+            --bg-sidebar: #0D1424;
+            --accent: #6366F1;
+            --accent-hover: #4F46E5;
+            --text-primary: #F3F4F6;
+            --text-secondary: #9CA3AF;
+            --border-color: #24324F;
+            --success: #10B981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar navigation */
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .logo-img {
+            filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.4));
+            transition: transform 0.3s ease;
+        }
+
+        .logo-img:hover {
+            transform: scale(1.08);
+        }
+
+        .logo-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-top: 15px;
+            background: linear-gradient(135deg, #A5B4FC, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-item a {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .nav-item.active a,
+        .nav-item a:hover {
+            color: var(--text-primary);
+            background-color: rgba(99, 102, 241, 0.15);
+            border-color: rgba(99, 102, 241, 0.25);
+        }
+
+        .nav-item.active a {
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+        }
+
+        .sf-logo {
+            margin-top: auto;
+            padding-top: 30px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .sf-logo img {
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+        }
+
+        .sf-logo img:hover {
+            opacity: 1;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 40px 50px;
+            max-width: 1200px;
+        }
+
+        .section-header {
+            margin-bottom: 40px;
+        }
+
+        .section-header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #FFF, #A5B4FC);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .section-header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Q&A Cards */
+        .faq-container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            margin-bottom: 50px;
+        }
+
+        .faq-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 28px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        }
+
+        .faq-card.resolved {
+            border-left: 4px solid var(--success);
+        }
+
+        .faq-card h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .faq-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .faq-card a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .faq-card a:hover {
+            text-decoration: underline;
+        }
+
+        .resolved-badge {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            display: inline-block;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border-color);
+            padding: 25px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 900px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                padding: 20px;
+            }
+            .logo-container {
+                margin-bottom: 20px;
+                flex-direction: row;
+                gap: 15px;
+                align-items: center;
+            }
+            .logo-title {
+                margin-top: 0;
+            }
+            .nav-links {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .nav-item a {
+                padding: 8px 12px;
+                font-size: 0.85rem;
+            }
+            .sf-logo {
+                display: none;
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar navigation -->
+    <div class="sidebar">
+        <div class="logo-container">
+            <img class="logo-img" src="BTTBIcon.gif" height="64" width="64" alt="BTTB Logo">
+            <div class="logo-title">Burn to the Brim</div>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item"><a href="index.html">Home</a></li>
+            <li class="nav-item"><a href="overview.html">Overview</a></li>
+            <li class="nav-item"><a href="news.html">News</a></li>
+            <li class="nav-item"><a href="history.html">History</a></li>
+            <li class="nav-item"><a href="http://sourceforge.net/project/showfiles.php?group_id=49999" target="_blank">Download</a></li>
+            <li class="nav-item"><a href="https://sourceforge.net/forum/forum.php?forum_id=164745" target="_blank">Forum</a></li>
+            <li class="nav-item"><a href="contact.html">Contact</a></li>
+            <li class="nav-item"><a href="elwin.html">About us</a></li>
+            <li class="nav-item active"><a href="Help">Help/FAQ</a></li>
+        </ul>
+        <div class="sf-logo">
+            <a href="https://sourceforge.net/projects/bttb/" target="_blank">
+                <img src="http://sourceforge.net/sflogo.php?group_id=49999&type=1" width="88" height="31" border="0" alt="SourceForge.net Logo">
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        
+        <div class="section-header">
+            <h1>Help & FAQ</h1>
+            <p>Find quick answers to common support questions regarding Burn to the Brim.</p>
+        </div>
+
+        <div class="faq-container">
+            
+            <!-- Question 1 (ASPI resolved) -->
+            <div class="faq-card resolved">
+                <span class="resolved-badge">Resolved in v3.0.0</span>
+                <h3>BTTB can't find WNASPI32.DLL or crashes on startup?</h3>
+                <p>
+                    <strong>This is fully resolved in Burn to the Brim 3.0.0!</strong> The legacy Delphi branch (v2.9.0 and below) relied heavily on legacy ASPI interface drivers to interact with hardware CD writers, which frequently caused crashes on modern 64-bit Windows installations.
+                </p>
+                <p style="margin-top: 10px;">
+                    Our new **C++20 codebase** has retired the ASPI dependency completely. BTTB now runs natively, instantly, and with 100% stability on all modern versions of Windows 10/11 and Linux out-of-the-box.
+                </p>
+            </div>
+
+            <!-- Question 2 (CD counts) -->
+            <div class="faq-card">
+                <h3>BTTB states it fills a number of CDs, but results show one less?</h3>
+                <p>
+                    BTTB *attempts* to fill the specified number of media, but it will end up selecting fewer if the remaining items cannot fit within your configured **Slack Space** threshold. You can easily adjust the Slack Capacity variable directly from the main solver settings to allow a larger or smaller packing tolerance.
+                </p>
+            </div>
+
+            <!-- Question 3 (ISO Tools) -->
+            <div class="faq-card">
+                <h3>Cannot find ISO creation tools on Windows?</h3>
+                <p>
+                    To use the native **Create ISO Image** dialog on Windows, BTTB calls standard command-line tools `genisoimage` or `mkisofs`. If both are missing, BTTB will print detailed instructions in its dialog window explaining how to quickly install them using package managers like **Scoop** (`scoop install cdrtools`), **Chocolatey** (`choco install cdrtools`), **Cygwin**, or **MSYS2**.
+                </p>
+            </div>
+
+            <!-- Question 4 (Generic support) -->
+            <div class="faq-card">
+                <h3>I have a bug or question that isn't addressed here?</h3>
+                <p>
+                    We'd love to help! Please inspect the <a href="contact.html">contact page</a> for details on posting to our community forums, submitting feature requests, or filing new bug reports.
+                </p>
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <span>&copy; BTTB Team. All rights reserved.</span>
+            <span>Manual & Support</span>
+        </footer>
+
+    </div>
+
+</body>
+</html>

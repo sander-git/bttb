@@ -66,6 +66,7 @@ MainWindow::MainWindow(GtkApplication* app) {
         std::string src = gtk_editable_get_text(GTK_EDITABLE(self->source_entry));
         std::string dest = gtk_editable_get_text(GTK_EDITABLE(self->target_entry));
         bool move = gtk_check_button_get_active(GTK_CHECK_BUTTON(self->move_check));
+        bool span = gtk_check_button_get_active(GTK_CHECK_BUTTON(self->span_check));
         
         if (src.empty()) {
             self->append_log("Error: Source directory must not be empty.\n", 2);
@@ -79,6 +80,7 @@ MainWindow::MainWindow(GtkApplication* app) {
         self->solver.sourceDirectory = src;
         self->solver.targetDirectory = dest;
         self->solver.moveFiles = move;
+        self->solver.spanMultipleVolumes = span;
         
         // UI updates before starting
         gtk_widget_set_sensitive(self->start_button, FALSE);
@@ -86,6 +88,7 @@ MainWindow::MainWindow(GtkApplication* app) {
         gtk_widget_set_sensitive(self->source_entry, FALSE);
         gtk_widget_set_sensitive(self->target_entry, FALSE);
         gtk_widget_set_sensitive(self->move_check, FALSE);
+        gtk_widget_set_sensitive(self->span_check, FALSE);
         
         // Clear old logs and tree
         GtkTextBuffer* buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(self->log_text_view));
@@ -221,6 +224,10 @@ MainWindow::MainWindow(GtkApplication* app) {
     move_check = gtk_check_button_new_with_label("Move fitted folders/files to target folder");
     gtk_grid_attach(GTK_GRID(input_grid), move_check, 1, 2, 2, 1);
     
+    // Checkbox for span
+    span_check = gtk_check_button_new_with_label("Span across multiple volumes (Volume_1, Volume_2, etc.)");
+    gtk_grid_attach(GTK_GRID(input_grid), span_check, 1, 3, 2, 1);
+    
     // Progress Section
     GtkWidget* progress_frame = gtk_frame_new("Fitted Medium capacity");
     gtk_box_append(GTK_BOX(right_box), progress_frame);
@@ -324,6 +331,7 @@ void MainWindow::solver_finished() {
     gtk_widget_set_sensitive(source_entry, TRUE);
     gtk_widget_set_sensitive(target_entry, TRUE);
     gtk_widget_set_sensitive(move_check, TRUE);
+    gtk_widget_set_sensitive(span_check, TRUE);
     
     // Join background thread securely
     if (solver_thread.joinable()) {
@@ -333,57 +341,60 @@ void MainWindow::solver_finished() {
     // Populate Results Tree
     gtk_tree_store_clear(tree_store);
     
-    GtkTreeIter fitted_parent;
-    gtk_tree_store_append(tree_store, &fitted_parent, nullptr);
-    gtk_tree_store_set(tree_store, &fitted_parent,
-                       0, "Selected for Medium #1",
-                       1, "",
-                       2, "Fitted",
-                       -1);
-    
-    GtkTreeIter unfitted_parent;
-    gtk_tree_store_append(tree_store, &unfitted_parent, nullptr);
-    gtk_tree_store_set(tree_store, &unfitted_parent,
-                       0, "Remaining Items",
-                       1, "",
-                       2, "Not Fitted",
-                       -1);
-    
-    int64_t fitted_bytes = 0;
-    int64_t unfitted_bytes = 0;
-    
-    // Walk solver objects and sort them into GtkTreeStore
-    for (size_t i = 0; i < solver.itemsToSplit.size(); ++i) {
-        const auto& item = solver.itemsToSplit[i];
+    // 1. Walk through each solved volume in packedVolumes
+    for (const auto& vol : solver.packedVolumes) {
+        GtkTreeIter vol_parent;
+        gtk_tree_store_append(tree_store, &vol_parent, nullptr);
         
-        GtkTreeIter child;
-        if (item->isSelected) {
-            gtk_tree_store_append(tree_store, &child, &fitted_parent);
+        char vol_name[128];
+        snprintf(vol_name, sizeof(vol_name), "Volume %d (Total: %.2f MB)", vol.volumeIndex, (double)vol.totalBytes / (1024.0 * 1024.0));
+        
+        gtk_tree_store_set(tree_store, &vol_parent,
+                           0, vol_name,
+                           1, "",
+                           2, "Fitted",
+                           -1);
+        
+        for (size_t i = 0; i < vol.itemPaths.size(); ++i) {
+            GtkTreeIter child;
+            gtk_tree_store_append(tree_store, &child, &vol_parent);
             gtk_tree_store_set(tree_store, &child,
-                               0, item->relativePath.c_str(),
-                               1, std::to_string(item->sizeBytes).c_str(),
+                               0, vol.itemPaths[i].c_str(),
+                               1, std::to_string(vol.itemSizes[i]).c_str(),
                                2, "Fitted",
                                -1);
-            fitted_bytes += item->sizeBytes;
-        } else {
+        }
+    }
+    
+    // 2. Add remaining (unfitted) items
+    if (!solver.itemsToSplit.empty()) {
+        GtkTreeIter unfitted_parent;
+        gtk_tree_store_append(tree_store, &unfitted_parent, nullptr);
+        
+        int64_t unfitted_bytes = 0;
+        for (const auto& item : solver.itemsToSplit) {
+            unfitted_bytes += item->sizeBytes;
+        }
+        
+        char unfitted_label[128];
+        snprintf(unfitted_label, sizeof(unfitted_label), "Remaining Items (Total: %.2f MB)", (double)unfitted_bytes / (1024.0 * 1024.0));
+        
+        gtk_tree_store_set(tree_store, &unfitted_parent,
+                           0, unfitted_label,
+                           1, "",
+                           2, "Not Fitted",
+                           -1);
+        
+        for (const auto& item : solver.itemsToSplit) {
+            GtkTreeIter child;
             gtk_tree_store_append(tree_store, &child, &unfitted_parent);
             gtk_tree_store_set(tree_store, &child,
                                0, item->relativePath.c_str(),
                                1, std::to_string(item->sizeBytes).c_str(),
                                2, "Not Fitted",
                                -1);
-            unfitted_bytes += item->sizeBytes;
         }
     }
-    
-    // Update parent labels with sums
-    char fitted_label[128];
-    snprintf(fitted_label, sizeof(fitted_label), "Selected for Medium #1 (Total: %.2f MB)", (double)fitted_bytes / (1024.0 * 1024.0));
-    gtk_tree_store_set(tree_store, &fitted_parent, 0, fitted_label, -1);
-    
-    char unfitted_label[128];
-    snprintf(unfitted_label, sizeof(unfitted_label), "Remaining Items (Total: %.2f MB)", (double)unfitted_bytes / (1024.0 * 1024.0));
-    gtk_tree_store_set(tree_store, &unfitted_parent, 0, unfitted_label, -1);
 }
 
 } // namespace bttb

@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Burn to the Brim: News</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+        :root {
+            --bg-main: #0B0F19;
+            --bg-card: #151D30;
+            --bg-sidebar: #0D1424;
+            --accent: #6366F1;
+            --accent-hover: #4F46E5;
+            --text-primary: #F3F4F6;
+            --text-secondary: #9CA3AF;
+            --border-color: #24324F;
+            --success: #10B981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar navigation */
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .logo-img {
+            filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.4));
+            transition: transform 0.3s ease;
+        }
+
+        .logo-img:hover {
+            transform: scale(1.08);
+        }
+
+        .logo-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-top: 15px;
+            background: linear-gradient(135deg, #A5B4FC, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-item a {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .nav-item.active a,
+        .nav-item a:hover {
+            color: var(--text-primary);
+            background-color: rgba(99, 102, 241, 0.15);
+            border-color: rgba(99, 102, 241, 0.25);
+        }
+
+        .nav-item.active a {
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+        }
+
+        .sf-logo {
+            margin-top: auto;
+            padding-top: 30px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .sf-logo img {
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+        }
+
+        .sf-logo img:hover {
+            opacity: 1;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 40px 50px;
+            max-width: 1200px;
+        }
+
+        .section-header {
+            margin-bottom: 40px;
+        }
+
+        .section-header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #FFF, #A5B4FC);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .section-header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* News Cards */
+        .news-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .news-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 35px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .news-date {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+
+        .news-card h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .news-card p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .news-visuals {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .visual-item {
+            background-color: #060911;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .visual-item img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .visual-caption {
+            padding: 12px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .btn-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: color 0.2s ease;
+        }
+
+        .btn-link:hover {
+            color: var(--accent-hover);
+            text-decoration: underline;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border-color);
+            padding: 25px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 900px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                padding: 20px;
+            }
+            .logo-container {
+                margin-bottom: 20px;
+                flex-direction: row;
+                gap: 15px;
+                align-items: center;
+            }
+            .logo-title {
+                margin-top: 0;
+            }
+            .nav-links {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .nav-item a {
+                padding: 8px 12px;
+                font-size: 0.85rem;
+            }
+            .sf-logo {
+                display: none;
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 30px 20px;
+            }
+            .news-visuals {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar navigation -->
+    <div class="sidebar">
+        <div class="logo-container">
+            <img class="logo-img" src="BTTBIcon.gif" height="64" width="64" alt="BTTB Logo">
+            <div class="logo-title">Burn to the Brim</div>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item"><a href="index.html">Home</a></li>
+            <li class="nav-item"><a href="overview.html">Overview</a></li>
+            <li class="nav-item active"><a href="news.html">News</a></li>
+            <li class="nav-item"><a href="history.html">History</a></li>
+            <li class="nav-item"><a href="http://sourceforge.net/project/showfiles.php?group_id=49999" target="_blank">Download</a></li>
+            <li class="nav-item"><a href="https://sourceforge.net/forum/forum.php?forum_id=164745" target="_blank">Forum</a></li>
+            <li class="nav-item"><a href="contact.html">Contact</a></li>
+            <li class="nav-item"><a href="elwin.html">About us</a></li>
+            <li class="nav-item"><a href="Help">Help/FAQ</a></li>
+        </ul>
+        <div class="sf-logo">
+            <a href="https://sourceforge.net/projects/bttb/" target="_blank">
+                <img src="http://sourceforge.net/sflogo.php?group_id=49999&type=1" width="88" height="31" border="0" alt="SourceForge.net Logo">
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        
+        <div class="section-header">
+            <h1>Latest Announcements</h1>
+            <p>Keep track of major updates, version releases, and general news regarding Burn to the Brim.</p>
+        </div>
+
+        <div class="news-container">
+            
+            <!-- News Item 3.1.0 -->
+            <div class="news-card">
+                <div class="news-date">May 24, 2026</div>
+                <h2>Version 3.1.0 Released: BD/USB Storage & Multi-Volume Spanning Engine</h2>
+                <p>
+                    Today we are thrilled to announce the immediate availability of **Burn to the Brim 3.1.0** for both Windows and Linux! 
+                    This major feature update brings the most requested enhancements to the modern C++20 port: high-capacity media presets and a powerful multi-disk organization loop.
+                </p>
+                <p>
+                    <strong>Iterative Multi-Volume Spanning:</strong> You can now pack exceptionally large directory trees that exceed the capacity of a single disc or flash drive. When "Span across multiple volumes" is checked, the backtracking solver iteratively runs on the remaining unselected files, organizing them automatically into separate subfolders like <code>Volume_1</code>, <code>Volume_2</code>, and so on.
+                </p>
+                <p>
+                    <strong>High-Capacity Media Presets:</strong> We have added native, built-in capacity presets for Blu-ray discs (BD 25 GB and BD DL 50 GB) as well as USB Flash Drives (8 GB, 16 GB, 32 GB, and 64 GB). Sector calculations have been carefully updated to 4096-byte clusters for USB filesystems and 2048-byte sectors for optical media.
+                </p>
+                <p>
+                    <strong>GUI Upgrades on Both Platforms:</strong> 
+                    On Linux, the GTK 4 interface has been updated with the Spanning check, expanded media combos, and a completely rewritten nested result tree that displays files grouped neatly under volume parent nodes. 
+                    On Windows, the native Win32 SDK GUI has been updated to prevent control overlap by dynamically expanding the main window height, updating the combobox dropdown size, and incorporating the new options.
+                </p>
+            </div>
+
+            <!-- News Item 3.0.0 -->
+            <div class="news-card">
+                <div class="news-date">May 24, 2026</div>
+                <h2>Version 3.0.0 Released: Complete C++20 Redesign</h2>
+                <p>
+                    We are extremely proud to announce that **Burn to the Brim 3.0.0** is officially available! 
+                    We have completely retired the ancient Delphi codebase and rebuilt the entire core bin-packing engine from scratch using **modern C++20**.
+                </p>
+                <p>
+                    BTTB now includes two dedicated graphical interfaces. On Linux, a modern GNOME-styled GTK 4 interface offers scrolling file tree listings and rich colored logs. On Windows, an ultra-lightweight (~160KB) native Win32 SDK GUI compiles statically to link strictly against pre-installed Windows DLLs, making it 100% compliant with GPL/LGPL open-source licensing.
+                </p>
+                <p>
+                    Key features in this release include recursive split-depth scanning parameters, modern glob and regex rule groupings, thread-safe asynchronous solver execution, and fully-integrated ISO 9660 image creation natively supported on both platforms.
+                </p>
+                <div class="news-visuals">
+                    <div class="visual-item">
+                        <img src="bttb3_linux_main.png" alt="Linux GTK 4 Desktop View">
+                        <div class="visual-caption">Linux GTK 4 GNOME Adwaita Desktop Interface</div>
+                    </div>
+                    <div class="visual-item">
+                        <img src="bttb3_windows_main.png" alt="Windows Win32 GUI View">
+                        <div class="visual-caption">Windows Native Win32 SDK GUI & Modal ISO Creator</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Legacy News Item -->
+            <div class="news-card">
+                <div class="news-date">Legacy Release</div>
+                <h2>Legacy version 2.6.1 is out</h2>
+                <p>
+                    Version 2.6.1 of the original Delphi branch is available. It features the classic tabbed results grid and multi-disk selections.
+                </p>
+                <a href="http://sourceforge.net/project/shownotes.php?release_id=144618" class="btn-link" target="_blank">See what's new in version 2.6.1 &rarr;</a>
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <span>&copy; BTTB Team. All rights reserved.</span>
+            <span>Announcements list</span>
+        </footer>
+
+    </div>
+
+</body>
+</html>

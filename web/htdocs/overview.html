@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Burn to the Brim: Overview</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+        :root {
+            --bg-main: #0B0F19;
+            --bg-card: #151D30;
+            --bg-sidebar: #0D1424;
+            --accent: #6366F1;
+            --accent-hover: #4F46E5;
+            --text-primary: #F3F4F6;
+            --text-secondary: #9CA3AF;
+            --border-color: #24324F;
+            --success: #10B981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar navigation */
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .logo-img {
+            filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.4));
+            transition: transform 0.3s ease;
+        }
+
+        .logo-img:hover {
+            transform: scale(1.08);
+        }
+
+        .logo-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-top: 15px;
+            background: linear-gradient(135deg, #A5B4FC, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-item a {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .nav-item.active a,
+        .nav-item a:hover {
+            color: var(--text-primary);
+            background-color: rgba(99, 102, 241, 0.15);
+            border-color: rgba(99, 102, 241, 0.25);
+        }
+
+        .nav-item.active a {
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+        }
+
+        .sf-logo {
+            margin-top: auto;
+            padding-top: 30px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .sf-logo img {
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+        }
+
+        .sf-logo img:hover {
+            opacity: 1;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 40px 50px;
+            max-width: 1200px;
+        }
+
+        .section-header {
+            margin-bottom: 40px;
+        }
+
+        .section-header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #FFF, #A5B4FC);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .section-header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Content Blocks */
+        .content-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 35px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .content-card h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .content-card p {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .feature-bullets {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .feature-bullet-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .bullet-icon {
+            color: var(--success);
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .bullet-icon.red {
+            color: #EF4444;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border-color);
+            padding: 25px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 900px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                padding: 20px;
+            }
+            .logo-container {
+                margin-bottom: 20px;
+                flex-direction: row;
+                gap: 15px;
+                align-items: center;
+            }
+            .logo-title {
+                margin-top: 0;
+            }
+            .nav-links {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .nav-item a {
+                padding: 8px 12px;
+                font-size: 0.85rem;
+            }
+            .sf-logo {
+                display: none;
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar navigation -->
+    <div class="sidebar">
+        <div class="logo-container">
+            <img class="logo-img" src="BTTBIcon.gif" height="64" width="64" alt="BTTB Logo">
+            <div class="logo-title">Burn to the Brim</div>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item"><a href="index.html">Home</a></li>
+            <li class="nav-item active"><a href="overview.html">Overview</a></li>
+            <li class="nav-item"><a href="news.html">News</a></li>
+            <li class="nav-item"><a href="history.html">History</a></li>
+            <li class="nav-item"><a href="http://sourceforge.net/project/showfiles.php?group_id=49999" target="_blank">Download</a></li>
+            <li class="nav-item"><a href="https://sourceforge.net/forum/forum.php?forum_id=164745" target="_blank">Forum</a></li>
+            <li class="nav-item"><a href="contact.html">Contact</a></li>
+            <li class="nav-item"><a href="elwin.html">About us</a></li>
+            <li class="nav-item"><a href="Help">Help/FAQ</a></li>
+        </ul>
+        <div class="sf-logo">
+            <a href="https://sourceforge.net/projects/bttb/" target="_blank">
+                <img src="http://sourceforge.net/sflogo.php?group_id=49999&type=1" width="88" height="31" border="0" alt="SourceForge.net Logo">
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        
+        <div class="section-header">
+            <h1>Application Overview</h1>
+            <p>Understand how Burn to the Brim intelligently optimizes your digital file archiving.</p>
+        </div>
+
+        <!-- Overview Block -->
+        <div class="content-card">
+            <h2>What is Burn to the Brim?</h2>
+            <p>
+                **Burn To The Brim** is a highly efficient archiving utility designed to solve the classic subset-sum (bin packing) optimization challenge. It intelligently selects and groups files and directories (documents, high-fidelity media, or raw back-ups) to optimally fill recordable CDs, DVDs, or custom-capacity storage drives.
+            </p>
+            <p>
+                By recursively scanning your designated folders, BTTB matches item sizes to your media capacity, finding a near-perfect selection in milliseconds and an absolute perfect packing configuration in just a few seconds.
+            </p>
+        </div>
+
+        <!-- Priority Block -->
+        <div class="content-card">
+            <h2>ARCHIVING PRIORITIES</h2>
+            <p>
+                The BTTB solver operates with two primary mathematical rules:
+            </p>
+            <ul class="feature-bullets">
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&rarr;</span>
+                    <div><strong>Fill to the Outer Edge First:</strong> The primary objective is to maximize space utilization on the target medium, leaving virtually zero wasted space (allowable tolerance is controlled by your custom slack capacity variable).</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&rarr;</span>
+                    <div><strong>Minimize Item Count Boundary:</strong> As a secondary priority, BTTB prefers keeping larger folders together and minimizing split segments. This keeps logical folder structures intact and leaves smaller, easily-fittable buffer items available for your subsequent disk burns.</div>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Spanning & Modern Media Block -->
+        <div class="content-card">
+            <h2>Multi-Volume Spanning & Modern High-Capacity Media</h2>
+            <p>
+                **Burn to the Brim 3.1.0** introduces cutting-edge capabilities that expand BTTB beyond single optical discs:
+            </p>
+            <ul class="feature-bullets">
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&rarr;</span>
+                    <div><strong>Multi-Volume Spanning Engine:</strong> When packing large file structures that exceed the capacity of a single disc or flash drive, BTTB can automatically slice your data tree into successive volumes (e.g. <code>Volume_1</code>, <code>Volume_2</code>, etc.). The backtracking solver runs iteratively on the remaining unselected files, ensuring every single volume is filled to maximum efficiency until all items are packed.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&rarr;</span>
+                    <div><strong>Blu-ray Presets:</strong> Native support for high-capacity Blu-ray (BD 25 GB) and Blu-ray Double Layer (BD DL 50 GB) optical media, utilizing standard 2048-byte sector dimensions.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&rarr;</span>
+                    <div><strong>USB Flash Drive Presets:</strong> Predefined storage presets for USB keys of 8 GB, 16 GB, 32 GB, and 64 GB. To match modern flash drive filesystems (such as FAT32, exFAT, or NTFS), sector calculations are configured automatically to 4096-byte clusters.</div>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Safety Guarantee -->
+        <div class="content-card">
+            <h2>Our Absolute Freeware Guarantee</h2>
+            <p>
+                We distribute BTTB as 100% clean, open-source freeware under the GNU GPLv2. We believe in providing lightweight, lightning-fast utilities without any of the clutter:
+            </p>
+            <ul class="feature-bullets">
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon red">&#10007;</span>
+                    <div><strong>NO SPYWARE:</strong> We never log, track, or transmit any of your personal details, directory paths, or habits across the network.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon red">&#10007;</span>
+                    <div><strong>NO ADWARE:</strong> You will never be bothered by distracting banners, sponsored ads, or commercial popups.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon red">&#10007;</span>
+                    <div><strong>NO BLOATWARE:</strong> The entire Windows Win32 client compiles to an ultra-lightweight standalone ~160KB executable with zero framework overhead.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon red">&#10007;</span>
+                    <div><strong>NO REGISTRY CLUTTER:</strong> BTTB does not litter your Windows registry with unnecessary keys or system settings.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon red">&#10007;</span>
+                    <div><strong>CLEAN DEINSTALLATION:</strong> Full, simple, and clean removal leaves no residual traces behind.</div>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <span>&copy; BTTB Team. All rights reserved.</span>
+            <span>Archive intelligently</span>
+        </footer>
+
+    </div>
+
+</body>
+</html>

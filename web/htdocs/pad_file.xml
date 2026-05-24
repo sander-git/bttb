@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="Windows-1252" ?>
+<XML_DIZ_INFO>
+<MASTER_PAD_VERSION_INFO>
+    <MASTER_PAD_VERSION>1.15</MASTER_PAD_VERSION>
+    <MASTER_PAD_INFO>Portable Application Description, or PAD for short, is a data set that is used by shareware authors to disseminate information to anyone interested in their software products. To find out more go to http://www.asp-shareware.org/pad</MASTER_PAD_INFO>
+</MASTER_PAD_VERSION_INFO>
+<Company_Info>
+        <Company_Name>BTTB Team</Company_Name>
+        <Address_1>-</Address_1>
+        <Address_2>-</Address_2>
+        <City_Town>-</City_Town>
+        <State_Province>-</State_Province>
+        <Zip_Postal_Code>-</Zip_Postal_Code>
+        <Country>-</Country>
+        <Company_WebSite_URL>http://bttb.sourceforge.net</Company_WebSite_URL>
+<Contact_Info>
+        <Author_First_Name>Elwin</Author_First_Name>
+        <Author_Last_Name>Oost</Author_Last_Name>
+        <Author_Email>bttb-info@lists.sourceforge.net</Author_Email>
+        <Contact_First_Name>Sander</Contact_First_Name>
+        <Contact_Last_Name>Raaijmakers</Contact_Last_Name>
+        <Contact_Email>bttb-info@lists.sourceforge.net</Contact_Email>
+    </Contact_Info>
+<Support_Info>
+        <Sales_Email />
+        <Support_Email>bttb-info@lists.sourceforge.net</Support_Email>
+        <General_Email />
+        <Sales_Phone />
+        <Support_Phone />
+        <General_Phone />
+        <Fax_Phone />
+    </Support_Info>
+</Company_Info>
+<Program_Info>
+        <Program_Name>Burn to the Brim</Program_Name>
+        <Program_Version>2.8.1</Program_Version>
+        <Program_Release_Month>07</Program_Release_Month>
+        <Program_Release_Day>07</Program_Release_Day>
+        <Program_Release_Year>2003</Program_Release_Year>
+        <Program_Cost_Dollars>0</Program_Cost_Dollars>
+        <Program_Cost_Other_Code />
+        <Program_Cost_Other />
+        <Program_Type>Freeware</Program_Type>
+        <Program_Release_Status>Minor Update</Program_Release_Status>
+        <Program_Install_Support>Install and Uninstall</Program_Install_Support>
+        <Program_OS_Support>Win95,Win98,WinME,WinNT 3.x,WinNT 4.x,WinXP,Windows2000</Program_OS_Support>
+        <Program_Language>English</Program_Language>
+<File_Info>
+        <Filename_Versioned>bttb281.exe</Filename_Versioned>
+        <Filename_Previous>bttb280.exe</Filename_Previous>
+        <Filename_Generic>bttb.exe</Filename_Generic>
+        <Filename_Long>Burn to the Brim.exe</Filename_Long>
+        <File_Size_Bytes>1328001</File_Size_Bytes>
+        <File_Size_K>1297</File_Size_K>
+        <File_Size_MB>1.26</File_Size_MB>
+    </File_Info>
+<Expire_Info>
+        <Has_Expire_Info>N</Has_Expire_Info>
+        <Expire_Count />
+        <Expire_Based_On>Days</Expire_Based_On>
+        <Expire_Other_Info />
+        <Expire_Month />
+        <Expire_Day />
+        <Expire_Year />
+    </Expire_Info>
+        <Program_Change_Info />
+        <Program_Specific_Category>Utilities</Program_Specific_Category>
+        <Program_Categories>file utilities, cd utilities, backup utilities</Program_Categories>
+        <Program_System_Requirements />
+        <Includes_JAVA_VM>N</Includes_JAVA_VM>
+        <Includes_VB_Runtime>N</Includes_VB_Runtime>
+        <Includes_DirectX>N</Includes_DirectX>
+</Program_Info>
+<Program_Descriptions>
+<English>
+        <Keywords>fit,group,batch,combine,file,folder,directory,folders,directories,cd,cdr,burn,cdrs,mp3,dvd,dvd-r,iso</Keywords>
+        <Char_Desc_45>Utility to optimally fit files/folders on CD.</Char_Desc_45>
+        <Char_Desc_80>Optimally groups files/folders on CD. Missing link between download and burn.</Char_Desc_80>
+        <Char_Desc_250>Burn To The Brim is a utility for grouping files and folders together in the most efficient way to fill up an entire CD, DVD or other medium. It can output the resulting structure to an ISO 9660 file, ready to be burned with most CD-burning tools.</Char_Desc_250>
+        <Char_Desc_450>Burn To The Brim is a utility for grouping files and folders together in the most efficient way to fill up an entire CD, DVD or other medium. It can output the resulting structure to an ISO 9660 file, ready to be burned with most CD-burning tools.
+
+The  program is optimized for quick performance and considers the most promising options first.</Char_Desc_450>
+        <Char_Desc_2000>Burn To The Brim is a utility for grouping files and folders together in the most efficient way to fill up an entire CD, DVD or other medium. It can output the resulting structure to an ISO 9660 file, ready to be burned with most CD-burning tools.
+
+The  program is optimized for quick performance and considers the most promising options first. It also minimizes the search length by fast detection of dead ends. The program cuts corners whenever possible (without missing anything). Folders can be split up to a set level for more versatile splitting options.
+
+
+The first priority of the program is to fill the media as well as possible, second is to minimize the number of items (so the larger, harder to fit items have preference and more items to choose from are left for the next burn).
+
+Users can define their own custom disk formats so they can also use the program to fill other media like Zip disks and the like.</Char_Desc_2000>
+</English>
+</Program_Descriptions>
+<Web_Info>
+<Application_URLs>
+        <Application_Info_URL>http://bttb.sourceforge.net</Application_Info_URL>
+        <Application_Order_URL />
+        <Application_Screenshot_URL>http://bttb.sourceforge.net/BTTB.gif</Application_Screenshot_URL>
+        <Application_Icon_URL>http://bttb.sourceforge.net/BTTBIcon.gif</Application_Icon_URL>
+        <Application_XML_File_URL>http://bttb.sourceforge.net/BTTB.xml</Application_XML_File_URL>
+    </Application_URLs>
+<Download_URLs>
+        <Primary_Download_URL>http://prdownloads.sourceforge.net/bttb/BTTB281.exe?download</Primary_Download_URL>
+        <Secondary_Download_URL />
+        <Additional_Download_URL_1 />
+        <Additional_Download_URL_2 />
+    </Download_URLs>
+</Web_Info>
+<Permissions>
+        <Distribution_Permissions>Everybody is allowed to distribute the program, as long as it is distributed as its original installation package.</Distribution_Permissions>
+        <EULA />
+</Permissions>
+<Simtel>
+    <Simtel_Agent />
+    <Simtel_FORM>Y</Simtel_FORM>
+    <Simtel_DOS_Category>Select - MS-DOS Platform (blank)</Simtel_DOS_Category>
+    <Simtel_Platform>win95 - Win95/Win98/WinME</Simtel_Platform>
+    <Simtel_Category>Utilities/Drivers/Systems Files - fileback File Backup, Copying, Synchronizer Utilities</Simtel_Category>
+    <SIMTEL_FORM_VER>1.6 11/26/2002</SIMTEL_FORM_VER>
+</Simtel>
+</XML_DIZ_INFO>

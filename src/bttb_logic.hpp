@@ -34,6 +34,13 @@ struct GroupRule {
     bool isRegex = false;
 };
 
+struct PackedVolume {
+    int volumeIndex = 0;
+    int64_t totalBytes = 0;
+    std::vector<std::string> itemPaths;
+    std::vector<int64_t> itemSizes;
+};
+
 // Callback types for thread-safe UI notifications
 using LogCallback = std::function<void(const std::string&, int msgType)>;
 using ProgressCallback = std::function<void(double currentMediumProgress, double overallProgress)>;
@@ -49,10 +56,12 @@ public:
     std::string targetDirectory;
     bool moveFiles = false;
     bool skipEmpty = true;
+    bool spanMultipleVolumes = false;
     int maxSearchTimeSeconds = 10;
     int splitDepth = 0; // 0 = split folders at root level, 1 = one level down, etc.
     CDInfo mediumInfo;
     std::vector<GroupRule> groupingRules;
+    std::vector<PackedVolume> packedVolumes;
 
     // Control
     std::atomic<bool> stopRequested{false};

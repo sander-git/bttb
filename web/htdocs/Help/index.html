@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Burn to the Brim: User Manual & Help System</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+        :root {
+            --bg-main: #0B0F19;
+            --bg-card: #151D30;
+            --bg-sidebar: #0D1424;
+            --accent: #6366F1;
+            --accent-hover: #4F46E5;
+            --text-primary: #F3F4F6;
+            --text-secondary: #9CA3AF;
+            --border-color: #24324F;
+            --success: #10B981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar navigation */
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .logo-img {
+            filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.4));
+            transition: transform 0.3s ease;
+        }
+
+        .logo-img:hover {
+            transform: scale(1.08);
+        }
+
+        .logo-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-top: 15px;
+            background: linear-gradient(135deg, #A5B4FC, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-item a {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .nav-item.active a,
+        .nav-item a:hover {
+            color: var(--text-primary);
+            background-color: rgba(99, 102, 241, 0.15);
+            border-color: rgba(99, 102, 241, 0.25);
+        }
+
+        .nav-item.active a {
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+        }
+
+        .sf-logo {
+            margin-top: auto;
+            padding-top: 30px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .sf-logo img {
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+        }
+
+        .sf-logo img:hover {
+            opacity: 1;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 40px 50px;
+            max-width: 1200px;
+        }
+
+        .section-header {
+            margin-bottom: 40px;
+        }
+
+        .section-header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #FFF, #A5B4FC);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .section-header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Layout Content Cards */
+        .content-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 35px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .content-card h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--accent);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .content-card h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-top: 25px;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .content-card p {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .feature-bullets {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+
+        .feature-bullet-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .bullet-icon {
+            color: var(--accent);
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        /* Legacy Link Section */
+        .legacy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .legacy-link-card a {
+            display: block;
+            background-color: rgba(255,255,255,0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .legacy-link-card a:hover {
+            background-color: rgba(99, 102, 241, 0.1);
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border-color);
+            padding: 25px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 900px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                padding: 20px;
+            }
+            .logo-container {
+                margin-bottom: 20px;
+                flex-direction: row;
+                gap: 15px;
+                align-items: center;
+            }
+            .logo-title {
+                margin-top: 0;
+            }
+            .nav-links {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .nav-item a {
+                padding: 8px 12px;
+                font-size: 0.85rem;
+            }
+            .sf-logo {
+                display: none;
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar navigation (Relative parent paths) -->
+    <div class="sidebar">
+        <div class="logo-container">
+            <img class="logo-img" src="bttbicon.gif" height="64" width="64" alt="BTTB Logo">
+            <div class="logo-title">Burn to the Brim</div>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item"><a href="../index.html">Home</a></li>
+            <li class="nav-item"><a href="../overview.html">Overview</a></li>
+            <li class="nav-item"><a href="../news.html">News</a></li>
+            <li class="nav-item"><a href="../history.html">History</a></li>
+            <li class="nav-item"><a href="http://sourceforge.net/project/showfiles.php?group_id=49999" target="_blank">Download</a></li>
+            <li class="nav-item"><a href="https://sourceforge.net/forum/forum.php?forum_id=164745" target="_blank">Forum</a></li>
+            <li class="nav-item"><a href="../contact.html">Contact</a></li>
+            <li class="nav-item"><a href="../elwin.html">About us</a></li>
+            <li class="nav-item active"><a href="index.html">Help/FAQ</a></li>
+        </ul>
+        <div class="sf-logo">
+            <a href="https://sourceforge.net/projects/bttb/" target="_blank">
+                <img src="http://sourceforge.net/sflogo.php?group_id=49999&type=1" width="88" height="31" border="0" alt="SourceForge.net Logo">
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        
+        <div class="section-header">
+            <h1>User Manual & Help System</h1>
+            <p>Comprehensive guide to the C++20 bin-packing solver and dual-platform graphical interfaces.</p>
+        </div>
+
+        <!-- BTTB 3.1.0 Manual -->
+        <div class="content-card">
+            <h2>BTTB 3.1.0 Core Functionality Manual</h2>
+            <p>
+                Version 3.1.0 introduces a robust, completely re-engineered platform-agnostic bin-packing engine written in modern C++20. This manual explains BTTB's advanced algorithms, folder constraints, rule structures, and user interface implementations in detail.
+            </p>
+
+            <h3>1. The Backtracking Subset-Sum Solver</h3>
+            <p>
+                BTTB fits files and folders onto storage media by solving a constrained knapsack / subset-sum mathematical model.
+            </p>
+            <ul class="feature-bullets">
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&bull;</span>
+                    <div><strong>Sector-Based Calculations:</strong> To match standard CD/DVD storage media behavior, BTTB converts file sizes from raw bytes into physical disk sectors (defaulting to 2048-byte sectors). The solver calculates the ceiling sector count of each item to ensure absolute sizing accuracy.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&bull;</span>
+                    <div><strong>Pruning Search Tree:</strong> Utilizing the same optimized Delphi backtracking engine, the C++20 solver builds prefix sums of sizes and immediately prunes search branches when the remaining items combined with the current selection cannot possibly exceed the best result found so far, guaranteeing execution speeds of milliseconds even for thousands of files.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&bull;</span>
+                    <div><strong>Slack Space:</strong> Users can define an allowable slack threshold in bytes. The solver will successfully complete once the filled capacity falls within this tolerance, rather than spending more search time attempting to find a microscopic 100% fit.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&bull;</span>
+                    <div><strong>Multi-Volume Spanning Engine:</strong> When "Span across multiple volumes" is selected, the solver loops iteratively over the remaining files. The selected files for the first volume are stored, and then the backtracking engine runs recursively on the remaining files to pack successive volumes (Volume 1, Volume 2, etc.) until every single file has been perfectly fitted and organized into its respective target directory.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&bull;</span>
+                    <div><strong>Blu-ray and USB Sectors:</strong> Preset capacities for Blu-ray discs use standard 2048-byte sector dimensions. For USB presets (8 GB to 64 GB), BTTB automatically adopts 4096-byte clusters, aligning perfectly with modern exFAT, NTFS, or FAT32 flash drive architectures.</div>
+                </li>
+            </ul>
+
+            <h3>2. Directory Split-Depth Constraints</h3>
+            <p>
+                Directory structures can be configured utilizing the new Split Depth parameter. This determines whether folders are scanned and moved atomically (as a single solid block) or split apart recursively into individual children.
+            </p>
+            <ul class="feature-bullets">
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&bull;</span>
+                    <div><strong>Depth 0 (Root Boundary):</strong> Subfolders located directly inside the scanned directory are considered atomic units. They are kept solid; BTTB will never split files inside them across different disks.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&bull;</span>
+                    <div><strong>Depth 1 or Higher:</strong> The splitting boundary is lowered. The solver will recurse down to that depth level, treating folders at that level as atomic, while splitting directories located higher up.</div>
+                </li>
+            </ul>
+
+            <h3>3. Regular Expression Rule Groupings</h3>
+            <p>
+                To keep specific files together (such as multi-part archives, or specific genres), users can define grouping rules using standard wildcards (e.g. `*.mp3`) or robust regular expressions (`std::regex`). Matching items are consolidated by the solver into unified virtual objects, preventing them from being separated across different media targets.
+            </p>
+
+            <h3>4. Asynchronous File Organization</h3>
+            <p>
+                When a perfect bin-packing configuration is solved, BTTB can automatically organize the files:
+            </p>
+            <ul class="feature-bullets">
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&bull;</span>
+                    <div><strong>Copy vs Move Mode:</strong> If a target folder is specified and "Move fitted folders/files" is checked, BTTB launches a background file system stream that copies files and directories recursively to the destination while preserving the subfolder structure, and then safely removes them from the source folder.</div>
+                </li>
+            </ul>
+
+            <h3>5. Native ISO Image Generation</h3>
+            <p>
+                Both platforms feature an integrated **Create ISO Image** utility that automates CD/DVD backup image compilation:
+            </p>
+            <ul class="feature-bullets">
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&bull;</span>
+                    <div><strong>Asynchronous C-Pipe Runs:</strong> When triggered, the application spawns a background command-line pipe calling `genisoimage` or `mkisofs` natively using standard C-pipes (`_popen`/`_pclose` on Windows, `popen`/`pclose` on Linux). This streams the process logs in real-time straight to the GUI log window while maintaining a completely responsive user interface.</div>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Platform Specifics -->
+        <div class="content-card">
+            <h2>Operating System Interfaces</h2>
+            <p>
+                To deliver premium, platform-native desktop experiences on both operating systems, we designed two dedicated front-end graphical interfaces.
+            </p>
+
+            <h3>Linux GTK 4 Desktop Application</h3>
+            <p>
+                The Linux client is written utilizing modern **GTK 4** and standard GNOME Adwaita layouts:
+            </p>
+            <ul class="feature-bullets">
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&bull;</span>
+                    <div><strong>Responsive Thread Safe Marshaling:</strong> The solver runs in a standard background thread. To prevent interface freezing or access violations, all solver notifications and execution logs are marshaled back to the GTK main loop thread safe using `g_idle_add` callbacks.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&bull;</span>
+                    <div><strong>Sidebar Result Trees:</strong> Displays a dynamic sidebar `GtkTreeView` that populates fitted and unfitted categories in visual nested node structures.</div>
+                </li>
+            </ul>
+
+            <h3>Windows Native Win32 SDK GUI</h3>
+            <p>
+                The Windows client is written in pure **Win32 API (Windows Software Development Kit)**, compiling into a standalone statically-linked binary:
+            </p>
+            <ul class="feature-bullets">
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&bull;</span>
+                    <div><strong>Zero DLL Footprint:</strong> By utilizing only core preinstalled system DLLs (`user32.dll`, `shell32.dll`, `comctl32.dll`, `comdlg32.dll`, `ole32.dll`), BTTB requires zero DLL packaging, solving all open-source licensing and redistribution issues.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&bull;</span>
+                    <div><strong>Native Dialog Flow:</strong> Utilizes standard Windows Shell directories (`SHBrowseForFolder`) and native save file dialogs (`GetSaveFileName`) for standard system UI interactions.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&bull;</span>
+                    <div><strong>Win32 Message Threading:</strong> Solver thread updates are posted to the main window procedure in a thread-safe manner using custom windows message identifiers (`PostMessage` and `WM_USER`).</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&bull;</span>
+                    <div><strong>ISO Dependency Fallbacks:</strong> If `genisoimage` is not recognized on Windows, BTTB falls back to `mkisofs`. If both are missing, BTTB prints easy-to-follow package installation steps (Scoop, Chocolatey, Cygwin, or MSYS2) directly into the execution log area.</div>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Legacy Delphi Help Index -->
+        <div class="content-card">
+            <h2>Legacy Delphi (v2.9.0) Help Directory</h2>
+            <p>
+                If you are running the legacy Delphi-based version of Burn to the Brim, you can browse its dedicated help files using the links below:
+            </p>
+            <div class="legacy-grid">
+                <div class="legacy-link-card"><a href="bttb_whatis.html">What is BTTB?</a></div>
+                <div class="legacy-link-card"><a href="bttb_quickstart.html">Quick Start</a></div>
+                <div class="legacy-link-card"><a href="bttb_faq.html">Legacy FAQ</a></div>
+                <div class="legacy-link-card"><a href="bttb_mainscreen.html">Main Screen Options</a></div>
+                <div class="legacy-link-card"><a href="bttb_medium.html">Medium Management</a></div>
+                <div class="legacy-link-card"><a href="bttb_createiso.html">Legacy ISO Creator</a></div>
+                <div class="legacy-link-card"><a href="bttb_groupcreation.html">Legacy Group Creation</a></div>
+                <div class="legacy-link-card"><a href="bttb_contact.html">Legacy Contact & Bugs</a></div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <span>&copy; BTTB Team. All rights reserved.</span>
+            <span>Redesigned for version 3.1.0</span>
+        </footer>
+
+    </div>
+
+</body>
+</html>

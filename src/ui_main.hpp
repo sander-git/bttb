@@ -21,6 +21,7 @@ public:
     GtkWidget* source_entry;
     GtkWidget* target_entry;
     GtkWidget* move_check;
+    GtkWidget* span_check;
     GtkWidget* log_text_view;
     GtkWidget* progress_bar_disc;
     GtkWidget* progress_label_disc;
