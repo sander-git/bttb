@@ -1,0 +1,389 @@
+#include "ui_main.hpp"
+#include "ui_settings.hpp"
+#include "ui_iso.hpp"
+#include <iostream>
+#include <filesystem>
+
+namespace bttb {
+
+struct LogPayload {
+    MainWindow* win;
+    std::string message;
+    int type;
+};
+
+struct ProgressPayload {
+    MainWindow* win;
+    double disc;
+    double overall;
+};
+
+MainWindow::MainWindow(GtkApplication* app) {
+    // Create GtkWindow
+    window = gtk_application_window_new(app);
+    gtk_window_set_title(GTK_WINDOW(window), "Burn to the Brim");
+    gtk_window_set_default_size(GTK_WINDOW(window), 850, 600);
+    
+    // Set custom HeaderBar
+    GtkWidget* header = gtk_header_bar_new();
+    gtk_window_set_titlebar(GTK_WINDOW(window), header);
+    
+    // Preferences button
+    GtkWidget* pref_btn = gtk_button_new_from_icon_name("preferences-system");
+    gtk_widget_set_tooltip_text(pref_btn, "Preferences");
+    gtk_header_bar_pack_start(GTK_HEADER_BAR(header), pref_btn);
+    
+    g_signal_connect(pref_btn, "clicked", G_CALLBACK(+[](GtkWidget* btn, gpointer user_data) {
+        auto* self = static_cast<MainWindow*>(user_data);
+        SettingsDialog::run(GTK_WINDOW(self->window), self->solver);
+    }), this);
+    
+    // Create ISO button
+    GtkWidget* iso_btn = gtk_button_new_from_icon_name("media-optical");
+    gtk_widget_set_tooltip_text(iso_btn, "Create ISO image...");
+    gtk_header_bar_pack_start(GTK_HEADER_BAR(header), iso_btn);
+    
+    g_signal_connect(iso_btn, "clicked", G_CALLBACK(+[](GtkWidget* btn, gpointer user_data) {
+        auto* self = static_cast<MainWindow*>(user_data);
+        std::string src = gtk_editable_get_text(GTK_EDITABLE(self->source_entry));
+        IsoDialog::run(GTK_WINDOW(self->window), src);
+    }), this);
+    
+    // Start / Stop buttons
+    start_button = gtk_button_new_with_label("Start");
+    gtk_widget_add_css_class(start_button, "suggested-action");
+    gtk_header_bar_pack_end(GTK_HEADER_BAR(header), start_button);
+    
+    stop_button = gtk_button_new_with_label("Stop");
+    gtk_widget_add_css_class(stop_button, "destructive-action");
+    gtk_widget_set_sensitive(stop_button, FALSE);
+    gtk_header_bar_pack_end(GTK_HEADER_BAR(header), stop_button);
+    
+    // Solver thread triggers
+    g_signal_connect(start_button, "clicked", G_CALLBACK(+[](GtkWidget* btn, gpointer user_data) {
+        auto* self = static_cast<MainWindow*>(user_data);
+        
+        std::string src = gtk_editable_get_text(GTK_EDITABLE(self->source_entry));
+        std::string dest = gtk_editable_get_text(GTK_EDITABLE(self->target_entry));
+        bool move = gtk_check_button_get_active(GTK_CHECK_BUTTON(self->move_check));
+        
+        if (src.empty()) {
+            self->append_log("Error: Source directory must not be empty.\n", 2);
+            return;
+        }
+        if (!std::filesystem::exists(src)) {
+            self->append_log("Error: Source directory does not exist.\n", 2);
+            return;
+        }
+        
+        self->solver.sourceDirectory = src;
+        self->solver.targetDirectory = dest;
+        self->solver.moveFiles = move;
+        
+        // UI updates before starting
+        gtk_widget_set_sensitive(self->start_button, FALSE);
+        gtk_widget_set_sensitive(self->stop_button, TRUE);
+        gtk_widget_set_sensitive(self->source_entry, FALSE);
+        gtk_widget_set_sensitive(self->target_entry, FALSE);
+        gtk_widget_set_sensitive(self->move_check, FALSE);
+        
+        // Clear old logs and tree
+        GtkTextBuffer* buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(self->log_text_view));
+        gtk_text_buffer_set_text(buffer, "", 0);
+        gtk_tree_store_clear(self->tree_store);
+        
+        // Spawn C++ solver thread
+        self->solver_thread = std::jthread([self]() {
+            self->solver.run();
+            
+            // Notify completion to GTK thread
+            g_idle_add([](gpointer data) -> gboolean {
+                auto* win = static_cast<MainWindow*>(data);
+                win->solver_finished();
+                return G_SOURCE_REMOVE;
+            }, self);
+        });
+        
+    }), this);
+    
+    g_signal_connect(stop_button, "clicked", G_CALLBACK(+[](GtkWidget* btn, gpointer user_data) {
+        auto* self = static_cast<MainWindow*>(user_data);
+        self->solver.stopRequested = true;
+        self->append_log("\nCancellation requested by user...\n", 2);
+        gtk_widget_set_sensitive(self->stop_button, FALSE);
+    }), this);
+    
+    // Main Split Layout
+    GtkWidget* paned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
+    gtk_window_set_child(GTK_WINDOW(window), paned);
+    
+    // Sidebar for tree results
+    GtkWidget* sidebar_scroll = gtk_scrolled_window_new();
+    gtk_widget_set_size_request(sidebar_scroll, 240, -1);
+    gtk_paned_set_start_child(GTK_PANED(paned), sidebar_scroll);
+    
+    tree_store = gtk_tree_store_new(3, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
+    tree_view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(tree_store));
+    g_object_unref(tree_store);
+    
+    GtkCellRenderer* text_renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view),
+                                gtk_tree_view_column_new_with_attributes("Relative Path / Category", text_renderer, "text", 0, NULL));
+    gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view),
+                                gtk_tree_view_column_new_with_attributes("Size", text_renderer, "text", 1, NULL));
+    gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view),
+                                gtk_tree_view_column_new_with_attributes("Fitted Status", text_renderer, "text", 2, NULL));
+    
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(sidebar_scroll), tree_view);
+    
+    // Main vertical box on the right
+    GtkWidget* right_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
+    gtk_widget_set_margin_start(right_box, 16);
+    gtk_widget_set_margin_end(right_box, 16);
+    gtk_widget_set_margin_top(right_box, 16);
+    gtk_widget_set_margin_bottom(right_box, 16);
+    gtk_paned_set_end_child(GTK_PANED(paned), right_box);
+    
+    // Folder Input section
+    GtkWidget* input_grid = gtk_grid_new();
+    gtk_grid_set_row_spacing(GTK_GRID(input_grid), 8);
+    gtk_grid_set_column_spacing(GTK_GRID(input_grid), 12);
+    gtk_box_append(GTK_BOX(right_box), input_grid);
+    
+    // Source Browse
+    GtkWidget* src_label = gtk_label_new("Source Folder:");
+    gtk_widget_set_halign(src_label, GTK_ALIGN_START);
+    gtk_grid_attach(GTK_GRID(input_grid), src_label, 0, 0, 1, 1);
+    
+    source_entry = gtk_entry_new();
+    gtk_widget_set_hexpand(source_entry, TRUE);
+    gtk_grid_attach(GTK_GRID(input_grid), source_entry, 1, 0, 1, 1);
+    
+    GtkWidget* src_browse = gtk_button_new_with_label("Browse...");
+    gtk_grid_attach(GTK_GRID(input_grid), src_browse, 2, 0, 1, 1);
+    
+    g_signal_connect(src_browse, "clicked", G_CALLBACK(+[](GtkWidget* btn, gpointer user_data) {
+        auto* self = static_cast<MainWindow*>(user_data);
+        
+        GtkFileDialog* dialog = gtk_file_dialog_new();
+        gtk_file_dialog_set_title(dialog, "Select Source Directory");
+        
+        gtk_file_dialog_select_folder(dialog, GTK_WINDOW(self->window), nullptr, +[](GObject* source, GAsyncResult* res, gpointer data) {
+            auto* self = static_cast<MainWindow*>(data);
+            GError* error = nullptr;
+            GFile* file = gtk_file_dialog_select_folder_finish(GTK_FILE_DIALOG(source), res, &error);
+            if (file) {
+                char* path = g_file_get_path(file);
+                gtk_editable_set_text(GTK_EDITABLE(self->source_entry), path);
+                g_free(path);
+                g_object_unref(file);
+            }
+            if (error) {
+                g_error_free(error);
+            }
+        }, self);
+    }), this);
+    
+    // Target Browse
+    GtkWidget* dest_label = gtk_label_new("Target Folder:");
+    gtk_widget_set_halign(dest_label, GTK_ALIGN_START);
+    gtk_grid_attach(GTK_GRID(input_grid), dest_label, 0, 1, 1, 1);
+    
+    target_entry = gtk_entry_new();
+    gtk_grid_attach(GTK_GRID(input_grid), target_entry, 1, 1, 1, 1);
+    
+    GtkWidget* dest_browse = gtk_button_new_with_label("Browse...");
+    gtk_grid_attach(GTK_GRID(input_grid), dest_browse, 2, 1, 1, 1);
+    
+    g_signal_connect(dest_browse, "clicked", G_CALLBACK(+[](GtkWidget* btn, gpointer user_data) {
+        auto* self = static_cast<MainWindow*>(user_data);
+        
+        GtkFileDialog* dialog = gtk_file_dialog_new();
+        gtk_file_dialog_set_title(dialog, "Select Target Directory");
+        
+        gtk_file_dialog_select_folder(dialog, GTK_WINDOW(self->window), nullptr, +[](GObject* source, GAsyncResult* res, gpointer data) {
+            auto* self = static_cast<MainWindow*>(data);
+            GError* error = nullptr;
+            GFile* file = gtk_file_dialog_select_folder_finish(GTK_FILE_DIALOG(source), res, &error);
+            if (file) {
+                char* path = g_file_get_path(file);
+                gtk_editable_set_text(GTK_EDITABLE(self->target_entry), path);
+                g_free(path);
+                g_object_unref(file);
+            }
+            if (error) {
+                g_error_free(error);
+            }
+        }, self);
+    }), this);
+    
+    // Checkbox for move
+    move_check = gtk_check_button_new_with_label("Move fitted folders/files to target folder");
+    gtk_grid_attach(GTK_GRID(input_grid), move_check, 1, 2, 2, 1);
+    
+    // Progress Section
+    GtkWidget* progress_frame = gtk_frame_new("Fitted Medium capacity");
+    gtk_box_append(GTK_BOX(right_box), progress_frame);
+    
+    GtkWidget* progress_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
+    gtk_widget_set_margin_start(progress_box, 8);
+    gtk_widget_set_margin_end(progress_box, 8);
+    gtk_widget_set_margin_top(progress_box, 8);
+    gtk_widget_set_margin_bottom(progress_box, 8);
+    gtk_frame_set_child(GTK_FRAME(progress_frame), progress_box);
+    
+    progress_bar_disc = gtk_progress_bar_new();
+    gtk_box_append(GTK_BOX(progress_box), progress_bar_disc);
+    
+    progress_label_disc = gtk_label_new("Filled: 0.00%");
+    gtk_widget_set_halign(progress_label_disc, GTK_ALIGN_START);
+    gtk_box_append(GTK_BOX(progress_box), progress_label_disc);
+    
+    // Rich Text Logs
+    GtkWidget* log_frame = gtk_frame_new("Status and Solver Logs");
+    gtk_widget_set_vexpand(log_frame, TRUE);
+    gtk_box_append(GTK_BOX(right_box), log_frame);
+    
+    GtkWidget* log_scroll = gtk_scrolled_window_new();
+    gtk_frame_set_child(GTK_FRAME(log_frame), log_scroll);
+    
+    log_text_view = gtk_text_view_new();
+    gtk_text_view_set_editable(GTK_TEXT_VIEW(log_text_view), FALSE);
+    gtk_text_view_set_monospace(GTK_TEXT_VIEW(log_text_view), TRUE);
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(log_scroll), log_text_view);
+    
+    // Create text tags for colored logs
+    GtkTextBuffer* log_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(log_text_view));
+    gtk_text_buffer_create_tag(log_buffer, "normal", "foreground", "black", NULL);
+    gtk_text_buffer_create_tag(log_buffer, "success", "foreground", "green", "weight", PANGO_WEIGHT_BOLD, NULL);
+    gtk_text_buffer_create_tag(log_buffer, "error", "foreground", "darkred", "weight", PANGO_WEIGHT_BOLD, NULL);
+    gtk_text_buffer_create_tag(log_buffer, "important", "foreground", "blue", "weight", PANGO_WEIGHT_BOLD, NULL);
+    
+    // Wire thread-safe notifications into solver
+    solver.logNotify = [this](const std::string& msg, int type) {
+        g_idle_add([](gpointer data) -> gboolean {
+            auto* p = static_cast<LogPayload*>(data);
+            p->win->append_log(p->message, p->type);
+            delete p;
+            return G_SOURCE_REMOVE;
+        }, new LogPayload{this, msg, type});
+    };
+    
+    solver.progressNotify = [this](double disc, double overall) {
+        g_idle_add([](gpointer data) -> gboolean {
+            auto* p = static_cast<ProgressPayload*>(data);
+            p->win->update_progress(p->disc, p->overall);
+            delete p;
+            return G_SOURCE_REMOVE;
+        }, new ProgressPayload{this, disc, overall});
+    };
+}
+
+MainWindow::~MainWindow() {
+    if (solver_thread.joinable()) {
+        solver_thread.join();
+    }
+}
+
+void MainWindow::show() {
+    gtk_widget_set_visible(window, TRUE);
+}
+
+void MainWindow::append_log(const std::string& message, int type) {
+    GtkTextBuffer* buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(log_text_view));
+    GtkTextIter end;
+    gtk_text_buffer_get_end_iter(buffer, &end);
+    
+    const char* tag = "normal";
+    if (type == 1) tag = "success";
+    else if (type == 2) tag = "error";
+    else if (type == 3) tag = "important";
+    
+    gtk_text_buffer_insert_with_tags_by_name(buffer, &end, (message + "\n").c_str(), -1, tag, NULL);
+    
+    // Auto scroll log to bottom
+    GtkAdjustment* adj = gtk_scrolled_window_get_vadjustment(
+        GTK_SCROLLED_WINDOW(gtk_widget_get_parent(log_text_view)));
+    if (adj) {
+        gtk_adjustment_set_value(adj, gtk_adjustment_get_upper(adj) - gtk_adjustment_get_page_size(adj));
+    }
+}
+
+void MainWindow::update_progress(double disc_progress, double overall_progress) {
+    gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress_bar_disc), disc_progress);
+    
+    char label_buf[64];
+    snprintf(label_buf, sizeof(label_buf), "Filled: %.2f%%", disc_progress * 100.0);
+    gtk_label_set_text(GTK_LABEL(progress_label_disc), label_buf);
+}
+
+void MainWindow::solver_finished() {
+    // Re-enable inputs
+    gtk_widget_set_sensitive(start_button, TRUE);
+    gtk_widget_set_sensitive(stop_button, FALSE);
+    gtk_widget_set_sensitive(source_entry, TRUE);
+    gtk_widget_set_sensitive(target_entry, TRUE);
+    gtk_widget_set_sensitive(move_check, TRUE);
+    
+    // Join background thread securely
+    if (solver_thread.joinable()) {
+        solver_thread.join();
+    }
+    
+    // Populate Results Tree
+    gtk_tree_store_clear(tree_store);
+    
+    GtkTreeIter fitted_parent;
+    gtk_tree_store_append(tree_store, &fitted_parent, nullptr);
+    gtk_tree_store_set(tree_store, &fitted_parent,
+                       0, "Selected for Medium #1",
+                       1, "",
+                       2, "Fitted",
+                       -1);
+    
+    GtkTreeIter unfitted_parent;
+    gtk_tree_store_append(tree_store, &unfitted_parent, nullptr);
+    gtk_tree_store_set(tree_store, &unfitted_parent,
+                       0, "Remaining Items",
+                       1, "",
+                       2, "Not Fitted",
+                       -1);
+    
+    int64_t fitted_bytes = 0;
+    int64_t unfitted_bytes = 0;
+    
+    // Walk solver objects and sort them into GtkTreeStore
+    for (size_t i = 0; i < solver.itemsToSplit.size(); ++i) {
+        const auto& item = solver.itemsToSplit[i];
+        
+        GtkTreeIter child;
+        if (item->isSelected) {
+            gtk_tree_store_append(tree_store, &child, &fitted_parent);
+            gtk_tree_store_set(tree_store, &child,
+                               0, item->relativePath.c_str(),
+                               1, std::to_string(item->sizeBytes).c_str(),
+                               2, "Fitted",
+                               -1);
+            fitted_bytes += item->sizeBytes;
+        } else {
+            gtk_tree_store_append(tree_store, &child, &unfitted_parent);
+            gtk_tree_store_set(tree_store, &child,
+                               0, item->relativePath.c_str(),
+                               1, std::to_string(item->sizeBytes).c_str(),
+                               2, "Not Fitted",
+                               -1);
+            unfitted_bytes += item->sizeBytes;
+        }
+    }
+    
+    // Update parent labels with sums
+    char fitted_label[128];
+    snprintf(fitted_label, sizeof(fitted_label), "Selected for Medium #1 (Total: %.2f MB)", (double)fitted_bytes / (1024.0 * 1024.0));
+    gtk_tree_store_set(tree_store, &fitted_parent, 0, fitted_label, -1);
+    
+    char unfitted_label[128];
+    snprintf(unfitted_label, sizeof(unfitted_label), "Remaining Items (Total: %.2f MB)", (double)unfitted_bytes / (1024.0 * 1024.0));
+    gtk_tree_store_set(tree_store, &unfitted_parent, 0, unfitted_label, -1);
+}
+
+} // namespace bttb
