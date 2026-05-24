@@ -26,7 +26,7 @@ It solves the subset-sum / bin packing problem instantly using an advanced recur
 ## Windows Installation & Running
 
 ### 1. Download and Run
-Simply extract the release package `bttb-cpp-3.1.1-Win64-Native-GUI.zip` and run:
+Simply extract the release package `bttb-cpp-3.1.2-Win64-Native-GUI.zip` and run:
 * **`bttb_win32.exe`**: Double-click to launch the native Windows GUI application instantly!
 
 ### 2. Creating ISO Images on Windows (Optional)

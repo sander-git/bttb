@@ -28,11 +28,11 @@
 #define ID_BTN_DEST_BROWSE 1002
 #define ID_BTN_START       1003
 #define ID_BTN_STOP        1004
-#define ID_COMBO_MEDIA     1005
 #define ID_CHK_MOVE        1006
 #define ID_BTN_CREATE_ISO  1007
-#define ID_CHK_EMPTY       1008
 #define ID_CHK_SPAN        1009
+#define ID_BTN_PREFS       1010
+#define ID_CHK_TRACE       1011
 
 // ISO Dialog Control IDs
 #define ID_BTN_ISO_SRC_BROWSE  2001
@@ -40,24 +40,54 @@
 #define ID_BTN_ISO_GENERATE    2003
 #define ID_BTN_ISO_CLOSE       2004
 
+// Preferences Dialog Control IDs
+#define ID_PREF_COMBO_MEDIA     3001
+#define ID_PREF_EDIT_CAP        3002
+#define ID_PREF_EDIT_CLUS       3003
+#define ID_PREF_EDIT_SLACK      3004
+#define ID_PREF_EDIT_TIME       3005
+#define ID_PREF_EDIT_DEPTH      3006
+#define ID_PREF_CHK_EMPTY       3007
+#define ID_PREF_LIST_RULES      3008
+#define ID_PREF_EDIT_PATTERN    3009
+#define ID_PREF_CHK_FILES       3010
+#define ID_PREF_CHK_FOLDERS     3011
+#define ID_PREF_CHK_REGEX       3012
+#define ID_PREF_BTN_ADD_RULE    3013
+#define ID_PREF_BTN_DEL_RULE    3014
+#define ID_PREF_BTN_OK          3015
+#define ID_PREF_BTN_CANCEL      3016
+
 // Global State
 HWND g_hwndMain = NULL;
 HWND g_editSrc = NULL;
 HWND g_editDest = NULL;
 HWND g_chkMove = NULL;
 HWND g_chkSpan = NULL;
-HWND g_comboMedia = NULL;
-HWND g_editCap = NULL;
-HWND g_editClus = NULL;
-HWND g_editSlack = NULL;
-HWND g_editDepth = NULL;
-HWND g_chkEmpty = NULL;
+HWND g_chkTrace = NULL;
 HWND g_editLog = NULL;
 HWND g_progress = NULL;
 HWND g_btnStart = NULL;
 HWND g_btnStop = NULL;
 HWND g_btnCreateIso = NULL;
 HWND g_labelProgress = NULL;
+
+// Preferences Dialog Global Controls
+HWND g_hwndPref = NULL;
+HWND g_comboPrefMedia = NULL;
+HWND g_editPrefCap = NULL;
+HWND g_editPrefClus = NULL;
+HWND g_editPrefSlack = NULL;
+HWND g_editPrefTime = NULL;
+HWND g_editPrefDepth = NULL;
+HWND g_chkPrefEmpty = NULL;
+HWND g_listPrefRules = NULL;
+HWND g_editPrefPattern = NULL;
+HWND g_chkPrefFiles = NULL;
+HWND g_chkPrefFolders = NULL;
+HWND g_chkPrefRegex = NULL;
+HWND g_btnPrefAddRule = NULL;
+HWND g_btnPrefDelRule = NULL;
 
 // ISO Dialog State
 HWND g_hwndIso = NULL;
@@ -320,6 +350,307 @@ LRESULT CALLBACK IsoWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     return 0;
 }
 
+// Preferences Dialog Window Procedure
+LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    switch (msg) {
+        case WM_CREATE: {
+            INITCOMMONCONTROLSEX icex;
+            icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
+            icex.dwICC = ICC_LISTVIEW_CLASSES;
+            InitCommonControlsEx(&icex);
+            
+            int y = 15;
+            
+            // Row 1: Media Selection & Capacity
+            CreateWindow("STATIC", "Select Medium:", WS_CHILD | WS_VISIBLE, 20, y + 2, 120, 20, hwnd, NULL, NULL, NULL);
+            g_comboPrefMedia = CreateWindow("COMBOBOX", "", WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST, 150, y, 120, 250, hwnd, (HMENU)ID_PREF_COMBO_MEDIA, NULL, NULL);
+            SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"CD (650 MB)");
+            SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"CD (700 MB)");
+            SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"DVD (4.7 GB)");
+            SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"DVD DL (8.5 GB)");
+            SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"BD (25 GB)");
+            SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"BD DL (50 GB)");
+            SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"USB (8 GB)");
+            SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"USB (16 GB)");
+            SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"USB (32 GB)");
+            SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"USB (64 GB)");
+            SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"Custom Size");
+            
+            CreateWindow("STATIC", "Capacity (Bytes):", WS_CHILD | WS_VISIBLE, 280, y + 2, 80, 20, hwnd, NULL, NULL, NULL);
+            g_editPrefCap = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_NUMBER, 370, y, 100, 22, hwnd, (HMENU)ID_PREF_EDIT_CAP, NULL, NULL);
+            
+            y += 30;
+            // Row 2: Cluster & Slack
+            CreateWindow("STATIC", "Cluster (Bytes):", WS_CHILD | WS_VISIBLE, 20, y + 2, 120, 20, hwnd, NULL, NULL, NULL);
+            g_editPrefClus = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_NUMBER, 150, y, 120, 22, hwnd, (HMENU)ID_PREF_EDIT_CLUS, NULL, NULL);
+            
+            CreateWindow("STATIC", "Slack (Bytes):", WS_CHILD | WS_VISIBLE, 280, y + 2, 80, 20, hwnd, NULL, NULL, NULL);
+            g_editPrefSlack = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_NUMBER, 370, y, 100, 22, hwnd, (HMENU)ID_PREF_EDIT_SLACK, NULL, NULL);
+            
+            y += 30;
+            // Row 3: Max Search Time & Split Depth
+            CreateWindow("STATIC", "Max Search Time (s):", WS_CHILD | WS_VISIBLE, 20, y + 2, 130, 20, hwnd, NULL, NULL, NULL);
+            g_editPrefTime = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_NUMBER, 150, y, 120, 22, hwnd, (HMENU)ID_PREF_EDIT_TIME, NULL, NULL);
+            
+            CreateWindow("STATIC", "Split depth:", WS_CHILD | WS_VISIBLE, 280, y + 2, 80, 20, hwnd, NULL, NULL, NULL);
+            g_editPrefDepth = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_NUMBER, 370, y, 100, 22, hwnd, (HMENU)ID_PREF_EDIT_DEPTH, NULL, NULL);
+            
+            y += 30;
+            // Row 4: Skip Empty
+            g_chkPrefEmpty = CreateWindow("BUTTON", "Skip empty files/folders", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 150, y, 320, 20, hwnd, (HMENU)ID_PREF_CHK_EMPTY, NULL, NULL);
+            
+            y += 30;
+            // Group: Grouping Rules
+            CreateWindow("BUTTON", "File/Folder Grouping Rules", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 12, y, 460, 260, hwnd, NULL, NULL, NULL);
+            
+            // Rules ListView
+            g_listPrefRules = CreateWindowEx(0, WC_LISTVIEW, "", WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SINGLESEL | WS_BORDER, 24, y + 20, 436, 110, hwnd, (HMENU)ID_PREF_LIST_RULES, NULL, NULL);
+            // Add columns
+            {
+                LVCOLUMN lvc;
+                lvc.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM;
+                
+                lvc.pszText = (LPSTR)"Pattern"; lvc.cx = 200; ListView_InsertColumn(g_listPrefRules, 0, &lvc);
+                lvc.pszText = (LPSTR)"Files"; lvc.cx = 60; ListView_InsertColumn(g_listPrefRules, 1, &lvc);
+                lvc.pszText = (LPSTR)"Folders"; lvc.cx = 60; ListView_InsertColumn(g_listPrefRules, 2, &lvc);
+                lvc.pszText = (LPSTR)"Type"; lvc.cx = 70; ListView_InsertColumn(g_listPrefRules, 3, &lvc);
+            }
+            // Set extended style for full row select
+            ListView_SetExtendedListViewStyle(g_listPrefRules, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
+            
+            // Rule inputs inside group box
+            CreateWindow("STATIC", "Pattern:", WS_CHILD | WS_VISIBLE, 24, y + 142, 60, 20, hwnd, NULL, NULL, NULL);
+            g_editPrefPattern = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 90, y + 140, 370, 22, hwnd, (HMENU)ID_PREF_EDIT_PATTERN, NULL, NULL);
+            
+            g_chkPrefFiles = CreateWindow("BUTTON", "Match Files", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 90, y + 170, 100, 20, hwnd, (HMENU)ID_PREF_CHK_FILES, NULL, NULL);
+            SendMessage(g_chkPrefFiles, BM_SETCHECK, BST_CHECKED, 0);
+            
+            g_chkPrefFolders = CreateWindow("BUTTON", "Match Folders", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 200, y + 170, 110, 20, hwnd, (HMENU)ID_PREF_CHK_FOLDERS, NULL, NULL);
+            SendMessage(g_chkPrefFolders, BM_SETCHECK, BST_CHECKED, 0);
+            
+            g_chkPrefRegex = CreateWindow("BUTTON", "Regex Pattern", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 320, y + 170, 110, 20, hwnd, (HMENU)ID_PREF_CHK_REGEX, NULL, NULL);
+            
+            g_btnPrefAddRule = CreateWindow("BUTTON", "Add Rule", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 90, y + 200, 100, 25, hwnd, (HMENU)ID_PREF_BTN_ADD_RULE, NULL, NULL);
+            g_btnPrefDelRule = CreateWindow("BUTTON", "Remove Selected", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 200, y + 200, 150, 25, hwnd, (HMENU)ID_PREF_BTN_DEL_RULE, NULL, NULL);
+            
+            y += 280;
+            // OK / Cancel Action Buttons
+            CreateWindow("BUTTON", "OK", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 250, y, 100, 30, hwnd, (HMENU)ID_PREF_BTN_OK, NULL, NULL);
+            CreateWindow("BUTTON", "Cancel", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 360, y, 100, 30, hwnd, (HMENU)ID_PREF_BTN_CANCEL, NULL, NULL);
+            
+            // Set Font
+            HFONT hFont = CreateFont(15, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "MS Shell Dlg");
+            EnumChildWindows(hwnd, [](HWND hwndChild, LPARAM lParam) -> BOOL {
+                SendMessage(hwndChild, WM_SETFONT, lParam, TRUE);
+                return TRUE;
+            }, (LPARAM)hFont);
+            
+            // Load Solver Settings into Controls
+            SetWindowText(g_editPrefCap, std::to_string(g_solver.mediumInfo.capacityBytes).c_str());
+            SetWindowText(g_editPrefClus, std::to_string(g_solver.mediumInfo.sectorSize).c_str());
+            SetWindowText(g_editPrefSlack, std::to_string(g_solver.mediumInfo.slackBytes).c_str());
+            SetWindowText(g_editPrefTime, std::to_string(g_solver.maxSearchTimeSeconds).c_str());
+            SetWindowText(g_editPrefDepth, std::to_string(g_solver.splitDepth).c_str());
+            SendMessage(g_chkPrefEmpty, BM_SETCHECK, g_solver.skipEmpty ? BST_CHECKED : BST_UNCHECKED, 0);
+            
+            // Select correct Media combobox index
+            int index = 10; // Custom Size
+            if (g_solver.mediumInfo.capacityBytes == 681574400) index = 0;
+            else if (g_solver.mediumInfo.capacityBytes == 734003200) index = 1;
+            else if (g_solver.mediumInfo.capacityBytes == 4700000000LL) index = 2;
+            else if (g_solver.mediumInfo.capacityBytes == 8500000000LL) index = 3;
+            else if (g_solver.mediumInfo.capacityBytes == 25000000000LL) index = 4;
+            else if (g_solver.mediumInfo.capacityBytes == 50000000000LL) index = 5;
+            else if (g_solver.mediumInfo.capacityBytes == 8000000000LL) index = 6;
+            else if (g_solver.mediumInfo.capacityBytes == 16000000000LL) index = 7;
+            else if (g_solver.mediumInfo.capacityBytes == 32000000000LL) index = 8;
+            else if (g_solver.mediumInfo.capacityBytes == 64000000000LL) index = 9;
+            
+            SendMessage(g_comboPrefMedia, CB_SETCURSEL, index, 0);
+            EnableWindow(g_editPrefCap, (index == 10) ? TRUE : FALSE);
+            
+            // Load Rules list
+            int rowIndex = 0;
+            for (const auto& rule : g_solver.groupingRules) {
+                LVITEM lvi = {0};
+                lvi.mask = LVIF_TEXT;
+                lvi.iItem = rowIndex;
+                lvi.iSubItem = 0;
+                lvi.pszText = const_cast<LPSTR>(rule.patternString.c_str());
+                ListView_InsertItem(g_listPrefRules, &lvi);
+                
+                ListView_SetItemText(g_listPrefRules, rowIndex, 1, const_cast<LPSTR>(rule.matchFiles ? "Yes" : "No"));
+                ListView_SetItemText(g_listPrefRules, rowIndex, 2, const_cast<LPSTR>(rule.matchFolders ? "Yes" : "No"));
+                ListView_SetItemText(g_listPrefRules, rowIndex, 3, const_cast<LPSTR>(rule.isRegex ? "Regex" : "Glob"));
+                
+                rowIndex++;
+            }
+            
+            break;
+        }
+        
+        case WM_COMMAND: {
+            int wmId = LOWORD(wParam);
+            int wmEvent = HIWORD(wParam);
+            
+            if (wmId == ID_PREF_COMBO_MEDIA && wmEvent == CBN_SELCHANGE) {
+                int index = SendMessage(g_comboPrefMedia, CB_GETCURSEL, 0, 0);
+                if (index == 0) { // CD 650
+                    SetWindowText(g_editPrefCap, "681574400");
+                    SetWindowText(g_editPrefClus, "2048");
+                    EnableWindow(g_editPrefCap, FALSE);
+                } else if (index == 1) { // CD 700
+                    SetWindowText(g_editPrefCap, "734003200");
+                    SetWindowText(g_editPrefClus, "2048");
+                    EnableWindow(g_editPrefCap, FALSE);
+                } else if (index == 2) { // DVD 4.7
+                    SetWindowText(g_editPrefCap, "4700000000");
+                    SetWindowText(g_editPrefClus, "2048");
+                    EnableWindow(g_editPrefCap, FALSE);
+                } else if (index == 3) { // DVD DL 8.5
+                    SetWindowText(g_editPrefCap, "8500000000");
+                    SetWindowText(g_editPrefClus, "2048");
+                    EnableWindow(g_editPrefCap, FALSE);
+                } else if (index == 4) { // BD 25
+                    SetWindowText(g_editPrefCap, "25000000000");
+                    SetWindowText(g_editPrefClus, "2048");
+                    EnableWindow(g_editPrefCap, FALSE);
+                } else if (index == 5) { // BD DL 50
+                    SetWindowText(g_editPrefCap, "50000000000");
+                    SetWindowText(g_editPrefClus, "2048");
+                    EnableWindow(g_editPrefCap, FALSE);
+                } else if (index == 6) { // USB 8
+                    SetWindowText(g_editPrefCap, "8000000000");
+                    SetWindowText(g_editPrefClus, "4096");
+                    EnableWindow(g_editPrefCap, FALSE);
+                } else if (index == 7) { // USB 16
+                    SetWindowText(g_editPrefCap, "16000000000");
+                    SetWindowText(g_editPrefClus, "4096");
+                    EnableWindow(g_editPrefCap, FALSE);
+                } else if (index == 8) { // USB 32
+                    SetWindowText(g_editPrefCap, "32000000000");
+                    SetWindowText(g_editPrefClus, "4096");
+                    EnableWindow(g_editPrefCap, FALSE);
+                } else if (index == 9) { // USB 64
+                    SetWindowText(g_editPrefCap, "64000000000");
+                    SetWindowText(g_editPrefClus, "4096");
+                    EnableWindow(g_editPrefCap, FALSE);
+                } else { // Custom
+                    EnableWindow(g_editPrefCap, TRUE);
+                }
+            }
+            
+            if (wmId == ID_PREF_BTN_ADD_RULE) {
+                char pattern[256];
+                GetWindowText(g_editPrefPattern, pattern, 256);
+                if (strlen(pattern) == 0) break;
+                
+                bool matchFiles = (SendMessage(g_chkPrefFiles, BM_GETCHECK, 0, 0) == BST_CHECKED);
+                bool matchFolders = (SendMessage(g_chkPrefFolders, BM_GETCHECK, 0, 0) == BST_CHECKED);
+                bool isRegex = (SendMessage(g_chkPrefRegex, BM_GETCHECK, 0, 0) == BST_CHECKED);
+                
+                int count = ListView_GetItemCount(g_listPrefRules);
+                
+                LVITEM lvi = {0};
+                lvi.mask = LVIF_TEXT;
+                lvi.iItem = count;
+                lvi.iSubItem = 0;
+                lvi.pszText = pattern;
+                ListView_InsertItem(g_listPrefRules, &lvi);
+                
+                ListView_SetItemText(g_listPrefRules, count, 1, const_cast<LPSTR>(matchFiles ? "Yes" : "No"));
+                ListView_SetItemText(g_listPrefRules, count, 2, const_cast<LPSTR>(matchFolders ? "Yes" : "No"));
+                ListView_SetItemText(g_listPrefRules, count, 3, const_cast<LPSTR>(isRegex ? "Regex" : "Glob"));
+                
+                SetWindowText(g_editPrefPattern, "");
+            }
+            
+            if (wmId == ID_PREF_BTN_DEL_RULE) {
+                int selected = ListView_GetNextItem(g_listPrefRules, -1, LVNI_SELECTED);
+                if (selected != -1) {
+                    ListView_DeleteItem(g_listPrefRules, selected);
+                }
+            }
+            
+            if (wmId == ID_PREF_BTN_OK) {
+                // Save settings back to g_solver
+                char buf[64];
+                
+                GetWindowText(g_editPrefCap, buf, 64);
+                g_solver.mediumInfo.capacityBytes = std::stoll(buf);
+                
+                GetWindowText(g_editPrefClus, buf, 64);
+                g_solver.mediumInfo.sectorSize = std::stoll(buf);
+                
+                GetWindowText(g_editPrefSlack, buf, 64);
+                g_solver.mediumInfo.slackBytes = std::stoll(buf);
+                
+                GetWindowText(g_editPrefTime, buf, 64);
+                g_solver.maxSearchTimeSeconds = std::stoi(buf);
+                
+                GetWindowText(g_editPrefDepth, buf, 64);
+                g_solver.splitDepth = std::stoi(buf);
+                
+                g_solver.skipEmpty = (SendMessage(g_chkPrefEmpty, BM_GETCHECK, 0, 0) == BST_CHECKED);
+                
+                // Save grouping rules
+                g_solver.groupingRules.clear();
+                int count = ListView_GetItemCount(g_listPrefRules);
+                for (int i = 0; i < count; ++i) {
+                    char pattern[256] = {0};
+                    char matchFiles[16] = {0};
+                    char matchFolders[16] = {0};
+                    char type[16] = {0};
+                    
+                    ListView_GetItemText(g_listPrefRules, i, 0, pattern, 256);
+                    ListView_GetItemText(g_listPrefRules, i, 1, matchFiles, 16);
+                    ListView_GetItemText(g_listPrefRules, i, 2, matchFolders, 16);
+                    ListView_GetItemText(g_listPrefRules, i, 3, type, 16);
+                    
+                    bttb::GroupRule rule;
+                    rule.patternString = pattern;
+                    rule.matchFiles = (strcmp(matchFiles, "Yes") == 0);
+                    rule.matchFolders = (strcmp(matchFolders, "Yes") == 0);
+                    rule.isRegex = (strcmp(type, "Regex") == 0);
+                    
+                    try {
+                        if (rule.isRegex) {
+                            rule.compiledRegex = std::regex(rule.patternString, std::regex_constants::icase);
+                        } else {
+                            rule.compiledRegex = bttb::globToRegex(rule.patternString);
+                        }
+                        g_solver.groupingRules.push_back(rule);
+                    } catch (...) {
+                        // ignore malformed regex
+                    }
+                }
+                
+                SendMessage(hwnd, WM_CLOSE, 0, 0);
+            }
+            
+            if (wmId == ID_PREF_BTN_CANCEL) {
+                SendMessage(hwnd, WM_CLOSE, 0, 0);
+            }
+            
+            break;
+        }
+        
+        case WM_CLOSE:
+            DestroyWindow(hwnd);
+            break;
+            
+        case WM_DESTROY:
+            EnableWindow(g_hwndMain, TRUE);
+            SetForegroundWindow(g_hwndMain);
+            g_hwndPref = NULL;
+            break;
+            
+        default:
+            return DefWindowProc(hwnd, msg, wParam, lParam);
+    }
+    return 0;
+}
+
 // Window Procedure for Main Window
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
@@ -334,7 +665,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             int y = 16;
             
             // Group 1: Folders Selection
-            CreateWindow("BUTTON", "Directories setup", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 12, y, 510, 138, hwnd, NULL, NULL, NULL);
+            CreateWindow("BUTTON", "Directories setup", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 12, y, 510, 160, hwnd, NULL, NULL, NULL);
             
             CreateWindow("STATIC", "Source folder:", WS_CHILD | WS_VISIBLE, 24, y + 26, 100, 20, hwnd, NULL, NULL, NULL);
             g_editSrc = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 130, y + 24, 270, 22, hwnd, NULL, NULL, NULL);
@@ -346,62 +677,29 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             
             g_chkMove = CreateWindow("BUTTON", "Move/organize fitted folders/files to target folder", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 130, y + 84, 350, 20, hwnd, (HMENU)ID_CHK_MOVE, NULL, NULL);
             g_chkSpan = CreateWindow("BUTTON", "Span across multiple volumes (Volume_1, Volume_2, etc.)", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 130, y + 106, 360, 20, hwnd, (HMENU)ID_CHK_SPAN, NULL, NULL);
+            g_chkTrace = CreateWindow("BUTTON", "Enable detailed solver diagnostic tracing (Trace)", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 130, y + 128, 360, 20, hwnd, (HMENU)ID_CHK_TRACE, NULL, NULL);
             
-            y += 150;
+            y += 175;
             
-            // Group 2: Media and Algorithm Settings
-            CreateWindow("BUTTON", "Medium & Solver settings", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 12, y, 510, 140, hwnd, NULL, NULL, NULL);
-            
-            CreateWindow("STATIC", "Select Medium:", WS_CHILD | WS_VISIBLE, 24, y + 26, 100, 20, hwnd, NULL, NULL, NULL);
-            g_comboMedia = CreateWindow("COMBOBOX", "", WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST, 130, y + 24, 120, 250, hwnd, (HMENU)ID_COMBO_MEDIA, NULL, NULL);
-            SendMessage(g_comboMedia, CB_ADDSTRING, 0, (LPARAM)"CD (650 MB)");
-            SendMessage(g_comboMedia, CB_ADDSTRING, 0, (LPARAM)"CD (700 MB)");
-            SendMessage(g_comboMedia, CB_ADDSTRING, 0, (LPARAM)"DVD (4.7 GB)");
-            SendMessage(g_comboMedia, CB_ADDSTRING, 0, (LPARAM)"DVD DL (8.5 GB)");
-            SendMessage(g_comboMedia, CB_ADDSTRING, 0, (LPARAM)"BD (25 GB)");
-            SendMessage(g_comboMedia, CB_ADDSTRING, 0, (LPARAM)"BD DL (50 GB)");
-            SendMessage(g_comboMedia, CB_ADDSTRING, 0, (LPARAM)"USB (8 GB)");
-            SendMessage(g_comboMedia, CB_ADDSTRING, 0, (LPARAM)"USB (16 GB)");
-            SendMessage(g_comboMedia, CB_ADDSTRING, 0, (LPARAM)"USB (32 GB)");
-            SendMessage(g_comboMedia, CB_ADDSTRING, 0, (LPARAM)"USB (64 GB)");
-            SendMessage(g_comboMedia, CB_ADDSTRING, 0, (LPARAM)"Custom Capacity");
-            SendMessage(g_comboMedia, CB_SETCURSEL, 1, 0); // Default CD 700MB
-            
-            CreateWindow("STATIC", "Capacity (Bytes):", WS_CHILD | WS_VISIBLE, 270, y + 26, 110, 20, hwnd, NULL, NULL, NULL);
-            g_editCap = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "734003200", WS_CHILD | WS_VISIBLE | ES_NUMBER, 380, y + 24, 120, 22, hwnd, NULL, NULL, NULL);
-            EnableWindow(g_editCap, FALSE);
-            
-            CreateWindow("STATIC", "Cluster (Bytes):", WS_CHILD | WS_VISIBLE, 24, y + 60, 100, 20, hwnd, NULL, NULL, NULL);
-            g_editClus = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "2048", WS_CHILD | WS_VISIBLE | ES_NUMBER, 130, y + 58, 120, 22, hwnd, NULL, NULL, NULL);
-            
-            CreateWindow("STATIC", "Slack (Bytes):", WS_CHILD | WS_VISIBLE, 270, y + 60, 110, 20, hwnd, NULL, NULL, NULL);
-            g_editSlack = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "0", WS_CHILD | WS_VISIBLE | ES_NUMBER, 380, y + 58, 120, 22, hwnd, NULL, NULL, NULL);
-            
-            CreateWindow("STATIC", "Split depth:", WS_CHILD | WS_VISIBLE, 24, y + 94, 100, 20, hwnd, NULL, NULL, NULL);
-            g_editDepth = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "0", WS_CHILD | WS_VISIBLE | ES_NUMBER, 130, y + 92, 120, 22, hwnd, NULL, NULL, NULL);
-            
-            g_chkEmpty = CreateWindow("BUTTON", "Skip empty files/folders", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 270, y + 92, 230, 20, hwnd, (HMENU)ID_CHK_EMPTY, NULL, NULL);
-            SendMessage(g_chkEmpty, BM_SETCHECK, BST_CHECKED, 0);
-            
-            y += 155;
-            
-            // Group 3: Progress
+            // Group 2: Progress
             CreateWindow("BUTTON", "Fitted Capacity Status", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 12, y, 510, 60, hwnd, NULL, NULL, NULL);
             g_progress = CreateWindow(PROGRESS_CLASS, "", WS_CHILD | WS_VISIBLE, 24, y + 24, 350, 20, hwnd, NULL, NULL, NULL);
             g_labelProgress = CreateWindow("STATIC", "Filled: 0.00%", WS_CHILD | WS_VISIBLE, 385, y + 26, 120, 20, hwnd, NULL, NULL, NULL);
             
             y += 75;
             
-            // Group 4: Log Output
-            CreateWindow("BUTTON", "Solver Output Log", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 12, y, 510, 140, hwnd, NULL, NULL, NULL);
-            g_editLog = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL | ES_READONLY, 24, y + 24, 480, 100, hwnd, NULL, NULL, NULL);
+            // Group 3: Log Output
+            CreateWindow("BUTTON", "Solver Output Log", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 12, y, 510, 160, hwnd, NULL, NULL, NULL);
+            g_editLog = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL | ES_READONLY, 24, y + 24, 480, 120, hwnd, NULL, NULL, NULL);
             
-            y += 155;
+            y += 175;
             
             // Control Action Buttons
-            g_btnStart = CreateWindow("BUTTON", "Start Optimal Solving", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 40, y, 170, 30, hwnd, (HMENU)ID_BTN_START, NULL, NULL);
-            g_btnStop = CreateWindow("BUTTON", "Stop", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 220, y, 80, 30, hwnd, (HMENU)ID_BTN_STOP, NULL, NULL);
-            g_btnCreateIso = CreateWindow("BUTTON", "Create ISO image...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 310, y, 190, 30, hwnd, (HMENU)ID_BTN_CREATE_ISO, NULL, NULL);
+            g_btnStart = CreateWindow("BUTTON", "Start Optimal Solving", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 20, y, 160, 30, hwnd, (HMENU)ID_BTN_START, NULL, NULL);
+            g_btnStop = CreateWindow("BUTTON", "Stop", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 190, y, 70, 30, hwnd, (HMENU)ID_BTN_STOP, NULL, NULL);
+            CreateWindow("BUTTON", "Preferences...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 270, y, 110, 30, hwnd, (HMENU)ID_BTN_PREFS, NULL, NULL);
+            g_btnCreateIso = CreateWindow("BUTTON", "Create ISO image...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 390, y, 130, 30, hwnd, (HMENU)ID_BTN_CREATE_ISO, NULL, NULL);
+            
             EnableWindow(g_btnStop, FALSE);
             
             // Setup visual font styles
@@ -417,53 +715,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case WM_COMMAND: {
             int wmId = LOWORD(wParam);
             int wmEvent = HIWORD(wParam);
-            
-            if (wmId == ID_COMBO_MEDIA && wmEvent == CBN_SELCHANGE) {
-                int index = SendMessage(g_comboMedia, CB_GETCURSEL, 0, 0);
-                if (index == 0) { // CD 650
-                    SetWindowText(g_editCap, "681574400");
-                    SetWindowText(g_editClus, "2048");
-                    EnableWindow(g_editCap, FALSE);
-                } else if (index == 1) { // CD 700
-                    SetWindowText(g_editCap, "734003200");
-                    SetWindowText(g_editClus, "2048");
-                    EnableWindow(g_editCap, FALSE);
-                } else if (index == 2) { // DVD 4.7
-                    SetWindowText(g_editCap, "4700000000");
-                    SetWindowText(g_editClus, "2048");
-                    EnableWindow(g_editCap, FALSE);
-                } else if (index == 3) { // DVD DL 8.5
-                    SetWindowText(g_editCap, "8500000000");
-                    SetWindowText(g_editClus, "2048");
-                    EnableWindow(g_editCap, FALSE);
-                } else if (index == 4) { // BD 25
-                    SetWindowText(g_editCap, "25000000000");
-                    SetWindowText(g_editClus, "2048");
-                    EnableWindow(g_editCap, FALSE);
-                } else if (index == 5) { // BD DL 50
-                    SetWindowText(g_editCap, "50000000000");
-                    SetWindowText(g_editClus, "2048");
-                    EnableWindow(g_editCap, FALSE);
-                } else if (index == 6) { // USB 8
-                    SetWindowText(g_editCap, "8000000000");
-                    SetWindowText(g_editClus, "4096");
-                    EnableWindow(g_editCap, FALSE);
-                } else if (index == 7) { // USB 16
-                    SetWindowText(g_editCap, "16000000000");
-                    SetWindowText(g_editClus, "4096");
-                    EnableWindow(g_editCap, FALSE);
-                } else if (index == 8) { // USB 32
-                    SetWindowText(g_editCap, "32000000000");
-                    SetWindowText(g_editClus, "4096");
-                    EnableWindow(g_editCap, FALSE);
-                } else if (index == 9) { // USB 64
-                    SetWindowText(g_editCap, "64000000000");
-                    SetWindowText(g_editClus, "4096");
-                    EnableWindow(g_editCap, FALSE);
-                } else { // Custom
-                    EnableWindow(g_editCap, TRUE);
-                }
-            }
             
             if (wmId == ID_BTN_SRC_BROWSE) {
                 std::string path = BrowseForFolder(hwnd, "Select Source Folder");
@@ -494,21 +745,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 g_solver.sourceDirectory = src;
                 g_solver.targetDirectory = dest;
                 g_solver.moveFiles = (IsDlgButtonChecked(hwnd, ID_CHK_MOVE) == BST_CHECKED);
-                g_solver.skipEmpty = (IsDlgButtonChecked(hwnd, ID_CHK_EMPTY) == BST_CHECKED);
                 g_solver.spanMultipleVolumes = (IsDlgButtonChecked(hwnd, ID_CHK_SPAN) == BST_CHECKED);
-                
-                char buf[32];
-                GetWindowText(g_editCap, buf, 32);
-                g_solver.mediumInfo.capacityBytes = std::stoll(buf);
-                
-                GetWindowText(g_editClus, buf, 32);
-                g_solver.mediumInfo.sectorSize = std::stoll(buf);
-                
-                GetWindowText(g_editSlack, buf, 32);
-                g_solver.mediumInfo.slackBytes = std::stoll(buf);
-                
-                GetWindowText(g_editDepth, buf, 32);
-                g_solver.splitDepth = std::stoi(buf);
+                g_solver.enableTrace = (IsDlgButtonChecked(hwnd, ID_CHK_TRACE) == BST_CHECKED);
                 
                 // Setup logs
                 SetWindowText(g_editLog, "");
@@ -519,8 +757,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 EnableWindow(g_btnStop, TRUE);
                 EnableWindow(g_chkMove, FALSE);
                 EnableWindow(g_chkSpan, FALSE);
-                EnableWindow(g_chkEmpty, FALSE);
-                EnableWindow(g_comboMedia, FALSE);
+                EnableWindow(g_chkTrace, FALSE);
                 
                 // Wire thread safe UI messages
                 g_solver.logNotify = [hwnd](const std::string& msg, int type) {
@@ -544,6 +781,32 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 g_solver.stopRequested = true;
                 AppendTextToLog(g_editLog, "Cancellation requested by user...");
                 EnableWindow(g_btnStop, FALSE);
+            }
+            
+            if (wmId == ID_BTN_PREFS) {
+                if (g_hwndPref != NULL) {
+                    SetForegroundWindow(g_hwndPref);
+                    break;
+                }
+                
+                // Disable main window
+                EnableWindow(hwnd, FALSE);
+                
+                // Create Preferences Window
+                g_hwndPref = CreateWindowEx(
+                    WS_EX_CONTROLPARENT,
+                    "BttbWin32PrefDialog",
+                    "Preferences",
+                    WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
+                    CW_USEDEFAULT, CW_USEDEFAULT, 500, 600,
+                    hwnd, NULL, GetModuleHandle(NULL), NULL
+                );
+                
+                if (g_hwndPref != NULL) {
+                    ShowWindow(g_hwndPref, SW_SHOW);
+                } else {
+                    EnableWindow(hwnd, TRUE);
+                }
             }
             
             if (wmId == ID_BTN_CREATE_ISO) {
@@ -626,8 +889,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             EnableWindow(g_btnStop, FALSE);
             EnableWindow(g_chkMove, TRUE);
             EnableWindow(g_chkSpan, TRUE);
-            EnableWindow(g_chkEmpty, TRUE);
-            EnableWindow(g_comboMedia, TRUE);
+            EnableWindow(g_chkTrace, TRUE);
             
             if (g_solver_thread.joinable()) {
                 g_solver_thread.join();
@@ -681,13 +943,28 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         return 0;
     }
     
+    // Register Preferences Dialog Window Class
+    WNDCLASSEX wcPref = {0};
+    wcPref.cbSize = sizeof(WNDCLASSEX);
+    wcPref.style = CS_HREDRAW | CS_VREDRAW;
+    wcPref.lpfnWndProc = PrefWndProc;
+    wcPref.hInstance = hInstance;
+    wcPref.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wcPref.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
+    wcPref.lpszClassName = "BttbWin32PrefDialog";
+    
+    if (!RegisterClassEx(&wcPref)) {
+        MessageBox(NULL, "Preferences Dialog Registration Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
+        return 0;
+    }
+    
     // Create Main Window
     g_hwndMain = CreateWindowEx(
         WS_EX_CONTROLPARENT,
         "BttbWin32GUI",
         "Burn to the Brim (Native Win32 GUI)",
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
-        CW_USEDEFAULT, CW_USEDEFAULT, 550, 630,
+        CW_USEDEFAULT, CW_USEDEFAULT, 550, 520, // Clean layout is much more compact!
         NULL, NULL, hInstance, NULL
     );
     

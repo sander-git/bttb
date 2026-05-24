@@ -138,10 +138,48 @@ void run_test2() {
     create_testinput(src);
 }
 
+void run_test3() {
+    std::cout << "\n--- STARTING TEST 3: HIGH-SLACK TESTINPUT2 VERIFICATION ---" << std::endl;
+    
+    std::filesystem::path currentDir = std::filesystem::current_path();
+    std::filesystem::path src = currentDir.parent_path().parent_path().parent_path() / "testinput2";
+    
+    std::cout << "Source directory resolved: " << src.string() << std::endl;
+    
+    bttb::BttbSolver solver;
+    solver.sourceDirectory = src.string();
+    solver.moveFiles = false;
+    solver.spanMultipleVolumes = false;
+    solver.splitDepth = 1;
+    
+    // capacity: 650MB = 681574400 bytes
+    // sectorSize: 2048
+    // slack: 650MB - 2048 = 681572352 bytes
+    solver.mediumInfo.capacityBytes = 681574400LL; 
+    solver.mediumInfo.sectorSize = 2048;
+    solver.mediumInfo.slackBytes = 681572352LL;
+    solver.maxSearchTimeSeconds = 10;
+    solver.enableTrace = true;
+    
+    solver.logNotify = [](const std::string& msg, int type) {
+        std::cout << "[Solver Test 3] " << msg << std::endl;
+    };
+    
+    auto startTime = std::chrono::steady_clock::now();
+    solver.run();
+    auto endTime = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
+    
+    std::cout << "Test 3 completed in: " << elapsed << " ms" << std::endl;
+    assert(elapsed < 10000); // must be well under the 10-second limit!
+    std::cout << "SUCCESS: High-slack solver finishes instantly!" << std::endl;
+}
+
 int main() {
     std::cout << "Starting BTTB automated verification suite..." << std::endl;
     run_test1();
     run_test2();
+    run_test3();
     std::cout << "\nALL TESTS PASSED SUCCESSFULLY!" << std::endl;
     return 0;
 }

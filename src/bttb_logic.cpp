@@ -35,6 +35,48 @@ BttbSolver::BttbSolver() {
 }
 
 void BttbSolver::addEntry(const std::string& relPath, int64_t size, bool isDir) {
+    // Check if it matches any grouping rules
+    for (size_t i = 0; i < groupingRules.size(); ++i) {
+        const auto& rule = groupingRules[i];
+        if ((isDir && !rule.matchFolders) || (!isDir && !rule.matchFiles)) {
+            continue;
+        }
+        
+        // Extract filename for matching
+        std::filesystem::path p(relPath);
+        std::string filename = p.filename().string();
+        
+        bool matched = false;
+        try {
+            matched = std::regex_match(filename, rule.compiledRegex) || std::regex_match(relPath, rule.compiledRegex);
+        } catch (...) {}
+        
+        if (matched) {
+            std::string groupName = "[Group: " + rule.patternString + "]";
+            // Find if we already have a consolidated entry for this grouping rule
+            for (auto& entry : itemsToSplit) {
+                if (entry->relativePath == groupName) {
+                    entry->sizeBytes += size;
+                    entry->sectorCount = (entry->sizeBytes + mediumInfo.sectorSize - 1) / mediumInfo.sectorSize;
+                    if (entry->sectorCount == 0) entry->sectorCount = 1;
+                    entry->groupedPaths.push_back(relPath);
+                    return;
+                }
+            }
+            
+            // Create a new consolidated entry
+            auto entry = std::make_unique<DirEntry>();
+            entry->relativePath = groupName;
+            entry->sizeBytes = size;
+            entry->sectorCount = (size + mediumInfo.sectorSize - 1) / mediumInfo.sectorSize;
+            if (entry->sectorCount == 0) entry->sectorCount = 1;
+            entry->isDirectory = false; // treated as a file group
+            entry->groupedPaths.push_back(relPath);
+            itemsToSplit.push_back(std::move(entry));
+            return;
+        }
+    }
+
     auto entry = std::make_unique<DirEntry>();
     entry->relativePath = relPath;
     entry->sizeBytes = size;
@@ -121,16 +163,27 @@ bool compareDirEntries(const std::unique_ptr<DirEntry>& a, const std::unique_ptr
 bool BttbSolver::findAWay(int64_t currentSectors, int poz) {
     exploredStates++;
     if (stopRequested || searchTimedOut) return false;
+
+    // Check timeout periodically (every 10000 states to minimize chrono overhead)
+    if (maxSearchTimeSeconds > 0 && (exploredStates % 10000 == 0)) {
+        auto now = std::chrono::steady_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - solverStartTime).count();
+        if (elapsed >= maxSearchTimeSeconds) {
+            searchTimedOut = true;
+            logNotify("Search time limit exceeded (" + std::to_string(maxSearchTimeSeconds) + " seconds).", 2);
+            return false;
+        }
+    }
     
     if (poz >= 0 && (itemsToSplit[poz]->prefixSumSectors + currentSectors < currentBestSectors)) {
         prunedStates++;
-        if (enableTrace && (prunedStates % 200000 == 0)) {
+        if (enableTrace && (prunedStates % 10000 == 0)) {
             logNotify("[TRACE] Pruning branch at index " + std::to_string(poz) + " (" + itemsToSplit[poz]->relativePath + "): currentBest=" + std::to_string(currentBestSectors) + " sectors", 0);
         }
     }
     
-    if (enableTrace && (exploredStates % 500000 == 0)) {
-        logNotify("[TRACE] Explored: " + std::to_string(exploredStates) + " states, Pruned: " + std::to_string(prunedStates) + " branches...", 0);
+    if (enableTrace && (exploredStates % 10000 == 0)) {
+        logNotify("[TRACE] Explored: " + std::to_string(exploredStates) + " states, Pruned: " + std::to_string(prunedStates) + " branches (currentBest=" + std::to_string(currentBestSectors) + " sectors)", 0);
     }
     
     if (poz < 0 || (itemsToSplit[poz]->prefixSumSectors + currentSectors < currentBestSectors)) {
@@ -150,6 +203,12 @@ bool BttbSolver::findAWay(int64_t currentSectors, int poz) {
                     
                     double percentage = (double)currentBestSectors / maxSectors * 100.0;
                     logNotify("New best space utilization: " + std::to_string(percentage) + "%", 3);
+
+                    // Check for early termination if within slack tolerance
+                    if (currentBestSectors >= maxSectors - slackSectors) {
+                        searchTimedOut = true;
+                        logNotify("Selection within slack tolerance (" + std::to_string(percentage) + "%) found. Terminating search early.", 1);
+                    }
                 }
                 
                 // Keep clusters together (minimize number of folder boundaries)
@@ -240,6 +299,11 @@ void BttbSolver::run() {
     int volumeIndex = 1;
     
     while (!itemsToSplit.empty() && !stopRequested) {
+        searchTimedOut = false;
+        for (auto& item : itemsToSplit) {
+            item->isSelected = false;
+        }
+        
         if (spanMultipleVolumes) {
             logNotify("\r\n--- SOLVING FOR VOLUME " + std::to_string(volumeIndex) + " ---", 3);
         }
@@ -258,6 +322,7 @@ void BttbSolver::run() {
         bestSelectionIndices.clear();
         
         auto startTime = std::chrono::steady_clock::now();
+        solverStartTime = startTime;
         
         logNotify("Solving optimal bin selection...", 0);
         
@@ -305,21 +370,32 @@ void BttbSolver::run() {
                 for (int idx : bestSelectionIndices) {
                     if (stopRequested) break;
                     
-                    std::filesystem::path src = std::filesystem::path(sourceDirectory) / itemsToSplit[idx]->relativePath;
-                    std::filesystem::path dest = volDestDir / itemsToSplit[idx]->relativePath;
+                    std::vector<std::string> pathsToMove;
+                    if (!itemsToSplit[idx]->groupedPaths.empty()) {
+                        pathsToMove = itemsToSplit[idx]->groupedPaths;
+                    } else {
+                        pathsToMove.push_back(itemsToSplit[idx]->relativePath);
+                    }
                     
                     logNotify("Organizing item: " + itemsToSplit[idx]->relativePath, 0);
-                    try {
-                        std::filesystem::create_directories(dest.parent_path());
-                        if (std::filesystem::is_directory(src)) {
-                            std::filesystem::copy(src, dest, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
-                            std::filesystem::remove_all(src);
-                        } else {
-                            std::filesystem::copy_file(src, dest, std::filesystem::copy_options::overwrite_existing);
-                            std::filesystem::remove(src);
+                    for (const auto& relItem : pathsToMove) {
+                        std::filesystem::path src = std::filesystem::path(sourceDirectory) / relItem;
+                        std::filesystem::path dest = volDestDir / relItem;
+                        
+                        try {
+                            std::filesystem::create_directories(dest.parent_path());
+                            if (std::filesystem::exists(src)) {
+                                if (std::filesystem::is_directory(src)) {
+                                    std::filesystem::copy(src, dest, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+                                    std::filesystem::remove_all(src);
+                                } else {
+                                    std::filesystem::copy_file(src, dest, std::filesystem::copy_options::overwrite_existing);
+                                    std::filesystem::remove(src);
+                                }
+                            }
+                        } catch (const std::exception& e) {
+                            logNotify("Failed to organize " + relItem + ": " + e.what(), 2);
                         }
-                    } catch (const std::exception& e) {
-                        logNotify("Failed to organize " + itemsToSplit[idx]->relativePath + ": " + e.what(), 2);
                     }
                 }
             }

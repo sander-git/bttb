@@ -24,6 +24,7 @@ struct DirEntry {
     bool isDirectory = false;
     bool isSelected = false;   // current backtracking selection
     int64_t prefixSumSectors = 0; // sum of sectors from 0 to current index
+    std::vector<std::string> groupedPaths; // Consolidated paths for grouping rules
 };
 
 struct GroupRule {
@@ -65,6 +66,7 @@ public:
     bool enableTrace = false;
     uint64_t exploredStates = 0;
     uint64_t prunedStates = 0;
+    std::chrono::steady_clock::time_point solverStartTime;
 
     // Control
     std::atomic<bool> stopRequested{false};

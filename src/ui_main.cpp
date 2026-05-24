@@ -67,6 +67,7 @@ MainWindow::MainWindow(GtkApplication* app) {
         std::string dest = gtk_editable_get_text(GTK_EDITABLE(self->target_entry));
         bool move = gtk_check_button_get_active(GTK_CHECK_BUTTON(self->move_check));
         bool span = gtk_check_button_get_active(GTK_CHECK_BUTTON(self->span_check));
+        bool trace = gtk_check_button_get_active(GTK_CHECK_BUTTON(self->trace_check));
         
         if (src.empty()) {
             self->append_log("Error: Source directory must not be empty.\n", 2);
@@ -81,6 +82,7 @@ MainWindow::MainWindow(GtkApplication* app) {
         self->solver.targetDirectory = dest;
         self->solver.moveFiles = move;
         self->solver.spanMultipleVolumes = span;
+        self->solver.enableTrace = trace;
         
         // UI updates before starting
         gtk_widget_set_sensitive(self->start_button, FALSE);
@@ -89,6 +91,7 @@ MainWindow::MainWindow(GtkApplication* app) {
         gtk_widget_set_sensitive(self->target_entry, FALSE);
         gtk_widget_set_sensitive(self->move_check, FALSE);
         gtk_widget_set_sensitive(self->span_check, FALSE);
+        gtk_widget_set_sensitive(self->trace_check, FALSE);
         
         // Clear old logs and tree
         GtkTextBuffer* buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(self->log_text_view));
@@ -228,6 +231,10 @@ MainWindow::MainWindow(GtkApplication* app) {
     span_check = gtk_check_button_new_with_label("Span across multiple volumes (Volume_1, Volume_2, etc.)");
     gtk_grid_attach(GTK_GRID(input_grid), span_check, 1, 3, 2, 1);
     
+    // Checkbox for trace
+    trace_check = gtk_check_button_new_with_label("Enable detailed solver diagnostic tracing (Trace)");
+    gtk_grid_attach(GTK_GRID(input_grid), trace_check, 1, 4, 2, 1);
+    
     // Progress Section
     GtkWidget* progress_frame = gtk_frame_new("Fitted Medium capacity");
     gtk_box_append(GTK_BOX(right_box), progress_frame);
@@ -332,6 +339,7 @@ void MainWindow::solver_finished() {
     gtk_widget_set_sensitive(target_entry, TRUE);
     gtk_widget_set_sensitive(move_check, TRUE);
     gtk_widget_set_sensitive(span_check, TRUE);
+    gtk_widget_set_sensitive(trace_check, TRUE);
     
     // Join background thread securely
     if (solver_thread.joinable()) {
