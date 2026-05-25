@@ -4,6 +4,8 @@
 #include <iostream>
 #include <filesystem>
 #include <cstring>
+#include <mutex>
+#include <condition_variable>
 
 namespace bttb {
 
@@ -199,7 +201,7 @@ public:
     }
 };
 
-MainWindow::MainWindow(GtkApplication* app) {
+MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
     // Create GtkWindow
     window = gtk_application_window_new(app);
     gtk_window_set_title(GTK_WINDOW(window), "Burn to the Brim");
@@ -242,12 +244,17 @@ MainWindow::MainWindow(GtkApplication* app) {
         gtk_window_set_transient_for(GTK_WINDOW(about), GTK_WINDOW(self->window));
         
         gtk_about_dialog_set_program_name(GTK_ABOUT_DIALOG(about), "Burn to the Brim");
-        gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(about), "3.1.2");
+        gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(about), "3.3.0");
         gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(about), "Copyright \u00a9 2001-2004 Sander Raaijmakers, Elwin Oost and the Burn to the Brim team");
         gtk_about_dialog_set_license_type(GTK_ABOUT_DIALOG(about), GTK_LICENSE_GPL_2_0);
         gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(about), "https://sourceforge.net/projects/bttb/");
         gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(about), 
             "Burn to the Brim (BTTB) is a modern C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums (CDs, DVDs, Blu-rays, or USBs).\n\n"
+            "Features in v3.3.0:\n"
+            "- Unicode & Long Path (>256 characters) support\n"
+            "- Hybrid GUI / CLI integrated binary execution\n"
+            "- Windows Explorer Context Menu integration\n"
+            "- Smart adaptive capacity recommendation & retrying\n\n"
             "Authors: Sander Raaijmakers, Elwin Oost and the Burn to the Brim team");
             
         // Load and set logo texture
@@ -627,6 +634,66 @@ MainWindow::MainWindow(GtkApplication* app) {
             return G_SOURCE_REMOVE;
         }, new ProgressPayload{this, disc, overall});
     };
+
+    struct GtkDialogSync {
+        std::mutex mtx;
+        std::condition_variable cv;
+        bool ready = false;
+        bool response = false;
+    };
+
+    solver.recommendCapacityNotify = [this](int64_t recommendedBytes) -> bool {
+        GtkDialogSync sync;
+        
+        struct DialogPayload {
+            MainWindow* win;
+            GtkDialogSync* sync;
+            int64_t recommendedBytes;
+        };
+
+        g_idle_add([](gpointer data) -> gboolean {
+            auto* p = static_cast<DialogPayload*>(data);
+            auto* win = p->win;
+            auto* cs = p->sync;
+            int64_t recommendedBytes = p->recommendedBytes;
+            
+            double recMB = (double)recommendedBytes / (1024.0 * 1024.0);
+            
+            GtkWidget* dialog = gtk_message_dialog_new(
+                GTK_WINDOW(win->window),
+                GTK_DIALOG_MODAL,
+                GTK_MESSAGE_WARNING,
+                GTK_BUTTONS_YES_NO,
+                "The largest scanned item requires a volume capacity of at least %.2f MB.\n\nWould you like to automatically increase the volume capacity to %.2f MB and retry packing?",
+                recMB, recMB
+            );
+            
+            gtk_window_set_title(GTK_WINDOW(dialog), "Volume Capacity Recommendation");
+            
+            g_signal_connect(dialog, "response", G_CALLBACK(+[](GtkDialog* dlg, int response_id, gpointer user_data) {
+                auto* cs_inner = static_cast<GtkDialogSync*>(user_data);
+                {
+                    std::lock_guard<std::mutex> lock(cs_inner->mtx);
+                    cs_inner->response = (response_id == GTK_RESPONSE_YES);
+                    cs_inner->ready = true;
+                }
+                cs_inner->cv.notify_one();
+                gtk_window_destroy(GTK_WINDOW(dlg));
+            }), cs);
+            
+            gtk_widget_show(dialog);
+            delete p;
+            return G_SOURCE_REMOVE;
+        }, new DialogPayload{this, &sync, recommendedBytes});
+        
+        std::unique_lock<std::mutex> lock(sync.mtx);
+        sync.cv.wait(lock, [&]() { return sync.ready; });
+        return sync.response;
+    };
+
+    if (!initialFolder.empty()) {
+        gtk_editable_set_text(GTK_EDITABLE(source_entry), initialFolder.c_str());
+    }
 }
 
 MainWindow::~MainWindow() {

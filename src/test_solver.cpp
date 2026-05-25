@@ -260,12 +260,110 @@ void run_test4() {
     std::cout << "SUCCESS: Multiple source folders scanned and symlink output engine works perfectly!" << std::endl;
 }
 
+#include "cli_engine.hpp"
+
+void run_test5() {
+    std::cout << "\n--- STARTING TEST 5: UNICODE/LONG-PATHS, UNREADABLE FILES, AND RETRY ADAPTIVE CAPACITIES (BTTB v3.3.0) ---" << std::endl;
+
+    // 1. Long path & Unicode test
+    std::string baseUnicode = "./mock_unicode_測試";
+    std::filesystem::remove_all(baseUnicode);
+    std::filesystem::create_directories(baseUnicode);
+    
+    // Create a very long directory path (>280 chars)
+    std::string longPath = baseUnicode;
+    for (int i = 0; i < 15; ++i) {
+        longPath += "/subdir_level_" + std::to_string(i) + "_長路徑";
+    }
+    std::filesystem::create_directories(longPath);
+    
+    std::string unicodeFile = longPath + "/unicode_file_文件.bin";
+    {
+        std::ofstream f(unicodeFile);
+        f << "Hello Unicode and Long Paths!";
+    }
+    
+    std::cout << "Long unicode path created: " << unicodeFile.size() << " characters." << std::endl;
+    
+    bttb::BttbSolver solver;
+    solver.sourceDirectory = baseUnicode;
+    solver.mediumInfo.capacityBytes = 1000;
+    solver.mediumInfo.sectorSize = 2048;
+    solver.mediumInfo.slackBytes = 0;
+    solver.skipUnreadable = true;
+    
+    solver.logNotify = [](const std::string& msg, int type) {
+        std::cout << "[Solver Test 5 - Scan] " << msg << std::endl;
+    };
+    
+    solver.run();
+    assert(solver.itemsToSplit.size() > 0);
+    std::cout << "Unicode & long path scanned successfully!" << std::endl;
+
+    // 2. Adaptive Capacity Recommendation test
+    std::string test_dir = "./mock_exceed_dir";
+    std::filesystem::remove_all(test_dir);
+    std::filesystem::create_directories(test_dir);
+    
+    {
+        std::ofstream f(test_dir + "/file_large.bin");
+        std::vector<char> buffer(5000, 0); // 5000 bytes
+        f.write(buffer.data(), 5000);
+    }
+    
+    bttb::BttbSolver solverExceed;
+    solverExceed.sourceDirectory = test_dir;
+    solverExceed.mediumInfo.capacityBytes = 2048; // only 2048 bytes capacity!
+    solverExceed.mediumInfo.sectorSize = 2048;
+    solverExceed.mediumInfo.slackBytes = 0;
+    
+    bool callbackTriggered = false;
+    solverExceed.recommendCapacityNotify = [&](int64_t recommendedBytes) -> bool {
+        std::cout << "[Solver Test 5 - Recommendation Callback] Recommended: " << recommendedBytes << " bytes (Expected: 6144 bytes [sector aligned])" << std::endl;
+        callbackTriggered = true;
+        assert(recommendedBytes == 6144);
+        return true; // Accept and adapt!
+    };
+    
+    solverExceed.logNotify = [](const std::string& msg, int type) {
+        std::cout << "[Solver Test 5 - Exceed] " << msg << std::endl;
+    };
+    
+    solverExceed.run();
+    assert(callbackTriggered);
+    assert(solverExceed.mediumInfo.capacityBytes == 6144);
+    std::cout << "Adaptive capacity recommendation triggered and solved successfully!" << std::endl;
+
+    // 3. CLI Mode Trigger testing
+    char* testArgv1[] = { (char*)"bttb" };
+    assert(!bttb::isCliModeTriggered(1, testArgv1));
+
+    char* testArgv2[] = { (char*)"bttb", (char*)"-gui" };
+    assert(!bttb::isCliModeTriggered(2, testArgv2));
+
+    char* testArgv3[] = { (char*)"bttb", (char*)"-c", (char*)"512MB" };
+    assert(bttb::isCliModeTriggered(3, testArgv3));
+
+    char* testArgv4[] = { (char*)"bttb", (char*)"-gui", (char*)"-c", (char*)"512MB" };
+    assert(!bttb::isCliModeTriggered(4, testArgv4));
+
+    char* testArgv5[] = { (char*)"bttb", (char*)"dir1", (char*)"dir2" };
+    assert(bttb::isCliModeTriggered(3, testArgv5));
+    
+    std::cout << "CLI Mode Trigger detector validated successfully!" << std::endl;
+
+    // Cleanup
+    std::filesystem::remove_all(baseUnicode);
+    std::filesystem::remove_all(test_dir);
+}
+
 int main() {
     std::cout << "Starting BTTB automated verification suite..." << std::endl;
     run_test1();
     run_test2();
     run_test3();
     run_test4();
+    run_test5();
     std::cout << "\nALL TESTS PASSED SUCCESSFULLY!" << std::endl;
     return 0;
 }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Burn to the Brim: Announcing Version 3.1.0</title>
+    <title>Burn to the Brim: Announcing Version 3.3.0</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
 
@@ -289,15 +289,16 @@
             border-radius: 16px;
             overflow: hidden;
             display: flex;
+            flex-direction: column;
             box-shadow: 0 10px 25px rgba(0,0,0,0.15);
         }
 
         .screenshot-card.reverse {
-            flex-direction: row-reverse;
+            flex-direction: column;
         }
 
         .screenshot-img-wrapper {
-            flex: 1.2;
+            width: 100%;
             overflow: hidden;
             position: relative;
             display: flex;
@@ -318,17 +319,17 @@
         }
 
         .screenshot-info {
-            flex: 1;
+            width: 100%;
             padding: 35px;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            border-left: 1px solid var(--border-color);
+            border-top: 1px solid var(--border-color);
         }
 
         .screenshot-card.reverse .screenshot-info {
-            border-left: none;
-            border-right: 1px solid var(--border-color);
+            border-top: 1px solid var(--border-color);
+            border-right: none;
         }
 
         .screenshot-platform {
@@ -578,17 +579,29 @@
 
     <!-- Main Content -->
     <div class="main-content">
-        
-        <!-- Hero Section -->
         <div class="hero">
-            <span class="version-badge">Version 3.1.0 Released</span>
-            <h1>Announcing BTTB v3.1.0: BD/USB & Spanning Engine</h1>
+            <span class="version-badge">Version 3.3.0 Released</span>
+            <h1>Announcing BTTB v3.3.0: Unicode Long Paths, Setup Installers, Shell Context Menus & Hybrid GUI/CLI!</h1>
             <p>
-                Burn to the Brim (BTTB) has been fully upgraded to v3.1.0! Experience iterative, optimal Multi-Volume Spanning across multiple disks or flash drives, plus native presets for Blu-ray discs and USB drives. Dual modern native graphical interfaces for both Linux and Windows compile cleanly and package without licensing dependencies.
+                Burn to the Brim (BTTB) has been upgraded to v3.3.0! This release introduces robust Unicode and long-path support (>256 chars), an optional Windows Explorer context menu integration with Single-Instance IPC folder appending, a hybrid integrated GUI/CLI binary on both Windows and Linux, adaptive capacity warning recommendation dialogs, and a native Windows Setup Installer package.
             </p>
             <div class="cta-group">
-                <a href="http://sourceforge.net/project/showfiles.php?group_id=49999" class="btn btn-primary" target="_blank">Download BTTB 3.1.0</a>
+                <a href="http://sourceforge.net/project/showfiles.php?group_id=49999" class="btn btn-primary" target="_blank">Download BTTB 3.3.0</a>
                 <a href="overview.html" class="btn btn-secondary">Learn More</a>
+            </div>
+            <div class="badges-row" style="margin-top: 25px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                <!-- Shields.io SF Downloads Badge -->
+                <a href="https://web.archive.org/web/*/https://sourceforge.net/projects/bttb/files/latest/download"><img alt="Download Burn To The Brim" src="https://img.shields.io/sourceforge/dt/bttb.svg" ></a>
+                
+                <!-- SourceForge Open Source Excellence Badge -->
+                <div class="sf-root" data-id="49999" data-badge="oss-open-source-excellence-white" data-metadata="achievement=oss-open-source-excellence" style="width:125px; display: inline-block;">
+                    <a href="https://web.archive.org/web/*/https://sourceforge.net/projects/bttb/" target="_blank">Burn To The Brim</a>
+                </div>
+                <script>(function () {var sc=document.createElement('script');sc.async=true;sc.src='https://b.sf-syn.com/badge_js?sf_id=49999';var p=document.getElementsByTagName('script')[0];p.parentNode.insertBefore(sc, p);})();</script>
+                
+                <span class="downloads-milestone" style="color: var(--text-primary); font-size: 0.9rem; font-weight: 600; font-family: 'Outfit', sans-serif;">
+                    🚀 Over 190,000+ Downloads on SourceForge!
+                </span>
             </div>
         </div>
 
@@ -668,13 +681,13 @@
             <div class="alert-card warning">
                 <h4>Notice for Legacy Users</h4>
                 <p>
-                    BTTB 3.1.0 completely replaces the old 2.9.0 Delphi version. You no longer need to worry about installing ASPI drivers on modern Windows systems!
+                    BTTB 3.3.0 completely replaces the old 2.9.0 Delphi version. You no longer need to worry about installing ASPI drivers on modern Windows systems!
                 </p>
             </div>
 
             <div class="note-text">
                 <a name="Note"></a>
-                <strong>Environmental Goal Note</strong>: BTTB is freeware, but if you enjoy the program, please consider donating whatever you think it's worth, or (perhaps even better) take some real action for an <a href="http://www.greenhousenet.org/action/action.html" target="_blank">environmental goal</a>! That would be highly appreciated.
+                <strong>Environmental Goal Note</strong>: BTTB is freeware, but if you enjoy the program, please consider donating whatever you think it's worth, or (perhaps even better) take some real action for an <a href="https://web.archive.org/web/*/http://www.greenhousenet.org/action/action.html" target="_blank">environmental goal</a>! That would be highly appreciated.
             </div>
 
         </div>
@@ -685,72 +698,72 @@
             <div class="awards-grid">
                 
                 <div class="award-card">
-                    <div class="award-badge-wrapper"><img src="http://www.heise.de/ct/icons/ct_logo.gif" alt="c't Logo"></div>
+                    <div class="award-badge-wrapper"><img src="https://web.archive.org/web/2004/http://www.heise.de/ct/icons/ct_logo.gif" alt="c't Logo"></div>
                     <div class="award-text">
-                        Featured in the renowned German <a href="http://www.heise.de/ct/shareware/default.shtml?prg=11409&T=brim&os=15&l_sw=1&l_aw=1" target="_blank">c't magazine (21/2002)</a>.
+                        Featured in the renowned German <a href="https://web.archive.org/web/*/http://www.heise.de/ct/shareware/default.shtml?prg=11409&T=brim&os=15&l_sw=1&l_aw=1" target="_blank">c't magazine (21/2002)</a>.
                     </div>
                 </div>
 
                 <div class="award-card">
                     <div class="award-badge-wrapper"><img src="si_editorspick.png" alt="Softlandmark Badge"></div>
                     <div class="award-text">
-                        <a href="http://www.softlandmark.com/CDRWSoft2.htm" target="_blank">Softlandmark</a> Editors Pick (5 Stars).
+                        <a href="https://web.archive.org/web/*/http://www.softlandmark.com/CDRWSoft2.htm" target="_blank">Softlandmark</a> Editors Pick (5 Stars).
                     </div>
                 </div>
 
                 <div class="award-card">
-                    <div class="award-badge-wrapper"><img src="http://www.wintotalserver.de/images/toptip.gif" alt="WinTotal Logo"></div>
+                    <div class="award-badge-wrapper"><img src="https://web.archive.org/web/2004/http://www.wintotalserver.de/images/toptip.gif" alt="WinTotal Logo"></div>
                     <div class="award-text">
-                        <a href="http://www.wintotal.de/softw" target="_blank">Wintotal</a> Top Tip / 6 of 6 points.
+                        <a href="https://web.archive.org/web/*/http://www.wintotal.de/softw" target="_blank">Wintotal</a> Top Tip / 6 of 6 points.
                     </div>
                 </div>
 
                 <div class="award-card">
                     <div class="award-badge-wrapper"><img src="hodnoc5.gif" alt="Slunecnice Badge"></div>
                     <div class="award-text">
-                        <a href="http://www.slunecnice.cz/product/BurntotheBrim/" target="_blank">Slunecnice</a> Editor's Tip / 5 Sunflowers (Czech).
+                        <a href="https://web.archive.org/web/*/http://www.slunecnice.cz/product/BurntotheBrim/" target="_blank">Slunecnice</a> Editor's Tip / 5 Sunflowers (Czech).
                     </div>
                 </div>
 
                 <div class="award-card">
                     <div class="award-badge-wrapper"><img src="5.gif" alt="CFS Doves"></div>
                     <div class="award-text">
-                        <a href="http://www.completelyfreesoftware.com/general_programs4_w95.html" target="_blank">CompletelyFreeSoftware</a> awarded BTTB 5 Doves.
+                        <a href="https://web.archive.org/web/*/http://www.completelyfreesoftware.com/general_programs4_w95.html" target="_blank">CompletelyFreeSoftware</a> awarded BTTB 5 Doves.
                     </div>
                 </div>
 
                 <div class="award-card">
                     <div class="award-badge-wrapper"><img src="5webattack.gif" alt="WebAttack Logo"></div>
                     <div class="award-text">
-                        <a href="http://www.webattack.com/get/burntorim.shtml" target="_blank">WebAttack</a> Editor's Pick.
+                        <a href="https://web.archive.org/web/*/http://www.webattack.com/get/burntorim.shtml" target="_blank">WebAttack</a> Editor's Pick.
                     </div>
                 </div>
 
                 <div class="award-card">
                     <div class="award-badge-wrapper"><img src="5emotsh.gif" alt="RocketDownload Badge"></div>
                     <div class="award-text">
-                        <a href="http://www.rocketdownload.com/Details/Musi/bttb.htm" target="_blank">Rocket Download</a> 5 Smileys.
+                        <a href="https://web.archive.org/web/*/http://www.rocketdownload.com/Details/Musi/bttb.htm" target="_blank">Rocket Download</a> 5 Smileys.
                     </div>
                 </div>
 
                 <div class="award-card">
                     <div class="award-badge-wrapper"><img src="softonic_essential.png" alt="Softonic Logo"></div>
                     <div class="award-text">
-                        <a href="http://www.softonic.com/informacion_extendida.phtml?n_id=14841&amp;plat=1" target="_blank">Softonic</a> ¡Excelente! / Essential in class (Spanish).
+                        <a href="https://web.archive.org/web/*/http://www.softonic.com/informacion_extendida.phtml?n_id=14841&amp;plat=1" target="_blank">Softonic</a> ¡Excelente! / Essential in class (Spanish).
                     </div>
                 </div>
 
                 <div class="award-card">
                     <div class="award-badge-wrapper"><img src="Nonags-5.gif" alt="Nonags Badge"></div>
                     <div class="award-text">
-                        <a href="http://www.nonags.com/nonags/cdr.html#Burn to the Brim" target="_blank">Nonags</a> 5 Duckies.
+                        <a href="https://web.archive.org/web/*/http://www.nonags.com/nonags/cdr.html#Burn to the Brim" target="_blank">Nonags</a> 5 Duckies.
                     </div>
                 </div>
 
                 <div class="award-card">
                     <div class="award-badge-wrapper"><img src="lockerlink.gif" alt="Lockergnome Badge"></div>
                     <div class="award-text">
-                        <a href="http://www.lockergnome.com/issues/daily/20010507.html" target="_blank">Lockergnome</a>:
+                        <a href="https://web.archive.org/web/*/http://www.lockergnome.com/issues/daily/20010507.html" target="_blank">Lockergnome</a>:
                         <cite>"... I haven't been this excited about burning things since those days on the sidewalk with the ants..."</cite>
                     </div>
                 </div>
@@ -758,14 +771,14 @@
                 <div class="award-card">
                     <div class="award-badge-wrapper"><img src="digifreq.png" alt="DigiFreq Logo"></div>
                     <div class="award-text">
-                        <a href="http://www.digifreq.com/digifreq/" target="_blank">DigiFreq</a>: Featured program <cite>"...Best of the best..."</cite>
+                        <a href="https://web.archive.org/web/*/http://www.digifreq.com/digifreq/" target="_blank">DigiFreq</a>: Featured program <cite>"...Best of the best..."</cite>
                     </div>
                 </div>
 
                 <div class="award-card">
                     <div class="award-badge-wrapper"><img src="tucowsbutton.gif" alt="Tucows Logo"></div>
                     <div class="award-text">
-                        <a href="http://www.tucows.com/preview/176884.html" target="_blank">Tucows</a>: <cite>"... A must-have if you spend a lot of time moving files around ..."</cite>
+                        <a href="https://web.archive.org/web/*/http://www.tucows.com/preview/176884.html" target="_blank">Tucows</a>: <cite>"... A must-have if you spend a lot of time moving files around ..."</cite>
                     </div>
                 </div>
 
@@ -779,7 +792,7 @@
         <!-- Footer -->
         <footer>
             <span>&copy; BTTB Team. All rights reserved.</span>
-            <span>Redesigned for version 3.1.0</span>
+            <span>Redesigned for version 3.3.0</span>
         </footer>
 
     </div>

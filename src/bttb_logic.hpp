@@ -47,6 +47,7 @@ struct PackedVolume {
 // Callback types for thread-safe UI notifications
 using LogCallback = std::function<void(const std::string&, int msgType)>;
 using ProgressCallback = std::function<void(double currentMediumProgress, double overallProgress)>;
+using RecommendCapacityCallback = std::function<bool(int64_t recommendedCapacityBytes)>;
 
 class BttbSolver {
 public:
@@ -61,6 +62,7 @@ public:
     bool moveFiles = false;
     bool createSymlinks = true;
     bool skipEmpty = true;
+    bool skipUnreadable = true;
     bool spanMultipleVolumes = false;
     int maxSearchTimeSeconds = 10;
     int splitDepth = 0; // 0 = split folders at root level, 1 = one level down, etc.
@@ -80,6 +82,7 @@ public:
     // Callback notifications
     LogCallback logNotify;
     ProgressCallback progressNotify;
+    RecommendCapacityCallback recommendCapacityNotify;
 
     // Public API
     void run();
@@ -110,5 +113,12 @@ int64_t parseHumanSize(const std::string& input);
 
 // Ignore folders nested in other folders
 std::vector<std::string> filterNestedDirectories(const std::vector<std::string>& dirs);
+
+// Unicode & Long Path utility conversions
+std::string wstringToUtf8(const std::wstring& wstr);
+std::wstring utf8ToWstring(const std::string& str);
+std::filesystem::path utf8Path(const std::string& utf8Str);
+std::string toUtf8Str(const std::filesystem::path& p);
+std::filesystem::path makeLongPath(const std::filesystem::path& p);
 
 } // namespace bttb

@@ -321,22 +321,54 @@
 
         <!-- Spanning & Modern Media Block -->
         <div class="content-card">
-            <h2>Multi-Volume Spanning & Modern High-Capacity Media</h2>
+            <h2>Unicode Long Paths, Explorer Shell Menus, Hybrid GUI/CLI & Multi-Volume Spanning</h2>
             <p>
-                **Burn to the Brim 3.1.0** introduces cutting-edge capabilities that expand BTTB beyond single optical discs:
+                **Burn to the Brim 3.3.0** introduces robust integration, advanced platform support, and cutting-edge shell mechanics:
             </p>
             <ul class="feature-bullets">
                 <li class="feature-bullet-item">
                     <span class="bullet-icon">&rarr;</span>
-                    <div><strong>Multi-Volume Spanning Engine:</strong> When packing large file structures that exceed the capacity of a single disc or flash drive, BTTB can automatically slice your data tree into successive volumes (e.g. <code>Volume_1</code>, <code>Volume_2</code>, etc.). The backtracking solver runs iteratively on the remaining unselected files, ensuring every single volume is filled to maximum efficiency until all items are packed.</div>
+                    <div><strong>Unicode & Long Path Support (>256 chars):</strong> BTTB is now fully compatible with international characters and paths of arbitrary length (supporting standard Windows UNC <code>\\?\</code> absolute path prefixes up to 32,767 characters). Scans unreadable files gracefully with skip/abort prompt choices.</div>
                 </li>
                 <li class="feature-bullet-item">
                     <span class="bullet-icon">&rarr;</span>
-                    <div><strong>Blu-ray Presets:</strong> Native support for high-capacity Blu-ray (BD 25 GB) and Blu-ray Double Layer (BD DL 50 GB) optical media, utilizing standard 2048-byte sector dimensions.</div>
+                    <div><strong>Explorer Context Menu & IPC Appending:</strong> Right-click folders in Windows Explorer and select "Add to Burn to the Brim". The single-instance IPC architecture uses <code>WM_COPYDATA</code> to append folders directly to your running BTTB session and brings it into focus.</div>
                 </li>
                 <li class="feature-bullet-item">
                     <span class="bullet-icon">&rarr;</span>
-                    <div><strong>USB Flash Drive Presets:</strong> Predefined storage presets for USB keys of 8 GB, 16 GB, 32 GB, and 64 GB. To match modern flash drive filesystems (such as FAT32, exFAT, or NTFS), sector calculations are configured automatically to 4096-byte clusters.</div>
+                    <div><strong>Integrated Hybrid GUI/CLI:</strong> Run BTTB directly from terminals or scripts! If arguments are provided, it runs in pure command-line console mode (including standard <code>-h</code> help guides). If no arguments are passed (or with <code>-gui</code>), it opens the responsive GTK 4 / Win32 GUI.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&rarr;</span>
+                    <div><strong>Smart Adaptive Capacity Warnings:</strong> Scanned files that exceed media capacity trigger clean prompts (CLI inputs or modal popups) that recommend the minimum required volume size, allowing you to automatically adjust and retry packing.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&rarr;</span>
+                    <div><strong>Windows Setup Installer Package:</strong> We now provide a native setup installer executable compiled via NSIS, offering desktop and Start Menu shortcuts and a clean uninstallation utility.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&rarr;</span>
+                    <div><strong>Multi-Volume Spanning Engine:</strong> Slices large file structures that exceed the capacity of a single disc or flash drive, automatically organizing them into successive volume folders (e.g. <code>Volume_1</code>, <code>Volume_2</code>, etc.) at maximum packing efficiency.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&rarr;</span>
+                    <div><strong>Multiple Source Directories Setup (+):</strong> Aggregates files across multiple distinct base folders into a single virtual root layout. Nested duplicate folders are automatically filtered and ignored.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&rarr;</span>
+                    <div><strong>Lightweight Symbolic Link Outputs:</strong> Instantly create symbolic links pointing back to original files in target folders instead of copy/move operations. Handles Windows native unprivileged symlinks, cmd shell mklink, and robust copy fallback.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&rarr;</span>
+                    <div><strong>Win32 Results TreeView Explorer:</strong> Hierarchical left-side results TreeView control natively displayed in the Windows GUI to easily explore fitted volumes and remaining items.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&rarr;</span>
+                    <div><strong>Blu-ray & USB Presets:</strong> Native support for BD and high-capacity USB keys (up to <code>512 GB</code> presets with <code>64 GB</code> custom default) using 4096-byte clusters to align with modern file systems.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&rarr;</span>
+                    <div><strong>Dynamic Suffix MB Capacity Label:</strong> Supports fractional capacity inputs (e.g. 2.5GB, 512MB) and displays real-time MB sizes dynamically inside settings dialogues.</div>
                 </li>
             </ul>
         </div>

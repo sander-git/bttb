@@ -322,6 +322,93 @@
 
         <div class="news-container">
             
+            <!-- News Item 3.3.0 -->
+            <div class="news-card">
+                <div class="news-date">May 25, 2026</div>
+                <h2>Version 3.3.0 Released: Unicode Long Paths, Setup Installers, Explorer Context Menus & Hybrid GUI/CLI</h2>
+                <p>
+                    Today we are excited to release **Burn to the Brim 3.3.0**, bringing extreme robust operating system and shell integration features to both Linux and Windows platforms!
+                </p>
+                <p>
+                    <strong>Unicode & Long Path Support:</strong> Filenames and paths exceeding 256 characters (up to 32,767 on Windows using standard UNC <code>\\?\</code> prefix extensions) are now fully supported. Additionally, the scanner gracefully handles unreadable system files, presenting clear options to skip or abort processing.
+                </p>
+                <p>
+                    <strong>Windows Setup Installer:</strong> In addition to our standalone ZIP package, we now distribute a native Windows Setup Installer package compiled using Nullsoft Scriptable Install System (NSIS), offering desktop and Start Menu shortcuts and a clean uninstallation utility.
+                </p>
+                <p>
+                    <strong>Explorer Context Menu & Single-Instance IPC:</strong> On Windows, you can optionally integrate BTTB in the file explorer's right-click context menu. Subsequent file additions are piped thread-safely via single-instance <code>WM_COPYDATA</code> IPC messaging directly into the running BTTB window class, appending new source directories.
+                </p>
+                <p>
+                    <strong>Hybrid GUI/CLI Binary:</strong> BTTB is now a hybrid binary! If run from a terminal shell with arguments (e.g. <code>-h</code>, <code>-v</code>, <code>-cli</code>, or folders), BTTB runs in pure command-line console mode, attaching directly to the parent cmd/bash shell. If run without arguments, or forced with <code>-gui</code>, BTTB loads the GUI!
+                </p>
+                <p>
+                    <strong>Smart Adaptive Capacity Warning:</strong> When a file size exceeds the target volume size during scanning, BTTB prompts the user (CLI console prompt or graphical message dialog) to automatically adapt the volume size based on the largest file and retries solving in a seamless, optimized loop.
+                </p>
+            </div>
+
+            <!-- News Item 3.2.0 -->
+            <div class="news-card">
+                <div class="news-date">May 25, 2026</div>
+                <h2>Version 3.2.0 Released: Multiple Directories, Symbolic Links & Win32 TreeView Explorer</h2>
+                <p>
+                    Today we are thrilled to announce the release of **Burn to the Brim 3.2.0**! This major minor upgrade introduces highly requested operational features: scanning multiple directories simultaneously, generating lightweight symbolic links, a native results TreeView on Windows, and real-time human size preset alignments!
+                </p>
+                <p>
+                    <strong>Multiple Source Folders:</strong> BTTB is no longer limited to a single source directory! Click the new "+" button next to the source selection to open a dedicated listbox manager. You can add, edit, or remove multiple source base directories. BTTB aggregates files across all roots into a virtual folder layout, intelligently filtering and ignoring any nested subdirectory overlapping to prevent duplicates.
+                </p>
+                <p>
+                    <strong>Lightweight Symbolic Link Outputs:</strong> Next to "Move fitted folders/files", a new "Create symbolic links" checkbox is checked by default. Instead of duplicating space-consuming files, BTTB creates instant symbolic links in the destination folder pointing back to original files. This supports Windows native `CreateSymbolicLinkA` API, falling back to `mklink` shell commands, and then to a safe copying operation if both fail.
+                </p>
+                <p>
+                    <strong>Standard Win32 TreeView Results:</strong> The Windows Win32 native standalone GUI now has a hierarchical left-side results explorer, matching the Linux GTK 4 tree sidebar. Review solved volumes, categories, and unfitted remaining items in an elegant native control.
+                </p>
+                <p>
+                    <strong>Dynamic Size Suffixed Capacities:</strong> You can now specify capacities in human-readable fractions (e.g. `2.5GB`, `512MB`, `1.5TB`) directly in the entry field. BTTB computes the exact size in MB in real-time in parentheses under the field as you type. Added `256 GB` and `512 GB` presets with `4096`-byte alignment, and updated default custom size to `64 GB`.
+                </p>
+                <p>
+                    <strong>Built-in Help System:</strong> Click the new "Help" button to show a comprehensive guide detailing split depth, max search time limits, spanning slack, grouping rules, and symbolic links.
+                </p>
+            </div>
+
+            <!-- News Item 3.1.2 -->
+            <div class="news-card">
+                <div class="news-date">May 25, 2026</div>
+                <h2>Version 3.1.2 Released: Slack Optimizations & Unified Windows GUI Features</h2>
+                <p>
+                    Today we are pleased to release **Burn to the Brim 3.1.2**, a high-performance minor update that resolves combinatorial search issues, adds an early-slack pruning optimization, and unifies the settings dialogue across Linux and Windows!
+                </p>
+                <p>
+                    <strong>High-Slack Solver Pruning:</strong> Solved the search explosion issue under large-slack datasets (such as a 650MB volume size with 650MB - 2048B slack). The backtracking solver now employs immediate early termination when a candidate subset is within the permitted slack limit, terminating complex searches in milliseconds instead of hanging.
+                </p>
+                <p>
+                    <strong>Unified Preferences on Windows Win32 GUI:</strong> The Windows Win32 native GUI now features the complete Preferences dialog matching the Linux GTK 4 version! Configure Max Search Time limits and manage standard wildcard or regular expression <strong>file/folder grouping rules</strong> natively using an elegant standard ListView control.
+                </p>
+                <p>
+                    <strong>Visual Thinking Progress:</strong> Added a dedicated "Trace" checkbox in both the Linux and Windows GUIs. When enabled, the real-time backtracking choice sequence is shown directly in the progress logging panel, so users can watch the solver's thinking and pruning in progress.
+                </p>
+            </div>
+
+            <!-- News Item 3.1.1 -->
+            <div class="news-card">
+                <div class="news-date">May 24, 2026</div>
+                <h2>Version 3.1.1 Released: Advanced Solver Tracing & Performance Metrics</h2>
+                <p>
+                    Today we are pleased to release **Burn to the Brim 3.1.1**, a minor feature update that adds robust analytical tools and tracing features to the modern C++20 backtracking engine on both Windows and Linux!
+                </p>
+                <p>
+                    <strong>Advanced Solver Tracing:</strong> Power users can now enable detailed real-time tracing of the recursive backtracking branch-and-bound search. BTTB prints explored search state counts and branch-pruning milestones, helping you observe exactly how the knapsack solver mathematically decides the optimal packing selections.
+                </p>
+                <p>
+                    <strong>Capacity & Volume Estimation:</strong> Prior to executing the backtracking loop, BTTB now estimates the theoretical minimum number of media volumes required based on your dataset size, sector counts, and cluster size alignments.
+                </p>
+                <p>
+                    <strong>Search Efficiency Summaries:</strong> At the conclusion of each run, BTTB logs detailed performance metrics: total states explored, branches pruned, elapsed search time, and mathematical pruning efficiency percentages.
+                </p>
+                <p>
+                    <strong>Spanning Automated Test Suite:</strong> The offline test suite has been fully upgraded to verify Multi-Volume Spanning recursively on custom dummy datasets using standard 60MB limits, copying and validating target directory results.
+                </p>
+            </div>
+
             <!-- News Item 3.1.0 -->
             <div class="news-card">
                 <div class="news-date">May 24, 2026</div>

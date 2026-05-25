@@ -325,6 +325,138 @@
 
         <div class="timeline">
             
+            <!-- v3.3.0 -->
+            <div class="timeline-card major">
+                <div class="version-title">
+                    <span>v3.3.0 &mdash; Unicode Long Paths, Setup Installers, Shell Context Menus & Hybrid GUI/CLI</span>
+                    <span class="version-date">May 25, 2026</span>
+                </div>
+                <ul class="changes-list">
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Unicode & Long Path Support (>256 chars):</strong> Extended BTTB to support filenames and paths of arbitrary length (using absolute normalization and <code>\\?\</code> prefixes on Windows) with full wide Unicode parsing.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type star">*</span>
+                        <div><strong>Graceful System File Scans:</strong> Added clean exception handling and user prompts to skip unreadable files or abort processing during the directory traversal.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Native Setup Installer (Windows):</strong> Designed and compiled a clean `.exe` setup installer using NSIS to package the application with desktop/Start Menu shortcuts and complete uninstall options.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Explorer Context Menu & IPC Appending:</strong> Allowed optional context menu integration under Windows. Active single-instance IPC appends subsequent folders to the main window list box and focuses the application.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Integrated Hybrid GUI/CLI:</strong> Unified the GUI and CLI binaries on both platforms. Command line flags trigger high-performance attached console modes, whereas launching without arguments (or with <code>-gui</code>) loads the UI.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Smart Adaptive Capacity Warning:</strong> Prompts the user via CLI or visual dialogs to automatically increase target capacity to fit abnormally large scanned files and retries packing seamlessly.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type star">*</span>
+                        <div><strong>About Screen & Metadata:</strong> Updated internal metadata resources and the visual About Box for both platforms to version 3.3.0.</div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- v3.2.0 -->
+            <div class="timeline-card major">
+                <div class="version-title">
+                    <span>v3.2.0 &mdash; Multiple Directories, Symbolic Links & Win32 TreeView Explorer</span>
+                    <span class="version-date">May 25, 2026</span>
+                </div>
+                <ul class="changes-list">
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Multiple Source Directories Setup (+):</strong> Added support to select and scan multiple source base folders. Nested folders are automatically filtered and ignored, allowing BTTB to act as if they are located under a single virtual root folder.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Lightweight Symbolic Link Outputs:</strong> Introduced a new option to create lightweight symbolic links in the destination folder instead of copying or moving original files. Supports Windows native CreateSymbolicLink API, mklink shell commands, and robust copy fallback on failure.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Standard TreeView Results Explorer:</strong> Ported the left-side hierarchical tree view explorer to the Windows native Win32 SDK build, displaying solved volumes and unfitted remaining items in a beautiful standard control.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type star">*</span>
+                        <div><strong>Dynamic Size Suffixed Capacity Input:</strong> Enhanced the custom size entry field to support fractional suffixes (e.g. 512MB, 2.5GB, 1.5TB) and displays the calculated size in real-time in MB. Added 256GB and 512GB presets.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Built-in Help System:</strong> Added a native Help button displaying a beautifully detailed guide to help users understand search times, split depth, slack tolerances, and symbolic links.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div>Packaged binary releases (`build/bttb-cpp-3.2.0-Linux-GTK4.zip`, `build/bttb-cpp-3.2.0-Win64-Native-GUI.zip`) and unified source release (`build/bttb-cpp-3.2.0-source-unified.zip`).</div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- v3.1.2 -->
+            <div class="timeline-card major">
+                <div class="version-title">
+                    <span>v3.1.2 &mdash; Slack Optimizations & Unified Windows GUI Features</span>
+                    <span class="version-date">May 25, 2026</span>
+                </div>
+                <ul class="changes-list">
+                    <li class="change-item">
+                        <span class="change-type star">*</span>
+                        <div><strong>Slack-Capacity Early Termination:</strong> Integrated a highly optimized early-exit condition that completes searches on high-slack datasets instantly (solving combinatorial complexity issues where searching takes more than 10 seconds).</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Unified Preferences on Windows:</strong> Completely ported all settings screens from the Linux GTK 4 version to the Windows native Win32 SDK build, including Max Search Time and standard wildcard/regex file/folder Grouping Rules list, match modes, and Add/Delete rules controls.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Visual Thinking Progress in GUI:</strong> Added a trace checkbox in both GUIs, enabling real-time step progress visual trace so users can see the backtracking solver's decisions and branch-prunings as they happen.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type star">*</span>
+                        <div><strong>Thread-Safety State Reset:</strong> Fixed a state corruption issue where aborted spanning solver runs left residual selected flags on files by resetting selection states at the start of each volume iteration.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div>Packaged binary releases (`build/bttb-cpp-3.1.2-Linux.tar.gz`, `build/bttb-cpp-3.1.2-Linux-GTK4.zip`, `build/bttb-cpp-3.1.2-Win64-Native-GUI.zip`) and unified source release (`build/bttb-cpp-3.1.2-source-unified.zip`).</div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- v3.1.1 -->
+            <div class="timeline-card major">
+                <div class="version-title">
+                    <span>v3.1.1 &mdash; Analytical Solver Tracing & Performance Metrics</span>
+                    <span class="version-date">May 24, 2026</span>
+                </div>
+                <ul class="changes-list">
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div>Added `enableTrace` option to the recursive knapsack backtracking algorithm, rendering real-time pruning and exploration step milestones.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div>Implemented theoretical pre-solving capacity volume estimations, indicating required volumes prior to solving.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type star">*</span>
+                        <div>Added detailed performance summaries upon solver completion: total states explored, branches pruned, and mathematical search pruning efficiency.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type star">*</span>
+                        <div>Upgraded automated verification suite to execute comprehensive, recursively-split Multi-Volume Spanning tests on 60MB file systems.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div>Packaged binary releases (`build/bttb-cpp-3.1.1-Linux.tar.gz`, `build/bttb-cpp-3.1.1-Linux-GTK4.zip`, `build/bttb-cpp-3.1.1-Win64-Native-GUI.zip`) and unified source release (`build/bttb-cpp-3.1.1-source-unified.zip`).</div>
+                    </li>
+                </ul>
+            </div>
+
             <!-- v3.1.0 -->
             <div class="timeline-card major">
                 <div class="version-title">

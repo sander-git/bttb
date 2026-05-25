@@ -11,6 +11,66 @@
 
 namespace bttb {
 
+#ifdef _WIN32
+std::string wstringToUtf8(const std::wstring& wstr) {
+    if (wstr.empty()) return "";
+    int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
+    std::string strTo(size_needed, 0);
+    WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0], size_needed, NULL, NULL);
+    return strTo;
+}
+std::wstring utf8ToWstring(const std::string& str) {
+    if (str.empty()) return L"";
+    int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);
+    std::wstring wstrTo(size_needed, 0);
+    MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], size_needed);
+    return wstrTo;
+}
+std::filesystem::path utf8Path(const std::string& utf8Str) {
+    return std::filesystem::path(utf8ToWstring(utf8Str));
+}
+std::string toUtf8Str(const std::filesystem::path& p) {
+    return wstringToUtf8(p.wstring());
+}
+std::filesystem::path makeLongPath(const std::filesystem::path& p) {
+    try {
+        std::wstring absPath = std::filesystem::absolute(p).wstring();
+        if (absPath.rfind(L"\\\\?\\", 0) != 0) {
+            if (absPath.rfind(L"\\\\", 0) == 0) {
+                absPath = L"\\\\?\\UNC\\" + absPath.substr(2);
+            } else {
+                absPath = L"\\\\?\\" + absPath;
+            }
+        }
+        return std::filesystem::path(absPath);
+    } catch (...) {
+        return p;
+    }
+}
+#else
+std::string wstringToUtf8(const std::wstring& wstr) {
+    std::string str(wstr.begin(), wstr.end());
+    return str;
+}
+std::wstring utf8ToWstring(const std::string& str) {
+    std::wstring wstr(str.begin(), str.end());
+    return wstr;
+}
+std::filesystem::path utf8Path(const std::string& utf8Str) {
+    return std::filesystem::path(utf8Str);
+}
+std::string toUtf8Str(const std::filesystem::path& p) {
+    return p.string();
+}
+std::filesystem::path makeLongPath(const std::filesystem::path& p) {
+    try {
+        return std::filesystem::absolute(p);
+    } catch (...) {
+        return p;
+    }
+}
+#endif
+
 // Convert standard wildcards/globs to C++ regex patterns
 std::regex globToRegex(const std::string& glob) {
     std::string regexStr = "^";
@@ -101,9 +161,9 @@ std::vector<std::string> filterNestedDirectories(const std::vector<std::string>&
     for (const auto& d : dirs) {
         if (d.empty()) continue;
         try {
-            normPaths.push_back(std::filesystem::absolute(d).lexically_normal());
+            normPaths.push_back(makeLongPath(utf8Path(d)).lexically_normal());
         } catch (...) {
-            normPaths.push_back(std::filesystem::path(d).lexically_normal());
+            normPaths.push_back(utf8Path(d).lexically_normal());
         }
     }
     
@@ -136,12 +196,12 @@ std::vector<std::string> filterNestedDirectories(const std::vector<std::string>&
             bool alreadyIn = false;
             for (const auto& f : filtered) {
                 try {
-                    if (std::filesystem::absolute(f).lexically_normal() == normPaths[i]) {
+                    if (makeLongPath(utf8Path(f)).lexically_normal() == normPaths[i]) {
                         alreadyIn = true;
                         break;
                     }
                 } catch (...) {
-                    if (std::filesystem::path(f).lexically_normal() == normPaths[i]) {
+                    if (utf8Path(f).lexically_normal() == normPaths[i]) {
                         alreadyIn = true;
                         break;
                     }
@@ -158,27 +218,32 @@ std::vector<std::string> filterNestedDirectories(const std::vector<std::string>&
 // Cross-platform symbolic link creation helper with unprivileged flag and fallback
 bool createPlatformSymlink(const std::string& target, const std::string& link, bool isDir) {
 #ifdef _WIN32
+    std::wstring wtarget = utf8ToWstring(target);
+    std::wstring wlink = utf8ToWstring(link);
+    std::wstring wtargetLong = makeLongPath(std::filesystem::path(wtarget)).wstring();
+    std::wstring wlinkLong = makeLongPath(std::filesystem::path(wlink)).wstring();
+
     HMODULE hKernel32 = GetModuleHandleA("kernel32.dll");
     if (hKernel32) {
-        typedef BOOLEAN (WINAPI *CreateSymbolicLinkA_t)(LPCSTR, LPCSTR, DWORD);
-        CreateSymbolicLinkA_t pCreateSymbolicLinkA = (CreateSymbolicLinkA_t)GetProcAddress(hKernel32, "CreateSymbolicLinkA");
-        if (pCreateSymbolicLinkA) {
+        typedef BOOLEAN (WINAPI *CreateSymbolicLinkW_t)(LPCWSTR, LPCWSTR, DWORD);
+        CreateSymbolicLinkW_t pCreateSymbolicLinkW = (CreateSymbolicLinkW_t)GetProcAddress(hKernel32, "CreateSymbolicLinkW");
+        if (pCreateSymbolicLinkW) {
             DWORD flags = 0x2; // SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE
-            if (isDir) flags |= 0x1; // SYMBOLIC_LINK_FLAG_DIRECTORY
-            if (pCreateSymbolicLinkA(link.c_str(), target.c_str(), flags)) {
+            if (isDir) flags |= 0x1;
+            if (pCreateSymbolicLinkW(wlinkLong.c_str(), wtargetLong.c_str(), flags)) {
                 return true;
             }
         }
     }
     // Fallback to mklink
-    std::string cmd = "cmd.exe /c mklink ";
-    if (isDir) cmd += "/d ";
-    cmd += "\"" + link + "\" \"" + target + "\"";
-    return (std::system(cmd.c_str()) == 0);
+    std::wstring wcmd = L"cmd.exe /c mklink ";
+    if (isDir) wcmd += L"/d ";
+    wcmd += L"\"" + wlinkLong + L"\" \"" + wtargetLong + L"\"";
+    return (_wsystem(wcmd.c_str()) == 0);
 #else
     try {
-        std::filesystem::path targetPath(target);
-        std::filesystem::path linkPath(link);
+        std::filesystem::path targetPath = makeLongPath(utf8Path(target));
+        std::filesystem::path linkPath = makeLongPath(utf8Path(link));
         if (isDir) {
             std::filesystem::create_directory_symlink(targetPath, linkPath);
         } else {
@@ -197,6 +262,8 @@ BttbSolver::BttbSolver() {
         std::cout << msg << std::endl;
     };
     progressNotify = [](double, double) {};
+    recommendCapacityNotify = nullptr;
+    skipUnreadable = true;
 }
 
 void BttbSolver::addEntry(const std::string& relPath, const std::string& absPath, int64_t size, bool isDir) {
@@ -266,28 +333,48 @@ void BttbSolver::addEntry(const std::string& relPath, const std::string& absPath
 
 int64_t BttbSolver::diveDepth(const std::filesystem::path& baseDir, const std::filesystem::path& currentSubpath, int depth) {
     int64_t totalSize = 0;
-    std::filesystem::path fullPath = baseDir / currentSubpath;
+    std::filesystem::path fullPath = makeLongPath(baseDir / currentSubpath);
+    std::filesystem::path baseDirLong = makeLongPath(baseDir);
     
-    if (!std::filesystem::exists(fullPath)) return 0;
+    try {
+        if (!std::filesystem::exists(fullPath)) return 0;
+    } catch (const std::exception& e) {
+        logNotify("Warning: Directory '" + toUtf8Str(fullPath) + "' is unreadable (" + e.what() + ").", 2);
+        if (!skipUnreadable) {
+            stopRequested = true;
+            logNotify("Scanning aborted by user due to unreadable directory.", 2);
+        }
+        return 0;
+    }
     
     std::vector<std::filesystem::path> subdirs;
     
     try {
-        for (const auto& entry : std::filesystem::directory_iterator(fullPath)) {
+        for (auto it = std::filesystem::directory_iterator(fullPath); it != std::filesystem::directory_iterator(); ++it) {
             if (stopRequested) return 0;
             
-            std::filesystem::path rel = std::filesystem::relative(entry.path(), baseDir);
-            
-            if (entry.is_directory()) {
-                subdirs.push_back(rel);
-            } else if (entry.is_regular_file()) {
-                int64_t fileSize = entry.file_size();
-                if (depth < 0) {
-                    // Accumulate size recursively below waterlevel
-                    totalSize += fileSize;
-                } else {
-                    // Above or at split depth, add files directly
-                    addEntry(rel.string(), entry.path().string(), fileSize, false);
+            try {
+                const auto& entry = *it;
+                std::filesystem::path rel = std::filesystem::relative(entry.path(), baseDirLong);
+                
+                if (std::filesystem::is_directory(entry.path())) {
+                    subdirs.push_back(rel);
+                } else if (std::filesystem::is_regular_file(entry.path())) {
+                    int64_t fileSize = std::filesystem::file_size(entry.path());
+                    if (depth < 0) {
+                        // Accumulate size recursively below waterlevel
+                        totalSize += fileSize;
+                    } else {
+                        // Above or at split depth, add files directly
+                        addEntry(toUtf8Str(rel), toUtf8Str(entry.path()), fileSize, false);
+                    }
+                }
+            } catch (const std::exception& e) {
+                logNotify("Warning: File or folder in '" + toUtf8Str(fullPath) + "' is unreadable (" + e.what() + ").", 2);
+                if (!skipUnreadable) {
+                    stopRequested = true;
+                    logNotify("Scanning aborted by user due to unreadable item.", 2);
+                    return 0;
                 }
             }
         }
@@ -299,15 +386,19 @@ int64_t BttbSolver::diveDepth(const std::filesystem::path& baseDir, const std::f
             if (depth == 0) {
                 // Split depth boundary reached: this subdirectory is treated as an atomic item.
                 // Call recursively with depth - 1 to sum all files within it.
-                int64_t dirTotal = diveDepth(baseDir, subdir, depth - 1);
-                addEntry(subdir.string(), (baseDir / subdir).string(), dirTotal, true);
+                int64_t dirTotal = diveDepth(baseDirLong, subdir, depth - 1);
+                addEntry(toUtf8Str(subdir), toUtf8Str(baseDirLong / subdir), dirTotal, true);
             } else {
                 // Continue recursing downwards
-                totalSize += diveDepth(baseDir, subdir, depth - 1);
+                totalSize += diveDepth(baseDirLong, subdir, depth - 1);
             }
         }
     } catch (const std::exception& e) {
-        logNotify("Error scanning directory " + currentSubpath.string() + ": " + e.what(), 2);
+        logNotify("Warning: Failed to iterate directory '" + toUtf8Str(fullPath) + "' (" + e.what() + ").", 2);
+        if (!skipUnreadable) {
+            stopRequested = true;
+            logNotify("Scanning aborted by user due to unreadable directory iteration.", 2);
+        }
     }
     
     return totalSize;
@@ -325,7 +416,7 @@ void BttbSolver::scanDirectory() {
     
     for (const auto& baseDir : activeDirs) {
         logNotify("Scanning folder: " + baseDir, 0);
-        diveDepth(baseDir, "", splitDepth);
+        diveDepth(utf8Path(baseDir), "", splitDepth);
     }
     logNotify("Found items to fit: " + std::to_string(itemsToSplit.size()), 0);
 }
@@ -437,11 +528,45 @@ void BttbSolver::run() {
     searchTimedOut = false;
     packedVolumes.clear();
     
-    scanDirectory();
-    if (itemsToSplit.empty()) {
-        logNotify("No items to fit.", 2);
-        return;
+    while (!stopRequested) {
+        scanDirectory();
+        if (itemsToSplit.empty()) {
+            logNotify("No items to fit.", 2);
+            return;
+        }
+        
+        // Find maximum file size encountered
+        int64_t maxItemSize = 0;
+        std::string maxItemName = "";
+        for (const auto& item : itemsToSplit) {
+            if (item->sizeBytes > maxItemSize) {
+                maxItemSize = item->sizeBytes;
+                maxItemName = item->relativePath;
+            }
+        }
+        
+        // Check if the maximum file size exceeds the medium capacity
+        if (maxItemSize > mediumInfo.capacityBytes) {
+            logNotify("Warning: Item '" + maxItemName + "' (" + std::to_string(maxItemSize) + " bytes) is larger than target volume size (" + std::to_string(mediumInfo.capacityBytes) + " bytes).", 2);
+            if (recommendCapacityNotify) {
+                int64_t recommendedBytes = ((maxItemSize + mediumInfo.sectorSize - 1) / mediumInfo.sectorSize) * mediumInfo.sectorSize;
+                if (recommendCapacityNotify(recommendedBytes)) {
+                    mediumInfo.capacityBytes = recommendedBytes;
+                    logNotify("Capacity adapted to " + std::to_string(recommendedBytes) + " bytes. Retrying solver...", 1);
+                    continue;
+                } else {
+                    logNotify("Solver aborted: dataset contains files exceeding capacity.", 2);
+                    return;
+                }
+            } else {
+                logNotify("Solver aborted: dataset contains files exceeding capacity. Adapt capacity or enable interactive retrying.", 2);
+                return;
+            }
+        }
+        break;
     }
+    
+    if (stopRequested) return;
     
     // Convert capacities to sectors
     maxSectors = mediumInfo.capacityBytes / mediumInfo.sectorSize;
@@ -539,9 +664,9 @@ void BttbSolver::run() {
         
         // Perform copy/move/symlink if target directory specified
         if (!targetDirectory.empty()) {
-            std::filesystem::path volDestDir = targetDirectory;
+            std::filesystem::path volDestDir = makeLongPath(utf8Path(targetDirectory));
             if (spanMultipleVolumes) {
-                volDestDir = std::filesystem::path(targetDirectory) / ("Volume_" + std::to_string(volumeIndex));
+                volDestDir = makeLongPath(std::filesystem::path(utf8Path(targetDirectory)) / ("Volume_" + std::to_string(volumeIndex)));
             }
             
             if (moveFiles || createSymlinks) {
@@ -564,8 +689,8 @@ void BttbSolver::run() {
                         const auto& relItem = relPaths[i];
                         const auto& absItem = absPaths[i];
                         
-                        std::filesystem::path src = std::filesystem::absolute(absItem);
-                        std::filesystem::path dest = volDestDir / relItem;
+                        std::filesystem::path src = makeLongPath(utf8Path(absItem));
+                        std::filesystem::path dest = makeLongPath(volDestDir / utf8Path(relItem));
                         
                         try {
                             std::filesystem::create_directories(dest.parent_path());
@@ -575,7 +700,7 @@ void BttbSolver::run() {
                                     if (std::filesystem::exists(dest)) {
                                         std::filesystem::remove_all(dest);
                                     }
-                                    if (!createPlatformSymlink(src.string(), dest.string(), isDir)) {
+                                    if (!createPlatformSymlink(toUtf8Str(src), toUtf8Str(dest), isDir)) {
                                         logNotify("Failed to create symlink for " + relItem + " (retrying with copy)", 2);
                                         if (isDir) {
                                             std::filesystem::copy(src, dest, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);

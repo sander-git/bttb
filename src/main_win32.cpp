@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <iostream>
 #include "bttb_logic.hpp"
+#include "cli_engine.hpp"
 
 #pragma comment(lib, "comctl32.lib")
 #pragma comment(lib, "shell32.lib")
@@ -59,6 +60,8 @@
 #define ID_PREF_BTN_OK          3015
 #define ID_PREF_BTN_CANCEL      3016
 #define ID_PREF_LABEL_CAP_MB    3017
+#define ID_PREF_CHK_CONTEXT_MENU 3018
+#define ID_PREF_CHK_UNREADABLE  3019
 
 #define ID_BTN_ADD_FOLDERS      1013
 #define ID_TREE_RESULTS         1014
@@ -102,6 +105,8 @@ HWND g_editPrefSlack = NULL;
 HWND g_editPrefTime = NULL;
 HWND g_editPrefDepth = NULL;
 HWND g_chkPrefEmpty = NULL;
+HWND g_chkPrefUnreadable = NULL;
+HWND g_chkPrefContextMenu = NULL;
 HWND g_listPrefRules = NULL;
 HWND g_editPrefPattern = NULL;
 HWND g_chkPrefFiles = NULL;
@@ -121,6 +126,87 @@ HWND g_btnIsoGenerate = NULL;
 bttb::BttbSolver g_solver;
 std::jthread g_solver_thread;
 std::jthread g_iso_thread;
+
+// v3.3.0 Explorer Integration & Single Instance Globals
+std::wstring g_folderToAdd = L"";
+HANDLE g_hMutex = NULL;
+
+// Unicode helper functions
+#ifndef wstringToUtf8_defined
+inline std::string wstringToUtf8(const std::wstring& wstr) {
+    if (wstr.empty()) return "";
+    int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
+    std::string strTo(size_needed, 0);
+    WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0], size_needed, NULL, NULL);
+    return strTo;
+}
+inline std::wstring utf8ToWstring(const std::string& str) {
+    if (str.empty()) return L"";
+    int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);
+    std::wstring wstrTo(size_needed, 0);
+    MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], size_needed);
+    return wstrTo;
+}
+#endif
+
+// Registry management helper functions
+void RegisterExplorerContextMenu(bool registerIt) {
+    std::wstring subkey = L"Software\\Classes\\Directory\\shell\\BTTB";
+    if (registerIt) {
+        HKEY hKey;
+        if (RegCreateKeyExW(HKEY_CURRENT_USER, subkey.c_str(), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &hKey, NULL) == ERROR_SUCCESS) {
+            std::wstring menuText = L"Add to Burn to the Brim";
+            RegSetValueExW(hKey, NULL, 0, REG_SZ, (const BYTE*)menuText.c_str(), (DWORD)((menuText.size() + 1) * sizeof(wchar_t)));
+            
+            // Set Icon
+            wchar_t exePath[MAX_PATH];
+            GetModuleFileNameW(NULL, exePath, MAX_PATH);
+            RegSetValueExW(hKey, L"Icon", 0, REG_SZ, (const BYTE*)exePath, (DWORD)((wcslen(exePath) + 1) * sizeof(wchar_t)));
+            
+            HKEY hSubKey;
+            if (RegCreateKeyExW(hKey, L"command", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &hSubKey, NULL) == ERROR_SUCCESS) {
+                std::wstring cmd = L"\"" + std::wstring(exePath) + L"\" \"%1\"";
+                RegSetValueExW(hSubKey, NULL, 0, REG_SZ, (const BYTE*)cmd.c_str(), (DWORD)((cmd.size() + 1) * sizeof(wchar_t)));
+                RegCloseKey(hSubKey);
+            }
+            RegCloseKey(hKey);
+        }
+    } else {
+        RegDeleteTreeW(HKEY_CURRENT_USER, subkey.c_str());
+    }
+}
+
+bool IsExplorerContextMenuRegistered() {
+    HKEY hKey;
+    bool registered = false;
+    if (RegOpenKeyExW(HKEY_CURRENT_USER, L"Software\\Classes\\Directory\\shell\\BTTB", 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
+        registered = true;
+        RegCloseKey(hKey);
+    }
+    return registered;
+}
+
+void LoadRegistrySettings() {
+    HKEY hKey;
+    g_solver.skipUnreadable = true; // default
+    if (RegOpenKeyExW(HKEY_CURRENT_USER, L"Software\\BurnToTheBrim", 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
+        DWORD type, size, val;
+        size = sizeof(DWORD);
+        if (RegQueryValueExW(hKey, L"SkipUnreadable", NULL, &type, (LPBYTE)&val, &size) == ERROR_SUCCESS) {
+            g_solver.skipUnreadable = (val != 0);
+        }
+        RegCloseKey(hKey);
+    }
+}
+
+void SaveRegistrySettings() {
+    HKEY hKey;
+    if (RegCreateKeyExW(HKEY_CURRENT_USER, L"Software\\BurnToTheBrim", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &hKey, NULL) == ERROR_SUCCESS) {
+        DWORD val = g_solver.skipUnreadable ? 1 : 0;
+        RegSetValueExW(hKey, L"SkipUnreadable", 0, REG_DWORD, (const BYTE*)&val, sizeof(DWORD));
+        RegCloseKey(hKey);
+    }
+}
 
 // Append text helper for multiline Edit control
 void AppendTextToLog(HWND hEdit, const std::string& text) {
@@ -528,8 +614,13 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             g_editPrefDepth = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_NUMBER, 370, y, 100, 22, hwnd, (HMENU)ID_PREF_EDIT_DEPTH, NULL, NULL);
             
             y += 30;
-            // Row 4: Skip Empty
-            g_chkPrefEmpty = CreateWindow("BUTTON", "Skip Empty Folders / Files", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 20, y, 250, 20, hwnd, (HMENU)ID_PREF_CHK_EMPTY, NULL, NULL);
+            // Row 4: Skip Empty & Skip Unreadable
+            g_chkPrefEmpty = CreateWindow("BUTTON", "Skip Empty Folders / Files", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 20, y, 220, 20, hwnd, (HMENU)ID_PREF_CHK_EMPTY, NULL, NULL);
+            g_chkPrefUnreadable = CreateWindow("BUTTON", "Skip Unreadable Files (Graceful)", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 250, y, 230, 20, hwnd, (HMENU)ID_PREF_CHK_UNREADABLE, NULL, NULL);
+            
+            y += 30;
+            // Row 4.5: Context Menu Integration
+            g_chkPrefContextMenu = CreateWindow("BUTTON", "Integrate with Windows Explorer Context Menu", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 20, y, 400, 20, hwnd, (HMENU)ID_PREF_CHK_CONTEXT_MENU, NULL, NULL);
             
             y += 30;
             // Group 5: Grouping Rules
@@ -607,6 +698,8 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             SetWindowText(g_editPrefTime, std::to_string(g_solver.maxSearchTimeSeconds).c_str());
             SetWindowText(g_editPrefDepth, std::to_string(g_solver.splitDepth).c_str());
             SendMessage(g_chkPrefEmpty, BM_SETCHECK, g_solver.skipEmpty ? BST_CHECKED : BST_UNCHECKED, 0);
+            SendMessage(g_chkPrefUnreadable, BM_SETCHECK, g_solver.skipUnreadable ? BST_CHECKED : BST_UNCHECKED, 0);
+            SendMessage(g_chkPrefContextMenu, BM_SETCHECK, IsExplorerContextMenuRegistered() ? BST_CHECKED : BST_UNCHECKED, 0);
             
             // Select correct Media combobox index
             int index = 12; // Custom Size
@@ -772,6 +865,12 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
                 g_solver.splitDepth = std::stoi(buf);
                 
                 g_solver.skipEmpty = (SendMessage(g_chkPrefEmpty, BM_GETCHECK, 0, 0) == BST_CHECKED);
+                g_solver.skipUnreadable = (SendMessage(g_chkPrefUnreadable, BM_GETCHECK, 0, 0) == BST_CHECKED);
+                
+                bool enableMenu = (SendMessage(g_chkPrefContextMenu, BM_GETCHECK, 0, 0) == BST_CHECKED);
+                RegisterExplorerContextMenu(enableMenu);
+                
+                SaveRegistrySettings();
                 
                 // Save grouping rules
                 g_solver.groupingRules.clear();
@@ -902,6 +1001,32 @@ void PopulateTreeView(HWND hwndTV) {
 // Window Procedure for Main Window
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
+        case WM_COPYDATA: {
+            PCOPYDATASTRUCT pcds = (PCOPYDATASTRUCT)lParam;
+            if (pcds && pcds->dwData == 1) {
+                wchar_t* wpath = (wchar_t*)pcds->lpData;
+                std::string utf8Path = wstringToUtf8(wpath);
+                
+                char currentText[4096] = {0};
+                GetWindowText(g_editSrc, currentText, sizeof(currentText));
+                
+                std::string text(currentText);
+                if (text.empty()) {
+                    text = utf8Path;
+                } else {
+                    if (text.find(utf8Path) == std::string::npos) {
+                        text += ";" + utf8Path;
+                    }
+                }
+                SetWindowText(g_editSrc, text.c_str());
+                
+                // Bring main window to foreground
+                ShowWindow(hwnd, SW_RESTORE);
+                SetForegroundWindow(hwnd);
+            }
+            return TRUE;
+        }
+        
         case WM_CREATE: {
             // Initialize Common Controls for Progress Bar and TreeView
             INITCOMMONCONTROLSEX icex;
@@ -931,6 +1056,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             CreateWindow("BUTTON", "+", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 296, y + 22, 30, 25, hwnd, (HMENU)ID_BTN_ADD_FOLDERS, NULL, NULL);
             CreateWindow("STATIC", "Source folder:", WS_CHILD | WS_VISIBLE, 332, y + 26, 80, 20, hwnd, NULL, NULL, NULL);
             g_editSrc = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 418, y + 24, 260, 22, hwnd, NULL, NULL, NULL);
+            LoadRegistrySettings();
+            if (!g_folderToAdd.empty()) {
+                std::string utf8Folder = wstringToUtf8(g_folderToAdd);
+                SetWindowText(g_editSrc, utf8Folder.c_str());
+            }
             CreateWindow("BUTTON", "Browse...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 688, y + 22, 90, 25, hwnd, (HMENU)ID_BTN_SRC_BROWSE, NULL, NULL);
             
             CreateWindow("STATIC", "Target folder:", WS_CHILD | WS_VISIBLE, 296, y + 58, 110, 20, hwnd, NULL, NULL, NULL);
@@ -1102,6 +1232,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                     PostMessage(hwnd, WM_SOLVER_PROGRESS, static_cast<WPARAM>(percent), 0);
                 };
                 
+                g_solver.recommendCapacityNotify = [hwnd](int64_t recommendedBytes) -> bool {
+                    double recMB = (double)recommendedBytes / (1024.0 * 1024.0);
+                    char buf[512];
+                    snprintf(buf, sizeof(buf), 
+                        "The largest scanned item requires a volume capacity of at least %.2f MB.\n\n"
+                        "Would you like to automatically increase the volume capacity to %.2f MB and retry packing?", 
+                        recMB, recMB);
+                    int res = MessageBox(hwnd, buf, "Volume Capacity Recommendation", MB_YESNO | MB_ICONWARNING | MB_SETFOREGROUND);
+                    return (res == IDYES);
+                };
+                
                 // Run background solver thread
                 g_solver_thread = std::jthread([hwnd]() {
                     g_solver.run();
@@ -1211,16 +1352,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             if (wmId == ID_BTN_ABOUT) {
                 std::string aboutText = 
                     "Burn to the Brim (BTTB)\r\n"
-                    "Version 3.2.0\r\n\r\n"
+                    "Version 3.3.0\r\n\r\n"
                     "Authors:\r\n"
                     "Sander Raaijmakers, Elwin Oost and the Burn to the Brim team\r\n\r\n"
                     "Licensing:\r\n"
                     "This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2 of the License (GPLv2).\r\n\r\n"
-                    "Features in v3.2.0:\r\n"
-                    "- Support for multiple source directories (+)\r\n"
-                    "- Lightweight symbolic link outputs\r\n"
-                    "- Standard tree results visual explorer\r\n"
-                    "- High-capacity USB preset alignment (256/512 GB)";
+                    "Features in v3.3.0:\r\n"
+                    "- Unicode & Long Path (>256 characters) support\r\n"
+                    "- Hybrid GUI / CLI integrated binary execution\r\n"
+                    "- Optional Windows Explorer Context Menu integration\r\n"
+                    "- Smart adaptive capacity recommendation & retrying\r\n"
+                    "- Windows Setup Installer Package (.exe)";
                 MessageBox(hwnd, aboutText.c_str(), "About Burn to the Brim", MB_OK | MB_ICONINFORMATION);
             }
             
@@ -1285,6 +1427,72 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
 // Windows entry point
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+    // 1. Parse Command Line Arguments in Unicode
+    int nArgs = 0;
+    LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+    std::vector<std::string> argsUtf8;
+    std::vector<char*> argvUtf8;
+    
+    if (szArglist) {
+        for (int i = 0; i < nArgs; ++i) {
+            std::string utf8 = wstringToUtf8(szArglist[i]);
+            argsUtf8.push_back(utf8);
+        }
+        for (size_t i = 0; i < argsUtf8.size(); ++i) {
+            argvUtf8.push_back(&argsUtf8[i][0]);
+        }
+        argvUtf8.push_back(nullptr);
+    }
+    
+    int c_argc = (int)argsUtf8.size();
+    char** c_argv = argvUtf8.data();
+    
+    // 2. Check if CLI mode is triggered
+    if (c_argc > 1 && bttb::isCliModeTriggered(c_argc, c_argv)) {
+        // Attach console to the parent command line prompt
+        if (AttachConsole(ATTACH_PARENT_PROCESS)) {
+            // Redirect standard stream handles
+            FILE* fp;
+            freopen_s(&fp, "CONOUT$", "w", stdout);
+            freopen_s(&fp, "CONOUT$", "w", stderr);
+            freopen_s(&fp, "CONIN$", "r", stdin);
+            std::ios_base::sync_with_stdio();
+        }
+        int status = bttb::runCliEngine(c_argc, c_argv);
+        if (szArglist) LocalFree(szArglist);
+        return status;
+    }
+    
+    // 3. Detect initial folder path passed via arguments (e.g. context menus)
+    if (szArglist && nArgs > 1) {
+        std::wstring firstArg = szArglist[1];
+        if (!firstArg.empty() && firstArg[0] != L'-') {
+            g_folderToAdd = firstArg;
+        }
+    }
+    if (szArglist) LocalFree(szArglist);
+    
+    // 4. Single-Instance Named Mutex verification
+    g_hMutex = CreateMutexW(NULL, FALSE, L"Local\\BTTB_SingleInstanceMutex");
+    if (g_hMutex != NULL && GetLastError() == ERROR_ALREADY_EXISTS) {
+        // Find existing instance window
+        HWND hwndExisting = FindWindow("BttbWin32GUI", NULL);
+        if (hwndExisting) {
+            if (!g_folderToAdd.empty()) {
+                COPYDATASTRUCT cds;
+                cds.dwData = 1; // "add folder" custom action code
+                cds.cbData = (DWORD)((g_folderToAdd.size() + 1) * sizeof(wchar_t));
+                cds.lpData = (void*)g_folderToAdd.c_str();
+                SendMessageW(hwndExisting, WM_COPYDATA, (WPARAM)NULL, (LPARAM)&cds);
+            } else {
+                ShowWindow(hwndExisting, SW_RESTORE);
+                SetForegroundWindow(hwndExisting);
+            }
+        }
+        if (g_hMutex) CloseHandle(g_hMutex);
+        return 0; // Terminate this secondary instance
+    }
+
     // Register Main Window Class
     WNDCLASSEX wc = {0};
     wc.cbSize = sizeof(WNDCLASSEX);
@@ -1377,5 +1585,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         TranslateMessage(&Msg);
         DispatchMessage(&Msg);
     }
+    if (g_hMutex) CloseHandle(g_hMutex);
     return Msg.wParam;
 }

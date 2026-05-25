@@ -323,11 +323,11 @@
             <p>Comprehensive guide to the C++20 bin-packing solver and dual-platform graphical interfaces.</p>
         </div>
 
-        <!-- BTTB 3.1.0 Manual -->
+        <!-- BTTB 3.3.0 Manual -->
         <div class="content-card">
-            <h2>BTTB 3.1.0 Core Functionality Manual</h2>
+            <h2>BTTB 3.3.0 Core Functionality Manual</h2>
             <p>
-                Version 3.1.0 introduces a robust, completely re-engineered platform-agnostic bin-packing engine written in modern C++20. This manual explains BTTB's advanced algorithms, folder constraints, rule structures, and user interface implementations in detail.
+                Version 3.3.0 introduces deep shell integration, robust file system utilities, and full cross-platform capabilities in C++20. This manual explains BTTB's advanced algorithms, folder constraints, rule structures, and user interface implementations in detail.
             </p>
 
             <h3>1. The Backtracking Subset-Sum Solver</h3>
@@ -335,6 +335,10 @@
                 BTTB fits files and folders onto storage media by solving a constrained knapsack / subset-sum mathematical model.
             </p>
             <ul class="feature-bullets">
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&bull;</span>
+                    <div><strong>Unicode & Long-Path Handling (>256 chars):</strong> Standardizes full wide-character Unicode compatibility on both Windows and Linux, utilizing standard normalized absolute paths and Windows <code>\\?\</code> prefixes to support paths up to 32,767 characters. Gracefully skips unreadable files or aborts scanning based on user choices.</div>
+                </li>
                 <li class="feature-bullet-item">
                     <span class="bullet-icon">&bull;</span>
                     <div><strong>Sector-Based Calculations:</strong> To match standard CD/DVD storage media behavior, BTTB converts file sizes from raw bytes into physical disk sectors (defaulting to 2048-byte sectors). The solver calculates the ceiling sector count of each item to ensure absolute sizing accuracy.</div>
@@ -345,7 +349,11 @@
                 </li>
                 <li class="feature-bullet-item">
                     <span class="bullet-icon">&bull;</span>
-                    <div><strong>Slack Space:</strong> Users can define an allowable slack threshold in bytes. The solver will successfully complete once the filled capacity falls within this tolerance, rather than spending more search time attempting to find a microscopic 100% fit.</div>
+                    <div><strong>Slack Space & Early Pruning:</strong> Users can define an allowable slack threshold in bytes. The solver will successfully complete once the filled capacity falls within this tolerance. In version 3.3.0, a highly optimized slack early-termination algorithm terminates complex backtracking searches instantly in milliseconds under high-slack conditions.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&bull;</span>
+                    <div><strong>Smart Adaptive Capacity Warnings:</strong> When a file size exceeds the target volume size, BTTB prompts the user (CLI prompt or graphical message dialog) to automatically increase the target capacity to fit the largest scanned file and retries packing recursively.</div>
                 </li>
                 <li class="feature-bullet-item">
                     <span class="bullet-icon">&bull;</span>
@@ -353,7 +361,19 @@
                 </li>
                 <li class="feature-bullet-item">
                     <span class="bullet-icon">&bull;</span>
-                    <div><strong>Blu-ray and USB Sectors:</strong> Preset capacities for Blu-ray discs use standard 2048-byte sector dimensions. For USB presets (8 GB to 64 GB), BTTB automatically adopts 4096-byte clusters, aligning perfectly with modern exFAT, NTFS, or FAT32 flash drive architectures.</div>
+                    <div><strong>Multiple Source Folders Setup (+):</strong> Allows adding, editing, or removing multiple source directories recursively. BTTB acts as if they are in a single root folder and filters overlapping nested subdirectories to avoid double scanning.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&bull;</span>
+                    <div><strong>Lightweight Symbolic Link Outputs:</strong> Instantly create symbolic links pointing back to original files in target folders instead of copy/move operations. Handles Windows native unprivileged symlinks, cmd shell mklink, and robust copy fallback on failure on modern Windows platforms.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&bull;</span>
+                    <div><strong>Blu-ray and USB Sectors:</strong> Preset capacities for Blu-ray discs use standard 2048-byte sector dimensions. For USB presets (8 GB to 512 GB), BTTB automatically adopts 4096-byte clusters, aligning perfectly with modern exFAT, NTFS, or FAT32 flash drive architectures.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&bull;</span>
+                    <div><strong>Analytical Tracing & Visual Progress:</strong> In version 3.3.0, users can enable a dedicated "Trace" checkbox in both the Linux GTK 4 and Windows Win32 native interfaces. When enabled, the real-time backtracking choice sequence, branch prunings, and explored state counts are printed directly into the GUI logging panel, letting you watch the solver's thinking progress as it runs.</div>
                 </li>
             </ul>
 
@@ -467,7 +487,7 @@
         <!-- Footer -->
         <footer>
             <span>&copy; BTTB Team. All rights reserved.</span>
-            <span>Redesigned for version 3.1.0</span>
+            <span>Redesigned for version 3.3.0</span>
         </footer>
 
     </div>

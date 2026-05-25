@@ -11,7 +11,7 @@ namespace bttb {
 
 class MainWindow {
 public:
-    MainWindow(GtkApplication* app);
+    MainWindow(GtkApplication* app, const std::string& initialFolder = "");
     ~MainWindow();
 
     void show();
