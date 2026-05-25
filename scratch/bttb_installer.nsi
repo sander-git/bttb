@@ -4,10 +4,10 @@ Unicode true
 
 Name "Burn to the Brim 3.3.0"
 OutFile "../build/bttb-cpp-3.3.0-Win64-Installer.exe"
-InstallDir "$PROGRAMFILES64\BurnToTheBrim"
+InstallDir "$LOCALAPPDATA\BurnToTheBrim"
 InstallDirRegKey HKCU "Software\BurnToTheBrim" "InstallDir"
 
-RequestExecutionLevel admin
+RequestExecutionLevel user
 
 !define MUI_ABORTWARNING
 !define MUI_ICON "../src/bttb.ico"
@@ -37,13 +37,13 @@ Section "Burn to the Brim (Required)" SecCore
   
   WriteRegStr HKCU "Software\BurnToTheBrim" "InstallDir" "$INSTDIR"
   
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "DisplayName" "Burn to the Brim"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "DisplayIcon" "$INSTDIR\bttb_win32.exe,0"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "UninstallString" '"$INSTDIR\uninstall.exe"'
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "DisplayVersion" "3.3.0"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "Publisher" "BurnToTheBrim Team"
-  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "NoModify" 1
-  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "NoRepair" 1
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "DisplayName" "Burn to the Brim"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "DisplayIcon" "$INSTDIR\bttb_win32.exe,0"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "UninstallString" '"$INSTDIR\uninstall.exe"'
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "DisplayVersion" "3.3.0"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "Publisher" "BurnToTheBrim Team"
+  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "NoModify" 1
+  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "NoRepair" 1
   
   WriteUninstaller "$INSTDIR\uninstall.exe"
 SectionEnd
@@ -72,7 +72,7 @@ Section "Uninstall"
   
   Delete "$DESKTOP\Burn to the Brim.lnk"
   
-  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB"
+  DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB"
   DeleteRegKey HKCU "Software\BurnToTheBrim"
   
   ; Remove Explorer Context Menu integration if registered

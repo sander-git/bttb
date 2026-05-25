@@ -355,7 +355,7 @@ int64_t BttbSolver::diveDepth(const std::filesystem::path& baseDir, const std::f
             
             try {
                 const auto& entry = *it;
-                std::filesystem::path rel = std::filesystem::relative(entry.path(), baseDirLong);
+                std::filesystem::path rel = currentSubpath / entry.path().filename();
                 
                 if (std::filesystem::is_directory(entry.path())) {
                     subdirs.push_back(rel);
