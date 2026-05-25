@@ -34,12 +34,14 @@ std::string toUtf8Str(const std::filesystem::path& p) {
 }
 std::filesystem::path makeLongPath(const std::filesystem::path& p) {
     try {
-        std::wstring absPath = std::filesystem::absolute(p).wstring();
-        if (absPath.rfind(L"\\\\?\\", 0) != 0) {
-            if (absPath.rfind(L"\\\\", 0) == 0) {
-                absPath = L"\\\\?\\UNC\\" + absPath.substr(2);
-            } else {
-                absPath = L"\\\\?\\" + absPath;
+        std::wstring absPath = std::filesystem::absolute(p).make_preferred().wstring();
+        if (absPath.length() >= 240) {
+            if (absPath.rfind(L"\\\\?\\", 0) != 0) {
+                if (absPath.rfind(L"\\\\", 0) == 0) {
+                    absPath = L"\\\\?\\UNC\\" + absPath.substr(2);
+                } else {
+                    absPath = L"\\\\?\\" + absPath;
+                }
             }
         }
         return std::filesystem::path(absPath);
