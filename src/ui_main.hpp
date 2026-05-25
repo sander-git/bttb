@@ -21,6 +21,7 @@ public:
     GtkWidget* source_entry;
     GtkWidget* target_entry;
     GtkWidget* move_check;
+    GtkWidget* symlink_check;
     GtkWidget* span_check;
     GtkWidget* trace_check;
     GtkWidget* log_text_view;

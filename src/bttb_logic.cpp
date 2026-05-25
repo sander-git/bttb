@@ -5,6 +5,10 @@
 #include <queue>
 #include <cmath>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 namespace bttb {
 
 // Convert standard wildcards/globs to C++ regex patterns
@@ -26,6 +30,167 @@ std::regex globToRegex(const std::string& glob) {
     return std::regex(regexStr, std::regex_constants::icase);
 }
 
+// Parse human-readable sizes like 512MB, 2.5GB, 1.5TB
+int64_t parseHumanSize(const std::string& input) {
+    std::string s = input;
+    s.erase(std::remove_if(s.begin(), s.end(), ::isspace), s.end());
+    if (s.empty()) return 0;
+    
+    double multiplier = 1.0;
+    std::string numPart = s;
+    
+    if (s.size() >= 2) {
+        std::string suffix = s.substr(s.size() - 2);
+        std::transform(suffix.begin(), suffix.end(), suffix.begin(), ::tolower);
+        if (suffix == "kb") {
+            multiplier = 1024.0;
+            numPart = s.substr(0, s.size() - 2);
+        } else if (suffix == "mb") {
+            multiplier = 1024.0 * 1024.0;
+            numPart = s.substr(0, s.size() - 2);
+        } else if (suffix == "gb") {
+            multiplier = 1024.0 * 1024.0 * 1024.0;
+            numPart = s.substr(0, s.size() - 2);
+        } else if (suffix == "tb") {
+            multiplier = 1024.0 * 1024.0 * 1024.0 * 1024.0;
+            numPart = s.substr(0, s.size() - 2);
+        } else {
+            char lastChar = std::tolower(s.back());
+            if (lastChar == 'b') {
+                multiplier = 1.0;
+                numPart = s.substr(0, s.size() - 1);
+            } else if (lastChar == 'k') {
+                multiplier = 1024.0;
+                numPart = s.substr(0, s.size() - 1);
+            } else if (lastChar == 'm') {
+                multiplier = 1024.0 * 1024.0;
+                numPart = s.substr(0, s.size() - 1);
+            } else if (lastChar == 'g') {
+                multiplier = 1024.0 * 1024.0 * 1024.0;
+                numPart = s.substr(0, s.size() - 1);
+            } else if (lastChar == 't') {
+                multiplier = 1024.0 * 1024.0 * 1024.0 * 1024.0;
+                numPart = s.substr(0, s.size() - 1);
+            }
+        }
+    } else if (s.size() == 1) {
+        char lastChar = std::tolower(s.back());
+        if (lastChar == 'b') { multiplier = 1.0; numPart = ""; }
+        else if (lastChar == 'k') { multiplier = 1024.0; numPart = ""; }
+        else if (lastChar == 'm') { multiplier = 1024.0 * 1024.0; numPart = ""; }
+        else if (lastChar == 'g') { multiplier = 1024.0 * 1024.0 * 1024.0; numPart = ""; }
+        else if (lastChar == 't') { multiplier = 1024.0 * 1024.0 * 1024.0 * 1024.0; numPart = ""; }
+    }
+    
+    try {
+        if (numPart.empty()) return 0;
+        double val = std::stod(numPart);
+        return static_cast<int64_t>(val * multiplier);
+    } catch (...) {
+        try {
+            return std::stoll(s);
+        } catch (...) {
+            return 0;
+        }
+    }
+}
+
+// Ignore folders nested in other folders
+std::vector<std::string> filterNestedDirectories(const std::vector<std::string>& dirs) {
+    std::vector<std::filesystem::path> normPaths;
+    for (const auto& d : dirs) {
+        if (d.empty()) continue;
+        try {
+            normPaths.push_back(std::filesystem::absolute(d).lexically_normal());
+        } catch (...) {
+            normPaths.push_back(std::filesystem::path(d).lexically_normal());
+        }
+    }
+    
+    std::vector<std::string> filtered;
+    for (size_t i = 0; i < normPaths.size(); ++i) {
+        bool isNested = false;
+        for (size_t j = 0; j < normPaths.size(); ++j) {
+            if (i == j) continue;
+            const auto& parent = normPaths[j];
+            const auto& child = normPaths[i];
+            
+            auto pIt = parent.begin();
+            auto cIt = child.begin();
+            bool mismatch = false;
+            while (pIt != parent.end()) {
+                if (cIt == child.end() || *pIt != *cIt) {
+                    mismatch = true;
+                    break;
+                }
+                ++pIt;
+                ++cIt;
+            }
+            if (!mismatch && cIt != child.end()) {
+                isNested = true;
+                break;
+            }
+        }
+        
+        if (!isNested) {
+            bool alreadyIn = false;
+            for (const auto& f : filtered) {
+                try {
+                    if (std::filesystem::absolute(f).lexically_normal() == normPaths[i]) {
+                        alreadyIn = true;
+                        break;
+                    }
+                } catch (...) {
+                    if (std::filesystem::path(f).lexically_normal() == normPaths[i]) {
+                        alreadyIn = true;
+                        break;
+                    }
+                }
+            }
+            if (!alreadyIn) {
+                filtered.push_back(dirs[i]);
+            }
+        }
+    }
+    return filtered;
+}
+
+// Cross-platform symbolic link creation helper with unprivileged flag and fallback
+bool createPlatformSymlink(const std::string& target, const std::string& link, bool isDir) {
+#ifdef _WIN32
+    HMODULE hKernel32 = GetModuleHandleA("kernel32.dll");
+    if (hKernel32) {
+        typedef BOOLEAN (WINAPI *CreateSymbolicLinkA_t)(LPCSTR, LPCSTR, DWORD);
+        CreateSymbolicLinkA_t pCreateSymbolicLinkA = (CreateSymbolicLinkA_t)GetProcAddress(hKernel32, "CreateSymbolicLinkA");
+        if (pCreateSymbolicLinkA) {
+            DWORD flags = 0x2; // SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE
+            if (isDir) flags |= 0x1; // SYMBOLIC_LINK_FLAG_DIRECTORY
+            if (pCreateSymbolicLinkA(link.c_str(), target.c_str(), flags)) {
+                return true;
+            }
+        }
+    }
+    // Fallback to mklink
+    std::string cmd = "cmd.exe /c mklink ";
+    if (isDir) cmd += "/d ";
+    cmd += "\"" + link + "\" \"" + target + "\"";
+    return (std::system(cmd.c_str()) == 0);
+#else
+    try {
+        std::filesystem::path targetPath(target);
+        std::filesystem::path linkPath(link);
+        if (isDir) {
+            std::filesystem::create_directory_symlink(targetPath, linkPath);
+        } else {
+            std::filesystem::create_symlink(targetPath, linkPath);
+        }
+        return true;
+    } catch (...) {
+        return false;
+    }
+#endif
+}
+
 BttbSolver::BttbSolver() {
     // Default log notifier
     logNotify = [](const std::string& msg, int) {
@@ -34,7 +199,7 @@ BttbSolver::BttbSolver() {
     progressNotify = [](double, double) {};
 }
 
-void BttbSolver::addEntry(const std::string& relPath, int64_t size, bool isDir) {
+void BttbSolver::addEntry(const std::string& relPath, const std::string& absPath, int64_t size, bool isDir) {
     // Check if it matches any grouping rules
     for (size_t i = 0; i < groupingRules.size(); ++i) {
         const auto& rule = groupingRules[i];
@@ -60,6 +225,7 @@ void BttbSolver::addEntry(const std::string& relPath, int64_t size, bool isDir) 
                     entry->sectorCount = (entry->sizeBytes + mediumInfo.sectorSize - 1) / mediumInfo.sectorSize;
                     if (entry->sectorCount == 0) entry->sectorCount = 1;
                     entry->groupedPaths.push_back(relPath);
+                    entry->absoluteGroupedPaths.push_back(absPath);
                     return;
                 }
             }
@@ -67,11 +233,13 @@ void BttbSolver::addEntry(const std::string& relPath, int64_t size, bool isDir) 
             // Create a new consolidated entry
             auto entry = std::make_unique<DirEntry>();
             entry->relativePath = groupName;
+            entry->absolutePath = "";
             entry->sizeBytes = size;
             entry->sectorCount = (size + mediumInfo.sectorSize - 1) / mediumInfo.sectorSize;
             if (entry->sectorCount == 0) entry->sectorCount = 1;
             entry->isDirectory = false; // treated as a file group
             entry->groupedPaths.push_back(relPath);
+            entry->absoluteGroupedPaths.push_back(absPath);
             itemsToSplit.push_back(std::move(entry));
             return;
         }
@@ -79,6 +247,7 @@ void BttbSolver::addEntry(const std::string& relPath, int64_t size, bool isDir) 
 
     auto entry = std::make_unique<DirEntry>();
     entry->relativePath = relPath;
+    entry->absolutePath = absPath;
     entry->sizeBytes = size;
     entry->sectorCount = (size + mediumInfo.sectorSize - 1) / mediumInfo.sectorSize;
     entry->isDirectory = isDir;
@@ -95,9 +264,9 @@ void BttbSolver::addEntry(const std::string& relPath, int64_t size, bool isDir) 
     itemsToSplit.push_back(std::move(entry));
 }
 
-int64_t BttbSolver::diveDepth(const std::filesystem::path& currentSubpath, int depth) {
+int64_t BttbSolver::diveDepth(const std::filesystem::path& baseDir, const std::filesystem::path& currentSubpath, int depth) {
     int64_t totalSize = 0;
-    std::filesystem::path fullPath = std::filesystem::path(sourceDirectory) / currentSubpath;
+    std::filesystem::path fullPath = baseDir / currentSubpath;
     
     if (!std::filesystem::exists(fullPath)) return 0;
     
@@ -107,7 +276,7 @@ int64_t BttbSolver::diveDepth(const std::filesystem::path& currentSubpath, int d
         for (const auto& entry : std::filesystem::directory_iterator(fullPath)) {
             if (stopRequested) return 0;
             
-            std::filesystem::path rel = std::filesystem::relative(entry.path(), sourceDirectory);
+            std::filesystem::path rel = std::filesystem::relative(entry.path(), baseDir);
             
             if (entry.is_directory()) {
                 subdirs.push_back(rel);
@@ -118,7 +287,7 @@ int64_t BttbSolver::diveDepth(const std::filesystem::path& currentSubpath, int d
                     totalSize += fileSize;
                 } else {
                     // Above or at split depth, add files directly
-                    addEntry(rel.string(), fileSize, false);
+                    addEntry(rel.string(), entry.path().string(), fileSize, false);
                 }
             }
         }
@@ -130,11 +299,11 @@ int64_t BttbSolver::diveDepth(const std::filesystem::path& currentSubpath, int d
             if (depth == 0) {
                 // Split depth boundary reached: this subdirectory is treated as an atomic item.
                 // Call recursively with depth - 1 to sum all files within it.
-                int64_t dirTotal = diveDepth(subdir, depth - 1);
-                addEntry(subdir.string(), dirTotal, true);
+                int64_t dirTotal = diveDepth(baseDir, subdir, depth - 1);
+                addEntry(subdir.string(), (baseDir / subdir).string(), dirTotal, true);
             } else {
                 // Continue recursing downwards
-                totalSize += diveDepth(subdir, depth - 1);
+                totalSize += diveDepth(baseDir, subdir, depth - 1);
             }
         }
     } catch (const std::exception& e) {
@@ -146,8 +315,18 @@ int64_t BttbSolver::diveDepth(const std::filesystem::path& currentSubpath, int d
 
 void BttbSolver::scanDirectory() {
     itemsToSplit.clear();
-    logNotify("Scanning folder: " + sourceDirectory, 0);
-    diveDepth("", splitDepth);
+    
+    std::vector<std::string> activeDirs = sourceDirectories;
+    if (activeDirs.empty() && !sourceDirectory.empty()) {
+        activeDirs.push_back(sourceDirectory);
+    }
+    
+    activeDirs = filterNestedDirectories(activeDirs);
+    
+    for (const auto& baseDir : activeDirs) {
+        logNotify("Scanning folder: " + baseDir, 0);
+        diveDepth(baseDir, "", splitDepth);
+    }
     logNotify("Found items to fit: " + std::to_string(itemsToSplit.size()), 0);
 }
 
@@ -358,39 +537,60 @@ void BttbSolver::run() {
         }
         packedVolumes.push_back(vol);
         
-        // Perform copy/move if target directory specified
+        // Perform copy/move/symlink if target directory specified
         if (!targetDirectory.empty()) {
             std::filesystem::path volDestDir = targetDirectory;
             if (spanMultipleVolumes) {
                 volDestDir = std::filesystem::path(targetDirectory) / ("Volume_" + std::to_string(volumeIndex));
             }
             
-            if (moveFiles) {
+            if (moveFiles || createSymlinks) {
                 std::filesystem::create_directories(volDestDir);
                 for (int idx : bestSelectionIndices) {
                     if (stopRequested) break;
                     
-                    std::vector<std::string> pathsToMove;
+                    std::vector<std::string> relPaths;
+                    std::vector<std::string> absPaths;
                     if (!itemsToSplit[idx]->groupedPaths.empty()) {
-                        pathsToMove = itemsToSplit[idx]->groupedPaths;
+                        relPaths = itemsToSplit[idx]->groupedPaths;
+                        absPaths = itemsToSplit[idx]->absoluteGroupedPaths;
                     } else {
-                        pathsToMove.push_back(itemsToSplit[idx]->relativePath);
+                        relPaths.push_back(itemsToSplit[idx]->relativePath);
+                        absPaths.push_back(itemsToSplit[idx]->absolutePath);
                     }
                     
                     logNotify("Organizing item: " + itemsToSplit[idx]->relativePath, 0);
-                    for (const auto& relItem : pathsToMove) {
-                        std::filesystem::path src = std::filesystem::path(sourceDirectory) / relItem;
+                    for (size_t i = 0; i < relPaths.size(); ++i) {
+                        const auto& relItem = relPaths[i];
+                        const auto& absItem = absPaths[i];
+                        
+                        std::filesystem::path src = std::filesystem::absolute(absItem);
                         std::filesystem::path dest = volDestDir / relItem;
                         
                         try {
                             std::filesystem::create_directories(dest.parent_path());
                             if (std::filesystem::exists(src)) {
-                                if (std::filesystem::is_directory(src)) {
-                                    std::filesystem::copy(src, dest, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
-                                    std::filesystem::remove_all(src);
-                                } else {
-                                    std::filesystem::copy_file(src, dest, std::filesystem::copy_options::overwrite_existing);
-                                    std::filesystem::remove(src);
+                                if (createSymlinks) {
+                                    bool isDir = std::filesystem::is_directory(src);
+                                    if (std::filesystem::exists(dest)) {
+                                        std::filesystem::remove_all(dest);
+                                    }
+                                    if (!createPlatformSymlink(src.string(), dest.string(), isDir)) {
+                                        logNotify("Failed to create symlink for " + relItem + " (retrying with copy)", 2);
+                                        if (isDir) {
+                                            std::filesystem::copy(src, dest, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+                                        } else {
+                                            std::filesystem::copy_file(src, dest, std::filesystem::copy_options::overwrite_existing);
+                                        }
+                                    }
+                                } else if (moveFiles) {
+                                    if (std::filesystem::is_directory(src)) {
+                                        std::filesystem::copy(src, dest, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+                                        std::filesystem::remove_all(src);
+                                    } else {
+                                        std::filesystem::copy_file(src, dest, std::filesystem::copy_options::overwrite_existing);
+                                        std::filesystem::remove(src);
+                                    }
                                 }
                             }
                         } catch (const std::exception& e) {
@@ -424,7 +624,7 @@ void BttbSolver::run() {
         volumeIndex++;
     }
     
-    if (moveFiles && !targetDirectory.empty()) {
+    if ((moveFiles || createSymlinks) && !targetDirectory.empty()) {
         logNotify("Completed file organization.", 1);
     }
     

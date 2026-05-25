@@ -19,12 +19,14 @@ struct CDInfo {
 
 struct DirEntry {
     std::string relativePath;  // path relative to the scanned base directory
+    std::string absolutePath;  // actual full absolute path on filesystem
     int64_t sizeBytes = 0;     // original size
     int64_t sectorCount = 0;   // size in sectors
     bool isDirectory = false;
     bool isSelected = false;   // current backtracking selection
     int64_t prefixSumSectors = 0; // sum of sectors from 0 to current index
     std::vector<std::string> groupedPaths; // Consolidated paths for grouping rules
+    std::vector<std::string> absoluteGroupedPaths; // Consolidated absolute paths matching groupedPaths
 };
 
 struct GroupRule {
@@ -54,8 +56,10 @@ public:
 
     // Configuration
     std::string sourceDirectory;
+    std::vector<std::string> sourceDirectories;
     std::string targetDirectory;
     bool moveFiles = false;
+    bool createSymlinks = true;
     bool skipEmpty = true;
     bool spanMultipleVolumes = false;
     int maxSearchTimeSeconds = 10;
@@ -63,6 +67,7 @@ public:
     CDInfo mediumInfo;
     std::vector<GroupRule> groupingRules;
     std::vector<PackedVolume> packedVolumes;
+    std::vector<std::unique_ptr<DirEntry>> itemsToSplit;
     bool enableTrace = false;
     uint64_t exploredStates = 0;
     uint64_t prunedStates = 0;
@@ -80,7 +85,6 @@ public:
     void run();
 
 private:
-    std::vector<std::unique_ptr<DirEntry>> itemsToSplit;
     std::vector<int> bestSelectionIndices;
     int64_t currentBestSectors = 0;
     int64_t maxSectors = 0;
@@ -88,8 +92,8 @@ private:
     int64_t minNumberOfClusters = 0;
 
     void scanDirectory();
-    int64_t diveDepth(const std::filesystem::path& currentSubpath, int depth);
-    void addEntry(const std::string& relPath, int64_t size, bool isDir);
+    int64_t diveDepth(const std::filesystem::path& baseDir, const std::filesystem::path& currentSubpath, int depth);
+    void addEntry(const std::string& relPath, const std::string& absPath, int64_t size, bool isDir);
     
     // Core subset-sum recursive backtracking search
     bool findAWay(int64_t currentSectors, int poz);
@@ -100,5 +104,11 @@ private:
 
 // Utility function to convert glob string (*.mp3) to std::regex
 std::regex globToRegex(const std::string& glob);
+
+// Parse human-readable sizes like 512MB, 2.5GB, 1.5TB
+int64_t parseHumanSize(const std::string& input);
+
+// Ignore folders nested in other folders
+std::vector<std::string> filterNestedDirectories(const std::vector<std::string>& dirs);
 
 } // namespace bttb

@@ -175,11 +175,97 @@ void run_test3() {
     std::cout << "SUCCESS: High-slack solver finishes instantly!" << std::endl;
 }
 
+void run_test4() {
+    std::cout << "\n--- STARTING TEST 4: MULTIPLE DIRECTORIES & SYMLINKS (BTTB v3.2.0) ---" << std::endl;
+    
+    // 1. Test nested path filtering
+    std::vector<std::string> dirs = {
+        "/mock/dir1",
+        "/mock/dir1/nested",
+        "/mock/dir2",
+        "/mock/dir2/sub/deep",
+        "/mock/dir1"
+    };
+    std::vector<std::string> filtered = bttb::filterNestedDirectories(dirs);
+    
+    std::cout << "Filtered nested directories count: " << filtered.size() << std::endl;
+    for (const auto& d : filtered) {
+        std::cout << " * " << d << std::endl;
+    }
+    
+    // We expect "/mock/dir1" and "/mock/dir2" only!
+    assert(filtered.size() == 2);
+    assert(std::find(filtered.begin(), filtered.end(), "/mock/dir1") != filtered.end());
+    assert(std::find(filtered.begin(), filtered.end(), "/mock/dir2") != filtered.end());
+    std::cout << "Nested directories filtered correctly!" << std::endl;
+    
+    // 2. Test human size parsing
+    assert(bttb::parseHumanSize("512MB") == 512LL * 1024 * 1024);
+    assert(bttb::parseHumanSize("2.5GB") == static_cast<int64_t>(2.5 * 1024 * 1024 * 1024));
+    assert(bttb::parseHumanSize("1.5TB") == static_cast<int64_t>(1.5 * 1024 * 1024 * 1024 * 1024));
+    assert(bttb::parseHumanSize("1024") == 1024);
+    std::cout << "Human readable size parser validated successfully!" << std::endl;
+    
+    // 3. Test multi-root scanning and symbolic links
+    std::string mock_root1 = "./mock_root1";
+    std::string mock_root2 = "./mock_root2";
+    std::string mock_dest = "./mock_dest";
+    
+    std::filesystem::remove_all(mock_root1);
+    std::filesystem::remove_all(mock_root2);
+    std::filesystem::remove_all(mock_dest);
+    
+    std::filesystem::create_directories(mock_root1);
+    std::filesystem::create_directories(mock_root2);
+    std::filesystem::create_directories(mock_dest);
+    
+    {
+        std::ofstream f1(mock_root1 + "/file_a.txt");
+        f1 << "Root 1 File A";
+        
+        std::ofstream f2(mock_root2 + "/file_b.txt");
+        f2 << "Root 2 File B";
+    }
+    
+    bttb::BttbSolver solver;
+    solver.sourceDirectories = { mock_root1, mock_root2 };
+    solver.targetDirectory = mock_dest;
+    solver.createSymlinks = true;
+    solver.moveFiles = false;
+    solver.spanMultipleVolumes = false;
+    solver.mediumInfo.capacityBytes = 1024 * 1024;
+    solver.mediumInfo.sectorSize = 2048;
+    solver.mediumInfo.slackBytes = 0;
+    
+    solver.logNotify = [](const std::string& msg, int type) {
+        std::cout << "[Solver Test 4] " << msg << std::endl;
+    };
+    
+    solver.run();
+    
+    // Verify files in target folder are created as symlinks or copies
+    std::filesystem::path dest_a = std::filesystem::path(mock_dest) / "file_a.txt";
+    std::filesystem::path dest_b = std::filesystem::path(mock_dest) / "file_b.txt";
+    
+    std::cout << "Verifying output file_a.txt exists in dest..." << std::endl;
+    assert(std::filesystem::exists(dest_a));
+    std::cout << "Verifying output file_b.txt exists in dest..." << std::endl;
+    assert(std::filesystem::exists(dest_b));
+    
+    // Cleanup
+    std::filesystem::remove_all(mock_root1);
+    std::filesystem::remove_all(mock_root2);
+    std::filesystem::remove_all(mock_dest);
+    
+    std::cout << "SUCCESS: Multiple source folders scanned and symlink output engine works perfectly!" << std::endl;
+}
+
 int main() {
     std::cout << "Starting BTTB automated verification suite..." << std::endl;
     run_test1();
     run_test2();
     run_test3();
+    run_test4();
     std::cout << "\nALL TESTS PASSED SUCCESSFULLY!" << std::endl;
     return 0;
 }

@@ -13,6 +13,7 @@ struct DialogData {
     GtkWidget* search_time_entry;
     GtkWidget* split_depth_entry;
     GtkWidget* skip_empty_switch;
+    GtkWidget* capacity_mb_label;
     
     GtkListStore* rule_store;
     GtkWidget* rule_tree_view;
@@ -27,46 +28,57 @@ static void on_media_changed(GtkComboBox* combo, gpointer user_data) {
     int active = gtk_combo_box_get_active(combo);
     
     if (active == 0) { // CD 650MB
-        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "681574400");
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "650 MB");
         gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "2048");
         gtk_widget_set_sensitive(data->capacity_entry, FALSE);
     } else if (active == 1) { // CD 700MB
-        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "734003200");
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "700 MB");
         gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "2048");
         gtk_widget_set_sensitive(data->capacity_entry, FALSE);
     } else if (active == 2) { // DVD 4.7GB
-        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "4700000000");
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "4.7 GB");
         gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "2048");
         gtk_widget_set_sensitive(data->capacity_entry, FALSE);
     } else if (active == 3) { // DVD DL 8.5GB
-        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "8500000000");
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "8.5 GB");
         gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "2048");
         gtk_widget_set_sensitive(data->capacity_entry, FALSE);
     } else if (active == 4) { // BD 25GB
-        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "25000000000");
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "25 GB");
         gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "2048");
         gtk_widget_set_sensitive(data->capacity_entry, FALSE);
     } else if (active == 5) { // BD DL 50GB
-        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "50000000000");
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "50 GB");
         gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "2048");
         gtk_widget_set_sensitive(data->capacity_entry, FALSE);
     } else if (active == 6) { // USB 8GB
-        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "8000000000");
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "8 GB");
         gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "4096");
         gtk_widget_set_sensitive(data->capacity_entry, FALSE);
     } else if (active == 7) { // USB 16GB
-        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "16000000000");
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "16 GB");
         gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "4096");
         gtk_widget_set_sensitive(data->capacity_entry, FALSE);
     } else if (active == 8) { // USB 32GB
-        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "32000000000");
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "32 GB");
         gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "4096");
         gtk_widget_set_sensitive(data->capacity_entry, FALSE);
     } else if (active == 9) { // USB 64GB
-        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "64000000000");
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "64 GB");
+        gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "4096");
+        gtk_widget_set_sensitive(data->capacity_entry, FALSE);
+    } else if (active == 10) { // USB 256GB
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "256 GB");
+        gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "4096");
+        gtk_widget_set_sensitive(data->capacity_entry, FALSE);
+    } else if (active == 11) { // USB 512GB
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "512 GB");
         gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "4096");
         gtk_widget_set_sensitive(data->capacity_entry, FALSE);
     } else { // Custom
+        // Default custom volume is set to 64GB
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "64 GB");
+        gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "4096");
         gtk_widget_set_sensitive(data->capacity_entry, TRUE);
     }
 }
@@ -143,57 +155,64 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "USB (16 GB)");
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "USB (32 GB)");
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "USB (64 GB)");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "USB (256 GB)");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "USB (512 GB)");
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "Custom Size");
     gtk_grid_attach(GTK_GRID(grid), data->media_combo, 1, 0, 1, 1);
     
     // Capacity
-    GtkWidget* label_cap = gtk_label_new("Capacity (Bytes):");
+    GtkWidget* label_cap = gtk_label_new("Capacity:");
     gtk_widget_set_halign(label_cap, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(grid), label_cap, 0, 1, 1, 1);
     
     data->capacity_entry = gtk_entry_new();
     gtk_grid_attach(GTK_GRID(grid), data->capacity_entry, 1, 1, 1, 1);
     
+    // Capacity MB Dynamic Label
+    data->capacity_mb_label = gtk_label_new("(0.00 MB)");
+    gtk_widget_set_halign(data->capacity_mb_label, GTK_ALIGN_START);
+    gtk_grid_attach(GTK_GRID(grid), data->capacity_mb_label, 1, 2, 1, 1);
+    
     // Cluster
     GtkWidget* label_clus = gtk_label_new("Cluster Size (Bytes):");
     gtk_widget_set_halign(label_clus, GTK_ALIGN_START);
-    gtk_grid_attach(GTK_GRID(grid), label_clus, 0, 2, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), label_clus, 0, 3, 1, 1);
     
     data->cluster_entry = gtk_entry_new();
-    gtk_grid_attach(GTK_GRID(grid), data->cluster_entry, 1, 2, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), data->cluster_entry, 1, 3, 1, 1);
     
     // Slack
     GtkWidget* label_slack = gtk_label_new("Slack Bytes:");
     gtk_widget_set_halign(label_slack, GTK_ALIGN_START);
-    gtk_grid_attach(GTK_GRID(grid), label_slack, 0, 3, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), label_slack, 0, 4, 1, 1);
     
     data->slack_entry = gtk_entry_new();
-    gtk_grid_attach(GTK_GRID(grid), data->slack_entry, 1, 3, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), data->slack_entry, 1, 4, 1, 1);
     
     // Search Time
     GtkWidget* label_time = gtk_label_new("Max Search Time (sec):");
     gtk_widget_set_halign(label_time, GTK_ALIGN_START);
-    gtk_grid_attach(GTK_GRID(grid), label_time, 0, 4, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), label_time, 0, 5, 1, 1);
     
     data->search_time_entry = gtk_entry_new();
-    gtk_grid_attach(GTK_GRID(grid), data->search_time_entry, 1, 4, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), data->search_time_entry, 1, 5, 1, 1);
     
     // Split Depth
     GtkWidget* label_depth = gtk_label_new("Directory Split Depth:");
     gtk_widget_set_halign(label_depth, GTK_ALIGN_START);
-    gtk_grid_attach(GTK_GRID(grid), label_depth, 0, 5, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), label_depth, 0, 6, 1, 1);
     
     data->split_depth_entry = gtk_entry_new();
-    gtk_grid_attach(GTK_GRID(grid), data->split_depth_entry, 1, 5, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), data->split_depth_entry, 1, 6, 1, 1);
     
     // Skip empty switch
     GtkWidget* label_empty = gtk_label_new("Skip Empty Files/Dirs:");
     gtk_widget_set_halign(label_empty, GTK_ALIGN_START);
-    gtk_grid_attach(GTK_GRID(grid), label_empty, 0, 6, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), label_empty, 0, 7, 1, 1);
     
     data->skip_empty_switch = gtk_switch_new();
     gtk_widget_set_halign(data->skip_empty_switch, GTK_ALIGN_START);
-    gtk_grid_attach(GTK_GRID(grid), data->skip_empty_switch, 1, 6, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), data->skip_empty_switch, 1, 7, 1, 1);
     
     // Grouping Rules list frame
     GtkWidget* rules_frame = gtk_frame_new("File/Folder Grouping Rules");
@@ -270,13 +289,42 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     GtkWidget* ok_btn = gtk_button_new_with_label("OK");
     gtk_box_append(GTK_BOX(action_box), ok_btn);
     
-    // Set initial values
-    gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), std::to_string(solver.mediumInfo.capacityBytes).c_str());
+    // Set initial human capacity value
+    if (solver.mediumInfo.capacityBytes == 681574400) gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "650 MB");
+    else if (solver.mediumInfo.capacityBytes == 734003200) gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "700 MB");
+    else if (solver.mediumInfo.capacityBytes == 4700000000LL) gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "4.7 GB");
+    else if (solver.mediumInfo.capacityBytes == 8500000000LL) gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "8.5 GB");
+    else if (solver.mediumInfo.capacityBytes == 25000000000LL) gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "25 GB");
+    else if (solver.mediumInfo.capacityBytes == 50000000000LL) gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "50 GB");
+    else if (solver.mediumInfo.capacityBytes == 8000000000LL) gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "8 GB");
+    else if (solver.mediumInfo.capacityBytes == 16000000000LL) gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "16 GB");
+    else if (solver.mediumInfo.capacityBytes == 32000000000LL) gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "32 GB");
+    else if (solver.mediumInfo.capacityBytes == 64000000000LL) gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "64 GB");
+    else if (solver.mediumInfo.capacityBytes == 256000000000LL) gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "256 GB");
+    else if (solver.mediumInfo.capacityBytes == 512000000000LL) gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "512 GB");
+    else {
+        double gb = (double)solver.mediumInfo.capacityBytes / (1024.0 * 1024.0 * 1024.0);
+        char buf[64];
+        snprintf(buf, sizeof(buf), "%.3f GB", gb);
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), buf);
+    }
+    
     gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), std::to_string(solver.mediumInfo.sectorSize).c_str());
     gtk_editable_set_text(GTK_EDITABLE(data->slack_entry), std::to_string(solver.mediumInfo.slackBytes).c_str());
     gtk_editable_set_text(GTK_EDITABLE(data->search_time_entry), std::to_string(solver.maxSearchTimeSeconds).c_str());
     gtk_editable_set_text(GTK_EDITABLE(data->split_depth_entry), std::to_string(solver.splitDepth).c_str());
     gtk_switch_set_active(GTK_SWITCH(data->skip_empty_switch), solver.skipEmpty);
+    
+    // Listen for capacity edit changes to show dynamic parsed size in MB
+    g_signal_connect(data->capacity_entry, "changed", G_CALLBACK(+[](GtkEditable* editable, gpointer user_data) {
+        auto* data = static_cast<DialogData*>(user_data);
+        const char* text = gtk_editable_get_text(editable);
+        int64_t bytes = parseHumanSize(text ? text : "");
+        double mb = (double)bytes / (1024.0 * 1024.0);
+        char buf[128];
+        snprintf(buf, sizeof(buf), "(%.2f MB)", mb);
+        gtk_label_set_text(GTK_LABEL(data->capacity_mb_label), buf);
+    }), data);
     
     // Fill rules store from solver
     for (const auto& rule : solver.groupingRules) {
@@ -291,7 +339,7 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     }
     
     // Select custom/standard size default index
-    int combo_index = 10; // Custom Size
+    int combo_index = 12; // Custom Size
     if (solver.mediumInfo.capacityBytes == 681574400) combo_index = 0;
     else if (solver.mediumInfo.capacityBytes == 734003200) combo_index = 1;
     else if (solver.mediumInfo.capacityBytes == 4700000000LL) combo_index = 2;
@@ -302,6 +350,8 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     else if (solver.mediumInfo.capacityBytes == 16000000000LL) combo_index = 7;
     else if (solver.mediumInfo.capacityBytes == 32000000000LL) combo_index = 8;
     else if (solver.mediumInfo.capacityBytes == 64000000000LL) combo_index = 9;
+    else if (solver.mediumInfo.capacityBytes == 256000000000LL) combo_index = 10;
+    else if (solver.mediumInfo.capacityBytes == 512000000000LL) combo_index = 11;
     
     gtk_combo_box_set_active(GTK_COMBO_BOX(data->media_combo), combo_index);
     on_media_changed(GTK_COMBO_BOX(data->media_combo), data);
@@ -315,8 +365,8 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     g_signal_connect(ok_btn, "clicked", G_CALLBACK(+[](GtkButton* btn, gpointer user_data) {
         auto* data = static_cast<DialogData*>(user_data);
         
-        // Save values
-        data->solver->mediumInfo.capacityBytes = std::stoll(gtk_editable_get_text(GTK_EDITABLE(data->capacity_entry)));
+        // Save values using parseHumanSize
+        data->solver->mediumInfo.capacityBytes = parseHumanSize(gtk_editable_get_text(GTK_EDITABLE(data->capacity_entry)));
         data->solver->mediumInfo.sectorSize = std::stoll(gtk_editable_get_text(GTK_EDITABLE(data->cluster_entry)));
         data->solver->mediumInfo.slackBytes = std::stoll(gtk_editable_get_text(GTK_EDITABLE(data->slack_entry)));
         data->solver->maxSearchTimeSeconds = std::stoi(gtk_editable_get_text(GTK_EDITABLE(data->search_time_entry)));
