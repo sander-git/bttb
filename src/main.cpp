@@ -1,6 +1,60 @@
+#define _GNU_SOURCE
 #include <gtk/gtk.h>
 #include "ui_main.hpp"
 #include "cli_engine.hpp"
+
+#ifdef __linux__
+#include <cstdlib>
+#include <cstdint>
+#include <unistd.h>
+#include <dlfcn.h>
+
+extern "C" {
+    uint32_t arc4random(void) {
+        uint32_t val = 0;
+        if (getentropy(&val, sizeof(val)) == 0) {
+            return val;
+        }
+        return static_cast<uint32_t>(std::rand());
+    }
+
+    long int __isoc23_strtol(const char *nptr, char **endptr, int base) {
+        typedef long int (*fn_t)(const char*, char**, int);
+        static fn_t real_fn = nullptr;
+        if (!real_fn) {
+            real_fn = (fn_t)dlsym(RTLD_NEXT, "strtol");
+        }
+        return real_fn(nptr, endptr, base);
+    }
+
+    long long int __isoc23_strtoll(const char *nptr, char **endptr, int base) {
+        typedef long long int (*fn_t)(const char*, char**, int);
+        static fn_t real_fn = nullptr;
+        if (!real_fn) {
+            real_fn = (fn_t)dlsym(RTLD_NEXT, "strtoll");
+        }
+        return real_fn(nptr, endptr, base);
+    }
+
+    unsigned long int __isoc23_strtoul(const char *nptr, char **endptr, int base) {
+        typedef unsigned long int (*fn_t)(const char*, char**, int);
+        static fn_t real_fn = nullptr;
+        if (!real_fn) {
+            real_fn = (fn_t)dlsym(RTLD_NEXT, "strtoul");
+        }
+        return real_fn(nptr, endptr, base);
+    }
+
+    unsigned long long int __isoc23_strtoull(const char *nptr, char **endptr, int base) {
+        typedef unsigned long long int (*fn_t)(const char*, char**, int);
+        static fn_t real_fn = nullptr;
+        if (!real_fn) {
+            real_fn = (fn_t)dlsym(RTLD_NEXT, "strtoull");
+        }
+        return real_fn(nptr, endptr, base);
+    }
+}
+#endif
 
 static std::string g_initialFolder = "";
 

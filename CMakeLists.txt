@@ -27,6 +27,7 @@ target_include_directories(bttb PRIVATE src)
 
 # Link Libraries
 target_link_libraries(bttb PRIVATE PkgConfig::GTK4)
+target_link_options(bttb PRIVATE -static-libgcc -static-libstdc++)
 
 # Test target
 add_executable(test_solver src/test_solver.cpp src/bttb_logic.cpp)
@@ -43,7 +44,13 @@ set(CPACK_PACKAGE_VERSION "3.3.0")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Burn to the Brim (C++ Port)")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
-set(CPACK_GENERATOR "TGZ")
+set(CPACK_GENERATOR "TGZ;DEB")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "BurnToTheBrim Team <support@sourceforge.net>")
+set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "Burn to the Brim C++ bin-packing optimizer")
+set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
+set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS OFF)
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.35), libglib2.0-0t64 | libglib2.0-0 (>= 2.28.0), libgtk-4-1 (>= 4.6.0)")
 
 # Source package exclusions
 set(CPACK_SOURCE_GENERATOR "TGZ")

@@ -9,10 +9,11 @@ version = "3.3.0"
 
 os.makedirs(build_dir, exist_ok=True)
 
-# 1. Compile Linux GTK4 binary
-print("Compiling Linux GTK4 binary via CMake...")
+# 1. Compile Linux GTK4 binary & Debian package
+print("Compiling Linux GTK4 binary and packaging DEB via CMake...")
 subprocess.run(["cmake", "-DCMAKE_BUILD_TYPE=Release", ".."], cwd=build_dir, check=True)
 subprocess.run(["make", "-j", "4"], cwd=build_dir, check=True)
+subprocess.run(["make", "package"], cwd=build_dir, check=True)
 
 # 2. Cross-compile Windows GUI binary
 print("Cross-compiling Windows Win32 Native binary...")
