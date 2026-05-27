@@ -35,6 +35,8 @@
 #define ID_BTN_PREFS       1010
 #define ID_CHK_TRACE       1011
 #define ID_BTN_ABOUT       1012
+#define ID_BTN_TEST        1017
+#define ID_EDIT_SEMANTIC   1018
 
 // ISO Dialog Control IDs
 #define ID_BTN_ISO_SRC_BROWSE  2001
@@ -87,9 +89,11 @@ HWND g_editLog = NULL;
 HWND g_progress = NULL;
 HWND g_hwndTreeView = NULL;
 HWND g_btnStart = NULL;
+HWND g_btnTest = NULL;
 HWND g_btnStop = NULL;
 HWND g_btnCreateIso = NULL;
 HWND g_labelProgress = NULL;
+HWND g_editSemantic = NULL;
 
 // Folders List Dialog State
 HWND g_hwndFolderList = NULL;
@@ -957,45 +961,79 @@ void PopulateTreeView(HWND hwndTV) {
             tvisChild.item.mask = TVIF_TEXT;
             tvisChild.item.pszText = const_cast<LPSTR>(child_name);
             
-            TreeView_InsertItem(hwndTV, &tvisChild);
+            HTREEITEM hChild = TreeView_InsertItem(hwndTV, &tvisChild);
+            
+            // If it is a semantic or rules group, add nested files under it!
+            if (i < vol.itemGroupedPaths.size() && !vol.itemGroupedPaths[i].empty()) {
+                for (const auto& subPath : vol.itemGroupedPaths[i]) {
+                    char sub_name[512];
+                    snprintf(sub_name, sizeof(sub_name), "%s", subPath.c_str());
+                    
+                    TVINSERTSTRUCT tvisSub = {0};
+                    tvisSub.hParent = hChild;
+                    tvisSub.hInsertAfter = TVI_LAST;
+                    tvisSub.item.mask = TVIF_TEXT;
+                    tvisSub.item.pszText = const_cast<LPSTR>(sub_name);
+                    
+                    TreeView_InsertItem(hwndTV, &tvisSub);
+                }
+                TreeView_Expand(hwndTV, hChild, TVE_EXPAND);
+            }
         }
         
         TreeView_Expand(hwndTV, hParent, TVE_EXPAND);
-    }
-    
-    // 2. Add remaining (unfitted) items
-    if (!g_solver.itemsToSplit.empty()) {
-        int64_t unfitted_bytes = 0;
-        for (const auto& item : g_solver.itemsToSplit) {
-            unfitted_bytes += item->sizeBytes;
-        }
-        
-        char unfitted_label[256];
-        snprintf(unfitted_label, sizeof(unfitted_label), "Remaining Items (Total: %.2f MB)", (double)unfitted_bytes / (1024.0 * 1024.0));
-        
-        TVINSERTSTRUCT tvis = {0};
-        tvis.hParent = TVI_ROOT;
-        tvis.hInsertAfter = TVI_LAST;
-        tvis.item.mask = TVIF_TEXT;
-        tvis.item.pszText = const_cast<LPSTR>(unfitted_label);
-        
-        HTREEITEM hParent = TreeView_InsertItem(hwndTV, &tvis);
-        
-        for (const auto& item : g_solver.itemsToSplit) {
-            char child_name[512];
-            snprintf(child_name, sizeof(child_name), "%s (%lld bytes)", item->relativePath.c_str(), static_cast<long long>(item->sizeBytes));
-            
-            TVINSERTSTRUCT tvisChild = {0};
-            tvisChild.hParent = hParent;
-            tvisChild.hInsertAfter = TVI_LAST;
-            tvisChild.item.mask = TVIF_TEXT;
-            tvisChild.item.pszText = const_cast<LPSTR>(child_name);
-            
-            TreeView_InsertItem(hwndTV, &tvisChild);
-        }
-        
-        TreeView_Expand(hwndTV, hParent, TVE_EXPAND);
-    }
+     }
+     
+     // 2. Add remaining (unfitted) items
+     if (!g_solver.itemsToSplit.empty()) {
+         int64_t unfitted_bytes = 0;
+         for (const auto& item : g_solver.itemsToSplit) {
+             unfitted_bytes += item->sizeBytes;
+         }
+         
+         char unfitted_label[256];
+         snprintf(unfitted_label, sizeof(unfitted_label), "Remaining Items (Total: %.2f MB)", (double)unfitted_bytes / (1024.0 * 1024.0));
+         
+         TVINSERTSTRUCT tvis = {0};
+         tvis.hParent = TVI_ROOT;
+         tvis.hInsertAfter = TVI_LAST;
+         tvis.item.mask = TVIF_TEXT;
+         tvis.item.pszText = const_cast<LPSTR>(unfitted_label);
+         
+         HTREEITEM hParent = TreeView_InsertItem(hwndTV, &tvis);
+         
+         for (const auto& item : g_solver.itemsToSplit) {
+             char child_name[512];
+             snprintf(child_name, sizeof(child_name), "%s (%lld bytes)", item->relativePath.c_str(), static_cast<long long>(item->sizeBytes));
+             
+             TVINSERTSTRUCT tvisChild = {0};
+             tvisChild.hParent = hParent;
+             tvisChild.hInsertAfter = TVI_LAST;
+             tvisChild.item.mask = TVIF_TEXT;
+             tvisChild.item.pszText = const_cast<LPSTR>(child_name);
+             
+             HTREEITEM hChild = TreeView_InsertItem(hwndTV, &tvisChild);
+             
+             // If it is a group, add nested files under it!
+             if (!item->groupedPaths.empty()) {
+                 for (const auto& subPath : item->groupedPaths) {
+                     char sub_name[512];
+                     snprintf(sub_name, sizeof(sub_name), "%s", subPath.c_str());
+                     
+                     TVINSERTSTRUCT tvisSub = {0};
+                     tvisSub.hParent = hChild;
+                     tvisSub.hInsertAfter = TVI_LAST;
+                     tvisSub.item.mask = TVIF_TEXT;
+                     tvisSub.item.pszText = const_cast<LPSTR>(sub_name);
+                     
+                     TreeView_InsertItem(hwndTV, &tvisSub);
+                 }
+                 TreeView_Expand(hwndTV, hChild, TVE_EXPAND);
+             }
+         }
+         
+         TreeView_Expand(hwndTV, hParent, TVE_EXPAND);
+     }
 }
 
 // Window Procedure for Main Window
@@ -1050,8 +1088,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             // Layout shifted to the right by 272px for right side groups
             int y = 16;
             
-            // Group 1: Folders Selection
-            CreateWindow("BUTTON", "Directories setup", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 284, y, 510, 180, hwnd, NULL, NULL, NULL);
+            // Group 1: Folders Selection (height expanded to 205 to fit semantic packing text box)
+            CreateWindow("BUTTON", "Directories setup", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 284, y, 510, 205, hwnd, NULL, NULL, NULL);
             
             CreateWindow("BUTTON", "+", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 296, y + 22, 30, 25, hwnd, (HMENU)ID_BTN_ADD_FOLDERS, NULL, NULL);
             CreateWindow("STATIC", "Source folder:", WS_CHILD | WS_VISIBLE, 332, y + 26, 80, 20, hwnd, NULL, NULL, NULL);
@@ -1067,29 +1105,35 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             g_editDest = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 418, y + 56, 260, 22, hwnd, NULL, NULL, NULL);
             CreateWindow("BUTTON", "Browse...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 688, y + 54, 90, 25, hwnd, (HMENU)ID_BTN_DEST_BROWSE, NULL, NULL);
             
-            g_chkMove = CreateWindow("BUTTON", "Move/organize fitted folders/files to target folder", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 418, y + 82, 360, 20, hwnd, (HMENU)ID_CHK_MOVE, NULL, NULL);
-            g_chkSymlink = CreateWindow("BUTTON", "Create symbolic links in target folder (Default)", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 418, y + 104, 360, 20, hwnd, (HMENU)ID_CHK_SYMLINK, NULL, NULL);
+            // v4.0.0 Semantic Prompt Control at y + 82
+            CreateWindow("STATIC", "Semantic prompt:", WS_CHILD | WS_VISIBLE, 296, y + 84, 120, 20, hwnd, NULL, NULL, NULL);
+            g_editSemantic = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 418, y + 82, 360, 22, hwnd, (HMENU)ID_EDIT_SEMANTIC, NULL, NULL);
+            
+            // Checkboxes shifted down to accommodate semantic prompt control
+            g_chkMove = CreateWindow("BUTTON", "Move/organize fitted folders/files to target folder", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 418, y + 108, 360, 20, hwnd, (HMENU)ID_CHK_MOVE, NULL, NULL);
+            g_chkSymlink = CreateWindow("BUTTON", "Create symbolic links in target folder (Default)", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 418, y + 130, 360, 20, hwnd, (HMENU)ID_CHK_SYMLINK, NULL, NULL);
             SendMessage(g_chkSymlink, BM_SETCHECK, BST_CHECKED, 0); // Checked by default
             
-            g_chkSpan = CreateWindow("BUTTON", "Span across multiple volumes (Volume_1, Volume_2, etc.)", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 418, y + 126, 360, 20, hwnd, (HMENU)ID_CHK_SPAN, NULL, NULL);
-            g_chkTrace = CreateWindow("BUTTON", "Enable detailed solver diagnostic tracing (Trace)", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 418, y + 148, 360, 20, hwnd, (HMENU)ID_CHK_TRACE, NULL, NULL);
+            g_chkSpan = CreateWindow("BUTTON", "Span across multiple volumes (Volume_1, Volume_2, etc.)", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 418, y + 152, 360, 20, hwnd, (HMENU)ID_CHK_SPAN, NULL, NULL);
+            g_chkTrace = CreateWindow("BUTTON", "Enable detailed solver diagnostic tracing (Trace)", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 418, y + 174, 360, 20, hwnd, (HMENU)ID_CHK_TRACE, NULL, NULL);
             
-            // Group 2: Progress
-            CreateWindow("BUTTON", "Fitted Capacity Status", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 284, 205, 510, 60, hwnd, NULL, NULL, NULL);
-            g_progress = CreateWindow(PROGRESS_CLASS, "", WS_CHILD | WS_VISIBLE, 296, 229, 350, 20, hwnd, NULL, NULL, NULL);
-            g_labelProgress = CreateWindow("STATIC", "Filled: 0.00%", WS_CHILD | WS_VISIBLE, 657, 231, 120, 20, hwnd, NULL, NULL, NULL);
+            // Group 2: Progress (Shifted to y=230)
+            CreateWindow("BUTTON", "Fitted Capacity Status", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 284, 230, 510, 60, hwnd, NULL, NULL, NULL);
+            g_progress = CreateWindow(PROGRESS_CLASS, "", WS_CHILD | WS_VISIBLE, 296, 254, 350, 20, hwnd, NULL, NULL, NULL);
+            g_labelProgress = CreateWindow("STATIC", "Filled: 0.00%", WS_CHILD | WS_VISIBLE, 657, 256, 120, 20, hwnd, NULL, NULL, NULL);
             
-            // Group 3: Log Output
-            CreateWindow("BUTTON", "Solver Output Log", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 284, 275, 510, 160, hwnd, NULL, NULL, NULL);
-            g_editLog = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL | ES_READONLY, 296, 299, 480, 120, hwnd, NULL, NULL, NULL);
+            // Group 3: Log Output (Shifted to y=300)
+            CreateWindow("BUTTON", "Solver Output Log", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 284, 300, 510, 160, hwnd, NULL, NULL, NULL);
+            g_editLog = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL | ES_READONLY, 296, 324, 480, 120, hwnd, NULL, NULL, NULL);
             
-            // Bottom Action buttons row
-            g_btnStart = CreateWindow("BUTTON", "Start", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 284, 450, 100, 30, hwnd, (HMENU)ID_BTN_START, NULL, NULL);
-            g_btnStop = CreateWindow("BUTTON", "Stop", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 390, 450, 60, 30, hwnd, (HMENU)ID_BTN_STOP, NULL, NULL);
-            CreateWindow("BUTTON", "Preferences...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 456, 450, 100, 30, hwnd, (HMENU)ID_BTN_PREFS, NULL, NULL);
-            g_btnCreateIso = CreateWindow("BUTTON", "Create ISO...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 562, 450, 110, 30, hwnd, (HMENU)ID_BTN_CREATE_ISO, NULL, NULL);
-            CreateWindow("BUTTON", "Help", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 678, 450, 60, 30, hwnd, (HMENU)ID_BTN_HELP, NULL, NULL);
-            CreateWindow("BUTTON", "About...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 744, 450, 50, 30, hwnd, (HMENU)ID_BTN_ABOUT, NULL, NULL);
+            // Bottom Action buttons row (Shifted to y=475)
+            g_btnTest = CreateWindow("BUTTON", "Test", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 284, 475, 70, 30, hwnd, (HMENU)ID_BTN_TEST, NULL, NULL);
+            g_btnStart = CreateWindow("BUTTON", "Start", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 360, 475, 70, 30, hwnd, (HMENU)ID_BTN_START, NULL, NULL);
+            g_btnStop = CreateWindow("BUTTON", "Stop", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 436, 475, 50, 30, hwnd, (HMENU)ID_BTN_STOP, NULL, NULL);
+            CreateWindow("BUTTON", "Preferences...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 492, 475, 95, 30, hwnd, (HMENU)ID_BTN_PREFS, NULL, NULL);
+            g_btnCreateIso = CreateWindow("BUTTON", "Create ISO...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 593, 475, 95, 30, hwnd, (HMENU)ID_BTN_CREATE_ISO, NULL, NULL);
+            CreateWindow("BUTTON", "Help", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 694, 475, 50, 30, hwnd, (HMENU)ID_BTN_HELP, NULL, NULL);
+            CreateWindow("BUTTON", "About...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 750, 475, 54, 30, hwnd, (HMENU)ID_BTN_ABOUT, NULL, NULL);
             
             EnableWindow(g_btnStop, FALSE);
             
@@ -1158,7 +1202,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 }
             }
             
-            if (wmId == ID_BTN_START) {
+            if (wmId == ID_BTN_START || wmId == ID_BTN_TEST) {
                 char src[2048];
                 char dest[MAX_PATH];
                 GetWindowText(g_editSrc, src, 2048);
@@ -1208,18 +1252,33 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 g_solver.spanMultipleVolumes = (IsDlgButtonChecked(hwnd, ID_CHK_SPAN) == BST_CHECKED);
                 g_solver.enableTrace = (IsDlgButtonChecked(hwnd, ID_CHK_TRACE) == BST_CHECKED);
                 
+                // Retrieve semantic prompt
+                char semanticPromptBuf[1024];
+                GetWindowText(g_editSemantic, semanticPromptBuf, 1024);
+                g_solver.semanticPrompt = semanticPromptBuf;
+                g_solver.enableSemanticPacking = !g_solver.semanticPrompt.empty();
+                
+                // Configure test mode
+                g_solver.testOnlyMode = (wmId == ID_BTN_TEST);
+                
                 // Clear old logs and tree
                 SetWindowText(g_editLog, "");
                 TreeView_DeleteAllItems(g_hwndTreeView);
-                AppendTextToLog(g_editLog, "Starting solver background calculations...");
+                if (g_solver.testOnlyMode) {
+                    AppendTextToLog(g_editLog, "Starting test packing simulation...");
+                } else {
+                    AppendTextToLog(g_editLog, "Starting solver background calculations...");
+                }
                 
                 // Disable UI inputs
                 EnableWindow(g_btnStart, FALSE);
+                EnableWindow(g_btnTest, FALSE);
                 EnableWindow(g_btnStop, TRUE);
                 EnableWindow(g_chkMove, FALSE);
                 EnableWindow(g_chkSymlink, FALSE);
                 EnableWindow(g_chkSpan, FALSE);
                 EnableWindow(g_chkTrace, FALSE);
+                EnableWindow(g_editSemantic, FALSE);
                 
                 // Wire thread safe UI messages
                 g_solver.logNotify = [hwnd](const std::string& msg, int type) {
@@ -1345,24 +1404,39 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                     "5. Multiple Source Folders (+)\r\n"
                     "Click '+' to specify multiple source folders. BTTB acts as if they are in a single root folder. Nested source paths are ignored.\r\n\r\n"
                     "6. Create Symbolic Links\r\n"
-                    "Instead of copying/moving files to the target folder, BTTB creates lightweight symbolic links pointing back to your original files.";
+                    "Instead of copying/moving files to the target folder, BTTB creates lightweight symbolic links pointing back to your original files.\r\n\r\n"
+                    "7. Neural Semantic Packing & MiniLM Setup Guide\r\n"
+                    "By specifying a semantic prompt, BTTB groups files with similar content using context-aware deep learning embeddings.\r\n"
+                    "To use the preferred, high-accuracy MiniLM neural model, you must install Python 3 and sentence-transformers:\r\n"
+                    " - Step 1: Ensure Python 3 & pip are installed.\r\n"
+                    "   (Linux: run 'sudo apt install python3 python3-pip python3-venv')\r\n"
+                    "   (Windows: Install from https://www.python.org/ and check 'Add Python to PATH')\r\n"
+                    " - Step 2: Install sentence-transformers via terminal/command prompt:\r\n"
+                    "   Option A (Recommended for simplicity):\r\n"
+                    "     pip install sentence-transformers\r\n"
+                    "   Option B (Virtual environment isolation):\r\n"
+                    "     python3 -m venv bttb_env\r\n"
+                    "     source bttb_env/bin/activate  # (Windows: bttb_env\\Scripts\\activate)\r\n"
+                    "     pip install sentence-transformers\r\n"
+                    " - Step 3: Restart Burn to the Brim to automatically load MiniLM! If not found, BTTB falls back gracefully to a localized character TF-IDF projector.";
                 MessageBox(hwnd, helpText.c_str(), "Help - Burn to the Brim", MB_OK | MB_ICONINFORMATION);
             }
             
             if (wmId == ID_BTN_ABOUT) {
                 std::string aboutText = 
                     "Burn to the Brim (BTTB)\r\n"
-                    "Version 3.3.0\r\n\r\n"
+                    "Version 4.0.0\r\n\r\n"
                     "Authors:\r\n"
                     "Sander Raaijmakers, Elwin Oost and the Burn to the Brim team\r\n\r\n"
                     "Licensing:\r\n"
                     "This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2 of the License (GPLv2).\r\n\r\n"
-                    "Features in v3.3.0:\r\n"
+                    "Features in v4.0.0:\r\n"
+                    "- Entropy-Aware Semantic Packing based on MiniLM embeddings\r\n"
+                    "- Interactive Test Simulation Mode with volume coherence metrics\r\n"
                     "- Unicode & Long Path (>256 characters) support\r\n"
                     "- Hybrid GUI / CLI integrated binary execution\r\n"
                     "- Optional Windows Explorer Context Menu integration\r\n"
-                    "- Smart adaptive capacity recommendation & retrying\r\n"
-                    "- Windows Setup Installer Package (.exe)";
+                    "- Smart adaptive capacity recommendation & retrying";
                 MessageBox(hwnd, aboutText.c_str(), "About Burn to the Brim", MB_OK | MB_ICONINFORMATION);
             }
             
@@ -1397,11 +1471,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             
             // Re-enable start and control inputs
             EnableWindow(g_btnStart, TRUE);
+            EnableWindow(g_btnTest, TRUE);
             EnableWindow(g_btnStop, FALSE);
             EnableWindow(g_chkMove, TRUE);
             EnableWindow(g_chkSymlink, TRUE);
             EnableWindow(g_chkSpan, TRUE);
             EnableWindow(g_chkTrace, TRUE);
+            EnableWindow(g_editSemantic, TRUE);
             
             PopulateTreeView(g_hwndTreeView);
             
@@ -1567,7 +1643,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         "BttbWin32GUI",
         "Burn to the Brim (Native Win32 GUI)",
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
-        CW_USEDEFAULT, CW_USEDEFAULT, 830, 540,
+        CW_USEDEFAULT, CW_USEDEFAULT, 830, 565,
         NULL, NULL, hInstance, NULL
     );
     

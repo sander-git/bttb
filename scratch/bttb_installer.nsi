@@ -2,8 +2,8 @@ Unicode true
 
 !include "MUI2.nsh"
 
-Name "Burn to the Brim 3.3.0"
-OutFile "../build/bttb-cpp-3.3.0-Win64-Installer.exe"
+Name "Burn to the Brim 4.0.0"
+OutFile "../build/bttb-cpp-4.0.0-Win64-Installer.exe"
 InstallDir "$LOCALAPPDATA\BurnToTheBrim"
 InstallDirRegKey HKCU "Software\BurnToTheBrim" "InstallDir"
 
@@ -35,12 +35,16 @@ Section "Burn to the Brim (Required)" SecCore
   File "../LICENSE"
   File "../README.md"
   
+  SetOutPath "$INSTDIR\src"
+  File "../src/bttb_embed.py"
+  SetOutPath "$INSTDIR"
+  
   WriteRegStr HKCU "Software\BurnToTheBrim" "InstallDir" "$INSTDIR"
   
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "DisplayName" "Burn to the Brim"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "DisplayIcon" "$INSTDIR\bttb_win32.exe,0"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "UninstallString" '"$INSTDIR\uninstall.exe"'
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "DisplayVersion" "3.3.0"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "DisplayVersion" "4.0.0"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "Publisher" "BurnToTheBrim Team"
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "NoModify" 1
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "NoRepair" 1
@@ -62,8 +66,10 @@ Section "Uninstall"
   Delete "$INSTDIR\bttb_win32.exe"
   Delete "$INSTDIR\LICENSE"
   Delete "$INSTDIR\README.md"
+  Delete "$INSTDIR\src\bttb_embed.py"
   Delete "$INSTDIR\uninstall.exe"
   
+  RMDir "$INSTDIR\src"
   RMDir "$INSTDIR"
   
   Delete "$SMPROGRAMS\Burn to the Brim\Burn to the Brim.lnk"

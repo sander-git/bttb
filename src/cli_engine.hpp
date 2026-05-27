@@ -30,6 +30,8 @@ inline void printCliHelp(const char* prog) {
     std::cout << "  --trace                    Show verbose branching backtracking diagnostics\n";
     std::cout << "  --time <seconds>           Kombinatoric search time limit in seconds (default: 10s)\n";
     std::cout << "  --rules <patterns>         Semicolon-separated glob matching groupings (e.g., \"*.mp3;*.wav\")\n";
+    std::cout << "  --semantic <prompt>        Enable MiniLM entropy-aware semantic packing with a prompt\n";
+    std::cout << "  --test                     Run solver calculations in interactive simulation test mode (no disk writes)\n";
     std::cout << "  -gui, --gui                Force loading the GUI interface\n";
 }
 
@@ -79,6 +81,11 @@ inline int runCliEngine(int argc, char* argv[]) {
             solver.skipUnreadable = false;
         } else if (arg == "--trace") {
             solver.enableTrace = true;
+        } else if (arg == "--semantic" && i + 1 < argc) {
+            solver.semanticPrompt = argv[++i];
+            solver.enableSemanticPacking = true;
+        } else if (arg == "--test") {
+            solver.testOnlyMode = true;
         } else if (arg == "--time" && i + 1 < argc) {
             solver.maxSearchTimeSeconds = std::stoi(argv[++i]);
         } else if (arg == "--rules" && i + 1 < argc) {
@@ -178,7 +185,8 @@ inline bool isCliModeTriggered(int argc, char* argv[]) {
                    arg == "-k" || arg == "--slack" || arg == "-d" || arg == "--depth" ||
                    arg == "-m" || arg == "--move" || arg == "-l" || arg == "--symlink" ||
                    arg == "--span" || arg == "--no-skip-empty" || arg == "--no-skip-unreadable" ||
-                   arg == "--trace" || arg == "--time" || arg == "--rules") {
+                   arg == "--trace" || arg == "--time" || arg == "--rules" ||
+                   arg == "--semantic" || arg == "--test") {
             hasCliOption = true;
         } else if (!arg.empty() && arg[0] != '-') {
             dirCount++;

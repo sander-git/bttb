@@ -5,7 +5,7 @@ import subprocess
 
 base_dir = "/home/sander/src/antigravity/project1/bttb_cpp"
 build_dir = os.path.join(base_dir, "build")
-version = "3.3.0"
+version = "4.0.0"
 
 os.makedirs(build_dir, exist_ok=True)
 
@@ -33,6 +33,7 @@ with zipfile.ZipFile(linux_zip_path, 'w', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(build_dir, "bttb"), os.path.join(linux_zip_name, "bttb"))
     z.write(os.path.join(base_dir, "LICENSE"), os.path.join(linux_zip_name, "LICENSE"))
     z.write(os.path.join(base_dir, "README.md"), os.path.join(linux_zip_name, "README.md"))
+    z.write(os.path.join(base_dir, "src/bttb_embed.py"), os.path.join(linux_zip_name, "src/bttb_embed.py"))
 
 # 4. Create Windows Win32 Native GUI release ZIP
 win_zip_name = f"bttb-cpp-{version}-Win64-Native-GUI"
@@ -42,6 +43,7 @@ with zipfile.ZipFile(win_zip_path, 'w', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(build_dir, "bttb_win32.exe"), os.path.join(win_zip_name, "bttb_win32.exe"))
     z.write(os.path.join(base_dir, "LICENSE"), os.path.join(win_zip_name, "LICENSE"))
     z.write(os.path.join(base_dir, "README.md"), os.path.join(win_zip_name, "README.md"))
+    z.write(os.path.join(base_dir, "src/bttb_embed.py"), os.path.join(win_zip_name, "src/bttb_embed.py"))
 
 # 5. Compile Windows Installer using makensis
 print("Compiling Windows Setup Installer via NSIS makensis...")
@@ -69,4 +71,4 @@ with zipfile.ZipFile(source_zip_path, 'w', zipfile.ZIP_DEFLATED) as z:
         if os.path.isfile(file_path):
             z.write(file_path, os.path.join(source_zip_name, "scratch", f))
 
-print("All BTTB v3.3.0 packages generated successfully!")
+print("All BTTB v4.0.0 packages generated successfully!")

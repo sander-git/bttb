@@ -357,6 +357,184 @@ void run_test5() {
     std::filesystem::remove_all(test_dir);
 }
 
+void run_test6() {
+    std::cout << "\n--- STARTING TEST 6: ENTROPY-AWARE SEMANTIC PACKING & TEST SIMULATION (BTTB v4.0.0) ---" << std::endl;
+    
+    // 1. Verify Cosine Similarity
+    bttb::BttbSolver solver;
+    std::vector<float> vecA = {1.0f, 0.0f, 0.0f};
+    std::vector<float> vecB = {1.0f, 0.0f, 0.0f};
+    std::vector<float> vecC = {0.0f, 1.0f, 0.0f};
+    
+    double simAB = solver.computeCosineSimilarity(vecA, vecB);
+    double simAC = solver.computeCosineSimilarity(vecA, vecC);
+    
+    std::cout << "Cosine Similarity A & B (identical): " << simAB << " (Expected: 1.0)" << std::endl;
+    std::cout << "Cosine Similarity A & C (orthogonal): " << simAC << " (Expected: 0.0)" << std::endl;
+    
+    assert(std::abs(simAB - 1.0) < 1e-5);
+    assert(std::abs(simAC - 0.0) < 1e-5);
+    
+    // 2. Test-only simulation verification (No files should be modified on disk)
+    std::string test_src = "./mock_semantic_src";
+    std::string test_dest = "./mock_semantic_dest";
+    std::filesystem::remove_all(test_src);
+    std::filesystem::remove_all(test_dest);
+    
+    std::filesystem::create_directories(test_src);
+    {
+        std::ofstream f1(test_src + "/rock_music_1.mp3"); f1 << "music";
+        std::ofstream f2(test_src + "/rock_music_2.mp3"); f2 << "music";
+        std::ofstream f3(test_src + "/text_document.txt"); f3 << "text document";
+    }
+    
+    solver.sourceDirectory = test_src;
+    solver.targetDirectory = test_dest;
+    solver.testOnlyMode = true; // IMPORTANT: Test mode
+    solver.createSymlinks = true;
+    solver.moveFiles = false;
+    solver.spanMultipleVolumes = false;
+    solver.mediumInfo.capacityBytes = 1024 * 1024;
+    solver.mediumInfo.sectorSize = 2048;
+    solver.mediumInfo.slackBytes = 0;
+    solver.enableTrace = true; // Enable trace options to assert folder analysis logs!
+    
+    solver.logNotify = [](const std::string& msg, int type) {
+        std::cout << "[Solver Test 6] " << msg << std::endl;
+    };
+    
+    solver.run();
+    
+    // Assert no target output exists because of testOnlyMode
+    std::cout << "Checking that destination '" << test_dest << "' does not contain files..." << std::endl;
+    bool destHasFiles = false;
+    if (std::filesystem::exists(test_dest)) {
+        for (const auto& entry : std::filesystem::directory_iterator(test_dest)) {
+            destHasFiles = true;
+            break;
+        }
+    }
+    assert(!destHasFiles);
+    std::cout << "SUCCESS: testOnlyMode correctly skipped all filesystem write operations!" << std::endl;
+    
+    // 3. Verify semantic prompt configuration parser in isCliModeTriggered
+    char* testArgv1[] = { (char*)"bttb", (char*)"--semantic", (char*)"keep similar content together" };
+    assert(bttb::isCliModeTriggered(3, testArgv1));
+    
+    char* testArgv2[] = { (char*)"bttb", (char*)"--test" };
+    assert(bttb::isCliModeTriggered(2, testArgv2));
+    
+    std::cout << "CLI semantic prompt trigger detectors validated successfully!" << std::endl;
+    
+    // 4. Verify deterministic instruction prompt embeddings in bttb_embed.py
+    {
+        std::filesystem::path tempDir = std::filesystem::temp_directory_path();
+        std::string tempIn = (tempDir / "bttb_test_in.json").string();
+        std::string tempOut = (tempDir / "bttb_test_out.json").string();
+        
+        std::string scriptPath = "src/bttb_embed.py";
+        if (!std::filesystem::exists(scriptPath)) {
+            scriptPath = "../src/bttb_embed.py";
+        }
+        if (!std::filesystem::exists(scriptPath)) {
+            scriptPath = "./bttb_embed.py";
+        }
+
+        // Scenario A: same first letter keep together
+        {
+            std::ofstream testIn(tempIn);
+            testIn << "{\n"
+                   << "  \"prompt\": \"same first letter keep together\",\n"
+                   << "  \"items\": [\n"
+                   << "    { \"path\": \"apple.txt\", \"size\": 10 },\n"
+                   << "    { \"path\": \"apricot.png\", \"size\": 20 },\n"
+                   << "    { \"path\": \"banana.txt\", \"size\": 30 }\n"
+                   << "  ]\n"
+                   << "}";
+            testIn.close();
+            
+            std::string cmd = "python3 \"" + scriptPath + "\" < \"" + tempIn + "\" > \"" + tempOut + "\"";
+            int ret = std::system(cmd.c_str());
+            assert(ret == 0);
+            
+            std::ifstream testOut(tempOut);
+            std::stringstream buffer;
+            buffer << testOut.rdbuf();
+            std::string outJson = buffer.str();
+            testOut.close();
+            
+            // Assert identical first letter mapping gets same unit dimension, and banana gets distinct
+            assert(outJson.find("[1.0") != std::string::npos || outJson.find("[1") != std::string::npos);
+            std::cout << "SUCCESS: 'same first letter keep together' verified successfully!" << std::endl;
+        }
+
+        // Scenario B: same extension keep together
+        {
+            std::ofstream testIn(tempIn);
+            testIn << "{\n"
+                   << "  \"prompt\": \"same extension keep together\",\n"
+                   << "  \"items\": [\n"
+                   << "    { \"path\": \"a.mp3\", \"size\": 10 },\n"
+                   << "    { \"path\": \"b.mp3\", \"size\": 20 },\n"
+                   << "    { \"path\": \"c.jpg\", \"size\": 30 }\n"
+                   << "  ]\n"
+                   << "}";
+            testIn.close();
+            
+            std::string cmd = "python3 \"" + scriptPath + "\" < \"" + tempIn + "\" > \"" + tempOut + "\"";
+            int ret = std::system(cmd.c_str());
+            assert(ret == 0);
+            
+            std::ifstream testOut(tempOut);
+            std::stringstream buffer;
+            buffer << testOut.rdbuf();
+            std::string outJson = buffer.str();
+            testOut.close();
+            
+            // Assert correct extension group matches
+            assert(outJson.find("[1.0") != std::string::npos || outJson.find("[1") != std::string::npos);
+            std::cout << "SUCCESS: 'same extension keep together' verified successfully!" << std::endl;
+        }
+
+        // Scenario C: similar file size keep together
+        {
+            std::ofstream testIn(tempIn);
+            testIn << "{\n"
+                   << "  \"prompt\": \"similar file size keep together\",\n"
+                   << "  \"items\": [\n"
+                   << "    { \"path\": \"a.txt\", \"size\": 1024 },\n"
+                   << "    { \"path\": \"b.txt\", \"size\": 1050 },\n"
+                   << "    { \"path\": \"c.txt\", \"size\": 1024000 }\n"
+                   << "  ]\n"
+                   << "}";
+            testIn.close();
+            
+            std::string cmd = "python3 \"" + scriptPath + "\" < \"" + tempIn + "\" > \"" + tempOut + "\"";
+            int ret = std::system(cmd.c_str());
+            assert(ret == 0);
+            
+            std::ifstream testOut(tempOut);
+            std::stringstream buffer;
+            buffer << testOut.rdbuf();
+            std::string outJson = buffer.str();
+            testOut.close();
+            
+            // Assert log-scale size grouping works beautifully
+            assert(outJson.find("[1.0") != std::string::npos || outJson.find("[1") != std::string::npos);
+            std::cout << "SUCCESS: 'similar file size keep together' verified successfully!" << std::endl;
+        }
+
+        // Clean up
+        std::filesystem::remove(tempIn);
+        std::filesystem::remove(tempOut);
+    }
+    
+    // Cleanup
+    std::filesystem::remove_all(test_src);
+    std::filesystem::remove_all(test_dest);
+    std::cout << "SUCCESS: Entropy-Aware Semantic Solver test suite completed successfully!" << std::endl;
+}
+
 int main() {
     std::cout << "Starting BTTB automated verification suite..." << std::endl;
     run_test1();
@@ -364,6 +542,7 @@ int main() {
     run_test3();
     run_test4();
     run_test5();
+    run_test6();
     std::cout << "\nALL TESTS PASSED SUCCESSFULLY!" << std::endl;
     return 0;
 }

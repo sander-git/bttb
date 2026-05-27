@@ -1,5 +1,7 @@
 #include "bttb_logic.hpp"
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <algorithm>
 #include <chrono>
 #include <queue>
@@ -266,6 +268,12 @@ BttbSolver::BttbSolver() {
     progressNotify = [](double, double) {};
     recommendCapacityNotify = nullptr;
     skipUnreadable = true;
+
+    // Semantic Packing
+    semanticPrompt = "";
+    enableSemanticPacking = false;
+    testOnlyMode = false;
+    semanticCoherenceFactor = 0.7;
 }
 
 void BttbSolver::addEntry(const std::string& relPath, const std::string& absPath, int64_t size, bool isDir) {
@@ -337,6 +345,10 @@ int64_t BttbSolver::diveDepth(const std::filesystem::path& baseDir, const std::f
     int64_t totalSize = 0;
     std::filesystem::path fullPath = makeLongPath(baseDir / currentSubpath);
     std::filesystem::path baseDirLong = makeLongPath(baseDir);
+    
+    if (enableTrace) {
+        logNotify("[TRACE] [Scan] Analyzing directory: " + toUtf8Str(fullPath) + " (split depth level: " + std::to_string(depth) + ")", 3);
+    }
     
     try {
         if (!std::filesystem::exists(fullPath)) return 0;
@@ -536,6 +548,10 @@ void BttbSolver::run() {
             logNotify("No items to fit.", 2);
             return;
         }
+
+        if (enableSemanticPacking && !semanticPrompt.empty()) {
+            runSemanticClustering();
+        }
         
         // Find maximum file size encountered
         int64_t maxItemSize = 0;
@@ -658,14 +674,20 @@ void BttbSolver::run() {
         vol.totalBytes = 0;
         for (int idx : bestSelectionIndices) {
             logNotify(" - " + itemsToSplit[idx]->relativePath + " (" + std::to_string(itemsToSplit[idx]->sizeBytes) + " bytes)", 0);
+            if (!itemsToSplit[idx]->groupedPaths.empty()) {
+                for (const auto& subPath : itemsToSplit[idx]->groupedPaths) {
+                    logNotify("     -> " + subPath, 0);
+                }
+            }
             vol.itemPaths.push_back(itemsToSplit[idx]->relativePath);
             vol.itemSizes.push_back(itemsToSplit[idx]->sizeBytes);
+            vol.itemGroupedPaths.push_back(itemsToSplit[idx]->groupedPaths);
             vol.totalBytes += itemsToSplit[idx]->sizeBytes;
         }
         packedVolumes.push_back(vol);
         
         // Perform copy/move/symlink if target directory specified
-        if (!targetDirectory.empty()) {
+        if (!targetDirectory.empty() && !testOnlyMode) {
             std::filesystem::path volDestDir = makeLongPath(utf8Path(targetDirectory));
             if (spanMultipleVolumes) {
                 volDestDir = makeLongPath(std::filesystem::path(utf8Path(targetDirectory)) / ("Volume_" + std::to_string(volumeIndex)));
@@ -751,7 +773,10 @@ void BttbSolver::run() {
         volumeIndex++;
     }
     
-    if ((moveFiles || createSymlinks) && !targetDirectory.empty()) {
+    if (testOnlyMode) {
+        logNotify("--- TEST SIMULATION COMPLETE ---", 3);
+        logNotify("No files were copied, symlinked, or moved on disk.", 1);
+    } else if ((moveFiles || createSymlinks) && !targetDirectory.empty()) {
         logNotify("Completed file organization.", 1);
     }
     
@@ -762,6 +787,351 @@ void BttbSolver::run() {
         double efficiency = exploredStates > 0 ? ((double)prunedStates / exploredStates * 100.0) : 0.0;
         logNotify("[TRACE]  - Backtracking pruning efficiency: " + std::to_string(efficiency) + "%", 1);
     }
+}
+
+double BttbSolver::computeCosineSimilarity(const std::vector<float>& a, const std::vector<float>& b) {
+    if (a.size() != b.size() || a.empty()) return 0.0;
+    double dot = 0.0, norm_a = 0.0, norm_b = 0.0;
+    for (size_t i = 0; i < a.size(); ++i) {
+        dot += a[i] * b[i];
+        norm_a += a[i] * a[i];
+        norm_b += b[i] * b[i];
+    }
+    if (norm_a > 1e-9 && norm_b > 1e-9) {
+        return dot / (std::sqrt(norm_a) * std::sqrt(norm_b));
+    }
+    return 0.0;
+}
+
+void BttbSolver::runSemanticClustering() {
+    if (itemsToSplit.empty()) return;
+
+    logNotify("Generating semantic embeddings...", 3);
+
+    auto escapeJson = [](const std::string& str) -> std::string {
+        std::string escaped = "";
+        for (char c : str) {
+            if (c == '"') escaped += "\\\"";
+            else if (c == '\\') escaped += "\\\\";
+            else if (c == '\n') escaped += "\\n";
+            else if (c == '\r') escaped += "\\r";
+            else if (c == '\t') escaped += "\\t";
+            else escaped += c;
+        }
+        return escaped;
+    };
+
+    // Serialize to structured JSON object with prompt, relative paths, and sizes
+    std::string jsonStr = "{\n  \"prompt\": \"" + escapeJson(semanticPrompt) + "\",\n  \"items\": [\n";
+    for (size_t i = 0; i < itemsToSplit.size(); ++i) {
+        if (i > 0) jsonStr += ",\n";
+        jsonStr += "    { \"path\": \"" + escapeJson(itemsToSplit[i]->relativePath) + "\", \"size\": " + std::to_string(itemsToSplit[i]->sizeBytes) + " }";
+    }
+    jsonStr += "\n  ]\n}";
+
+    // 3. Find the path to bttb_embed.py
+    std::string scriptPath = "src/bttb_embed.py";
+    if (!std::filesystem::exists(scriptPath)) {
+        scriptPath = "../src/bttb_embed.py";
+    }
+    if (!std::filesystem::exists(scriptPath)) {
+        scriptPath = "./bttb_embed.py";
+    }
+    if (!std::filesystem::exists(scriptPath)) {
+        scriptPath = "/usr/share/bttb/bttb_embed.py";
+    }
+    if (!std::filesystem::exists(scriptPath)) {
+        scriptPath = "/usr/bin/bttb_embed.py";
+    }
+
+    // 4. Run bttb_embed.py subprocess via temporary files
+    std::filesystem::path tempDir = std::filesystem::temp_directory_path();
+    std::string tempIn = (tempDir / "bttb_embed_in.json").string();
+    std::string tempOut = (tempDir / "bttb_embed_out.json").string();
+
+    try {
+        std::ofstream in(tempIn);
+        in << jsonStr;
+        in.close();
+    } catch (const std::exception& e) {
+        logNotify("Failed to write temporary embedding input file: " + std::string(e.what()), 2);
+        return;
+    }
+
+    std::string tempErr = (tempDir / "bttb_embed_err.log").string();
+    std::string cmd = "python3 \"" + scriptPath + "\" < \"" + tempIn + "\" > \"" + tempOut + "\" 2> \"" + tempErr + "\"";
+    int ret = std::system(cmd.c_str());
+
+    // Read and log stderr if it contains warnings/tutorials
+    if (std::filesystem::exists(tempErr)) {
+        std::ifstream errFile(tempErr);
+        std::string errLine;
+        while (std::getline(errFile, errLine)) {
+            if (!errLine.empty()) {
+                logNotify(errLine, 2); // Log directly to UI listbox
+            }
+        }
+        errFile.close();
+        try {
+            std::filesystem::remove(tempErr);
+        } catch (...) {}
+    }
+
+    if (ret != 0) {
+        logNotify("Warning: Subprocess python embedding engine failed or python3 is not installed.", 2);
+        logNotify("-> Semantic grouping will fall back to local string matching metrics.", 3);
+        // Clean up and return
+        try {
+            std::filesystem::remove(tempIn);
+            std::filesystem::remove(tempOut);
+        } catch (...) {}
+        return;
+    }
+
+    // 5. Read output JSON file
+    std::string outJson;
+    try {
+        std::ifstream in(tempOut);
+        std::stringstream buffer;
+        buffer << in.rdbuf();
+        outJson = buffer.str();
+        in.close();
+        
+        std::filesystem::remove(tempIn);
+        std::filesystem::remove(tempOut);
+    } catch (const std::exception& e) {
+        logNotify("Failed to read temporary embedding output file: " + std::string(e.what()), 2);
+        return;
+    }
+
+    // 6. Parse the 2D JSON float array: [[f, f, ...], [f, f, ...]]
+    std::vector<std::vector<float>> parsedEmbeddings;
+    size_t pos = 0;
+    while ((pos = outJson.find('[', pos)) != std::string::npos) {
+        if (pos == 0 || (pos > 0 && outJson[pos - 1] == '[' && parsedEmbeddings.empty())) {
+            pos++;
+            continue;
+        }
+        
+        size_t end = outJson.find(']', pos);
+        if (end == std::string::npos) break;
+        
+        std::string vecStr = outJson.substr(pos, end - pos);
+        std::vector<float> vec;
+        std::stringstream ss(vecStr);
+        std::string valStr;
+        while (std::getline(ss, valStr, ',')) {
+            try {
+                vec.push_back(std::stof(valStr));
+            } catch (...) {}
+        }
+        
+        if (!vec.empty()) {
+            parsedEmbeddings.push_back(vec);
+        }
+        pos = end + 1;
+    }
+
+    if (parsedEmbeddings.empty()) {
+        logNotify("Warning: Embedded output is empty.", 2);
+        return;
+    }
+
+    // 7. Assign embeddings
+    std::vector<float> promptVec;
+    size_t embedIdx = 0;
+    if (!semanticPrompt.empty() && embedIdx < parsedEmbeddings.size()) {
+        promptVec = parsedEmbeddings[embedIdx++];
+    }
+
+    for (size_t i = 0; i < itemsToSplit.size(); ++i) {
+        if (embedIdx < parsedEmbeddings.size()) {
+            itemsToSplit[i]->embedding = parsedEmbeddings[embedIdx++];
+        }
+    }
+
+    // 8. Agglomerative Hierarchical Clustering based on Cosine Similarity
+    logNotify("Running agglomerative semantic clustering (threshold=0.6)...", 3);
+    
+    std::vector<int> clusterMap(itemsToSplit.size());
+    for (size_t i = 0; i < itemsToSplit.size(); ++i) {
+        clusterMap[i] = i;
+    }
+
+    size_t N = itemsToSplit.size();
+    std::vector<std::vector<double>> sim(N, std::vector<double>(N, 0.0));
+    for (size_t i = 0; i < N; ++i) {
+        for (size_t j = i + 1; j < N; ++j) {
+            double s = 0.0;
+            bool usedEmbedding = false;
+            if (!itemsToSplit[i]->embedding.empty() && !itemsToSplit[j]->embedding.empty()) {
+                s = computeCosineSimilarity(itemsToSplit[i]->embedding, itemsToSplit[j]->embedding);
+                usedEmbedding = true;
+            } else {
+                std::string s1 = std::filesystem::path(itemsToSplit[i]->relativePath).filename().string();
+                std::string s2 = std::filesystem::path(itemsToSplit[j]->relativePath).filename().string();
+                std::transform(s1.begin(), s1.end(), s1.begin(), ::tolower);
+                std::transform(s2.begin(), s2.end(), s2.begin(), ::tolower);
+                int matches = 0;
+                for (char c : s1) {
+                    if (s2.find(c) != std::string::npos) matches++;
+                }
+                s = (double)matches / std::max<size_t>(1, s1.size() + s2.size() - matches);
+            }
+
+            if (enableTrace) {
+                std::string method = usedEmbedding ? "MiniLM Cosine" : "Local character TF-IDF fallback";
+                logNotify("[TRACE] [Semantic] Initial similarity between '" + itemsToSplit[i]->relativePath + "' and '" + itemsToSplit[j]->relativePath + "' using " + method + ": " + std::to_string(s), 3);
+            }
+
+            if (!promptVec.empty() && !itemsToSplit[i]->embedding.empty() && !itemsToSplit[j]->embedding.empty()) {
+                double pSimI = computeCosineSimilarity(itemsToSplit[i]->embedding, promptVec);
+                double pSimJ = computeCosineSimilarity(itemsToSplit[j]->embedding, promptVec);
+                if (pSimI > 0.4 && pSimJ > 0.4) {
+                    double oldS = s;
+                    s += 0.25;
+                    if (enableTrace) {
+                        logNotify("[TRACE] [Semantic] Boosting similarity for '" + itemsToSplit[i]->relativePath + "' & '" + itemsToSplit[j]->relativePath + "' due to semantic prompt match (Old: " + std::to_string(oldS) + ", New: " + std::to_string(s) + ")", 3);
+                    }
+                }
+            }
+
+            sim[i][j] = s;
+            sim[j][i] = s;
+        }
+    }
+
+    while (true) {
+        double maxSim = -1.0;
+        int mergeA = -1;
+        int mergeB = -1;
+
+        for (size_t i = 0; i < N; ++i) {
+            for (size_t j = i + 1; j < N; ++j) {
+                if (clusterMap[i] != clusterMap[j] && sim[i][j] > maxSim) {
+                    maxSim = sim[i][j];
+                    mergeA = i;
+                    mergeB = j;
+                }
+            }
+        }
+
+        if (maxSim < 0.6 || mergeA == -1) {
+            break;
+        }
+
+        if (enableTrace) {
+            logNotify("[TRACE] [Semantic] Merging cluster containing '" + itemsToSplit[mergeA]->relativePath + "' and '" + itemsToSplit[mergeB]->relativePath + "' (similarity: " + std::to_string(maxSim) + ")", 3);
+        }
+
+        int cA = clusterMap[mergeA];
+        int cB = clusterMap[mergeB];
+        for (size_t i = 0; i < N; ++i) {
+            if (clusterMap[i] == cB) {
+                clusterMap[i] = cA;
+            }
+        }
+    }
+
+    std::vector<std::unique_ptr<DirEntry>> clusteredItems;
+    std::vector<bool> processed(N, false);
+
+    for (size_t i = 0; i < N; ++i) {
+        if (processed[i]) continue;
+        int c = clusterMap[i];
+        
+        std::vector<size_t> groupIndices;
+        for (size_t j = i; j < N; ++j) {
+            if (clusterMap[j] == c) {
+                groupIndices.push_back(j);
+                processed[j] = true;
+            }
+        }
+
+        if (groupIndices.size() == 1) {
+            clusteredItems.push_back(std::move(itemsToSplit[groupIndices[0]]));
+        } else {
+            int64_t maxGroupSize = mediumInfo.capacityBytes * 0.4;
+            if (maxGroupSize <= 0) maxGroupSize = 1024 * 1024 * 100; // fallback 100MB
+            
+            std::vector<size_t> currentSubgroup;
+            int64_t currentSubgroupSize = 0;
+            int subgroupCounter = 1;
+            
+            auto flushSubgroup = [&](const std::vector<size_t>& indices) {
+                if (indices.empty()) return;
+                if (indices.size() == 1) {
+                    clusteredItems.push_back(std::move(itemsToSplit[indices[0]]));
+                } else {
+                    auto entry = std::make_unique<DirEntry>();
+                    if (indices.size() < groupIndices.size()) {
+                        entry->relativePath = "[Semantic Group #" + std::to_string(c + 1) + "_" + std::to_string(subgroupCounter) + "]";
+                    } else {
+                        entry->relativePath = "[Semantic Group #" + std::to_string(c + 1) + "]";
+                    }
+                    entry->absolutePath = "";
+                    entry->sizeBytes = 0;
+                    entry->isDirectory = false;
+                    
+                    entry->embedding.assign(384, 0.0f);
+                    
+                    for (size_t idx : indices) {
+                        const auto& item = itemsToSplit[idx];
+                        entry->sizeBytes += item->sizeBytes;
+                        
+                        if (!item->groupedPaths.empty()) {
+                            for (size_t k = 0; k < item->groupedPaths.size(); ++k) {
+                                entry->groupedPaths.push_back(item->groupedPaths[k]);
+                                entry->absoluteGroupedPaths.push_back(item->absoluteGroupedPaths[k]);
+                            }
+                        } else {
+                            entry->groupedPaths.push_back(item->relativePath);
+                            entry->absoluteGroupedPaths.push_back(item->absolutePath);
+                        }
+
+                        if (!item->embedding.empty()) {
+                            for (size_t k = 0; k < 384; ++k) {
+                                entry->embedding[k] += item->embedding[k];
+                            }
+                        }
+                    }
+
+                    float norm = 0.0f;
+                    for (size_t k = 0; k < 384; ++k) {
+                        entry->embedding[k] /= indices.size();
+                        norm += entry->embedding[k] * entry->embedding[k];
+                    }
+                    norm = std::sqrt(norm);
+                    if (norm > 1e-9) {
+                        for (size_t k = 0; k < 384; ++k) {
+                            entry->embedding[k] /= norm;
+                        }
+                    }
+
+                    entry->sectorCount = (entry->sizeBytes + mediumInfo.sectorSize - 1) / mediumInfo.sectorSize;
+                    if (entry->sectorCount == 0) entry->sectorCount = 1;
+                    
+                    clusteredItems.push_back(std::move(entry));
+                }
+            };
+            
+            for (size_t idx : groupIndices) {
+                int64_t itemSize = itemsToSplit[idx]->sizeBytes;
+                if (currentSubgroupSize + itemSize > maxGroupSize && !currentSubgroup.empty()) {
+                    flushSubgroup(currentSubgroup);
+                    currentSubgroup.clear();
+                    currentSubgroupSize = 0;
+                    subgroupCounter++;
+                }
+                currentSubgroup.push_back(idx);
+                currentSubgroupSize += itemSize;
+            }
+            flushSubgroup(currentSubgroup);
+        }
+    }
+
+    itemsToSplit = std::move(clusteredItems);
+    logNotify("Semantic clustering completed. Total consolidated groups: " + std::to_string(itemsToSplit.size()), 1);
 }
 
 } // namespace bttb

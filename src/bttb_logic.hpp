@@ -27,6 +27,7 @@ struct DirEntry {
     int64_t prefixSumSectors = 0; // sum of sectors from 0 to current index
     std::vector<std::string> groupedPaths; // Consolidated paths for grouping rules
     std::vector<std::string> absoluteGroupedPaths; // Consolidated absolute paths matching groupedPaths
+    std::vector<float> embedding; // 384 float MiniLM semantic embedding
 };
 
 struct GroupRule {
@@ -42,6 +43,7 @@ struct PackedVolume {
     int64_t totalBytes = 0;
     std::vector<std::string> itemPaths;
     std::vector<int64_t> itemSizes;
+    std::vector<std::vector<std::string>> itemGroupedPaths;
 };
 
 // Callback types for thread-safe UI notifications
@@ -75,6 +77,12 @@ public:
     uint64_t prunedStates = 0;
     std::chrono::steady_clock::time_point solverStartTime;
 
+    // Semantic Packing (Milestone v4.0.0)
+    std::string semanticPrompt;
+    bool enableSemanticPacking = false;
+    bool testOnlyMode = false;
+    double semanticCoherenceFactor = 0.7;
+
     // Control
     std::atomic<bool> stopRequested{false};
     std::atomic<bool> searchTimedOut{false};
@@ -86,6 +94,10 @@ public:
 
     // Public API
     void run();
+
+    // Semantic Helpers
+    double computeCosineSimilarity(const std::vector<float>& a, const std::vector<float>& b);
+    void runSemanticClustering();
 
 private:
     std::vector<int> bestSelectionIndices;
@@ -103,6 +115,8 @@ private:
     
     void saveBestSelection();
     int countClusters(const std::string& path);
+
+
 };
 
 // Utility function to convert glob string (*.mp3) to std::regex

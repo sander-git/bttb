@@ -244,16 +244,18 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
         gtk_window_set_transient_for(GTK_WINDOW(about), GTK_WINDOW(self->window));
         
         gtk_about_dialog_set_program_name(GTK_ABOUT_DIALOG(about), "Burn to the Brim");
-        gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(about), "3.3.0");
+        gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(about), "4.0.0");
         gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(about), "Copyright \u00a9 2001-2004 Sander Raaijmakers, Elwin Oost and the Burn to the Brim team");
         gtk_about_dialog_set_license_type(GTK_ABOUT_DIALOG(about), GTK_LICENSE_GPL_2_0);
         gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(about), "https://sourceforge.net/projects/bttb/");
         gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(about), 
             "Burn to the Brim (BTTB) is a modern C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums (CDs, DVDs, Blu-rays, or USBs).\n\n"
-            "Features in v3.3.0:\n"
+            "Features in v4.0.0:\n"
+            "- Entropy-Aware Semantic Packing based on MiniLM embeddings\n"
+            "- Interactive Test Simulation Mode with volume coherence metrics\n"
             "- Unicode & Long Path (>256 characters) support\n"
             "- Hybrid GUI / CLI integrated binary execution\n"
-            "- Windows Explorer Context Menu integration\n"
+            "- Optional Windows Explorer Context Menu integration\n"
             "- Smart adaptive capacity recommendation & retrying\n\n"
             "Authors: Sander Raaijmakers, Elwin Oost and the Burn to the Brim team");
             
@@ -277,10 +279,14 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
         gtk_window_present(GTK_WINDOW(about));
     }), this);
     
-    // Start / Stop buttons
+    // Start / Test / Stop buttons
     start_button = gtk_button_new_with_label("Start");
     gtk_widget_add_css_class(start_button, "suggested-action");
     gtk_header_bar_pack_end(GTK_HEADER_BAR(header), start_button);
+
+    test_button = gtk_button_new_with_label("Test");
+    gtk_widget_add_css_class(test_button, "suggested-action");
+    gtk_header_bar_pack_end(GTK_HEADER_BAR(header), test_button);
     
     stop_button = gtk_button_new_with_label("Stop");
     gtk_widget_add_css_class(stop_button, "destructive-action");
@@ -337,7 +343,21 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
             "5. Multiple Source Folders (+)\n"
             "Click '+' to specify multiple source folders. BTTB acts as if they are in a single root folder. Nested source paths are ignored.\n\n"
             "6. Create Symbolic Links\n"
-            "Instead of copying/moving files to the target folder, BTTB creates lightweight symbolic links pointing back to your original files.";
+            "Instead of copying/moving files to the target folder, BTTB creates lightweight symbolic links pointing back to your original files.\n\n"
+            "7. Neural Semantic Packing & MiniLM Setup Guide\n"
+            "By specifying a semantic prompt, BTTB groups files with similar content using context-aware deep learning embeddings.\n"
+            "To use the preferred, high-accuracy MiniLM neural model, you must install Python 3 and sentence-transformers:\n"
+            " - Step 1: Ensure Python 3 & pip are installed.\n"
+            "   (Linux: run 'sudo apt install python3 python3-pip python3-venv')\n"
+            "   (Windows: Install from https://www.python.org/ and check 'Add Python to PATH')\n"
+            " - Step 2: Install sentence-transformers via terminal or command prompt:\n"
+            "   Option A (Recommended for simplicity):\n"
+            "     pip install sentence-transformers\n"
+            "   Option B (Virtual environment isolation):\n"
+            "     python3 -m venv bttb_env\n"
+            "     source bttb_env/bin/activate  # (Windows: bttb_env\\Scripts\\activate)\n"
+            "     pip install sentence-transformers\n"
+            " - Step 3: Restart Burn to the Brim to automatically load MiniLM! If not found, BTTB falls back gracefully to a localized character TF-IDF projector.";
             
         gtk_text_buffer_set_text(buffer, help_text, -1);
         
@@ -351,11 +371,11 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
     }), this);
     
     // Solver thread triggers
-    g_signal_connect(start_button, "clicked", G_CALLBACK(+[](GtkWidget* btn, gpointer user_data) {
-        auto* self = static_cast<MainWindow*>(user_data);
-        
+    // Solver thread triggers
+    auto start_solver = [](MainWindow* self, bool testMode) {
         std::string src = gtk_editable_get_text(GTK_EDITABLE(self->source_entry));
         std::string dest = gtk_editable_get_text(GTK_EDITABLE(self->target_entry));
+        std::string semantic = gtk_editable_get_text(GTK_EDITABLE(self->semantic_entry));
         bool move = gtk_check_button_get_active(GTK_CHECK_BUTTON(self->move_check));
         bool symlink = gtk_check_button_get_active(GTK_CHECK_BUTTON(self->symlink_check));
         bool span = gtk_check_button_get_active(GTK_CHECK_BUTTON(self->span_check));
@@ -396,12 +416,21 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
         self->solver.createSymlinks = symlink;
         self->solver.spanMultipleVolumes = span;
         self->solver.enableTrace = trace;
+
+        // Semantic Packing
+        self->solver.semanticPrompt = semantic;
+        self->solver.enableSemanticPacking = !semantic.empty();
+        self->solver.testOnlyMode = testMode;
         
         // UI updates before starting
-        gtk_widget_set_sensitive(self->start_button, FALSE);
         gtk_widget_set_sensitive(self->stop_button, TRUE);
+        gtk_widget_grab_focus(self->stop_button);
+        
+        gtk_widget_set_sensitive(self->start_button, FALSE);
+        gtk_widget_set_sensitive(self->test_button, FALSE);
         gtk_widget_set_sensitive(self->source_entry, FALSE);
         gtk_widget_set_sensitive(self->target_entry, FALSE);
+        gtk_widget_set_sensitive(self->semantic_entry, FALSE);
         gtk_widget_set_sensitive(self->move_check, FALSE);
         gtk_widget_set_sensitive(self->symlink_check, FALSE);
         gtk_widget_set_sensitive(self->span_check, FALSE);
@@ -423,8 +452,26 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
                 return G_SOURCE_REMOVE;
             }, self);
         });
-        
+    };
+
+    g_signal_connect(start_button, "clicked", G_CALLBACK(+[](GtkWidget* btn, gpointer user_data) {
+        auto* self = static_cast<MainWindow*>(user_data);
+        auto* launch_fn = static_cast<decltype(start_solver)*>(g_object_get_data(G_OBJECT(btn), "launch_fn"));
+        (*launch_fn)(self, false);
     }), this);
+
+    g_signal_connect(test_button, "clicked", G_CALLBACK(+[](GtkWidget* btn, gpointer user_data) {
+        auto* self = static_cast<MainWindow*>(user_data);
+        auto* launch_fn = static_cast<decltype(start_solver)*>(g_object_get_data(G_OBJECT(btn), "launch_fn"));
+        (*launch_fn)(self, true);
+    }), this);
+
+    // Save launch lambda inside GTK objects to bypass lifetime constraints
+    auto* p_launch = new decltype(start_solver)(start_solver);
+    g_object_set_data_full(G_OBJECT(start_button), "launch_fn", p_launch, +[](gpointer data) {
+        delete static_cast<decltype(start_solver)*>(data);
+    });
+    g_object_set_data(G_OBJECT(test_button), "launch_fn", p_launch);
     
     g_signal_connect(stop_button, "clicked", G_CALLBACK(+[](GtkWidget* btn, gpointer user_data) {
         auto* self = static_cast<MainWindow*>(user_data);
@@ -546,22 +593,31 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
         }, self);
     }), this);
     
+    // Semantic Prompt (v4.0.0)
+    GtkWidget* semantic_label = gtk_label_new("Semantic Prompt:");
+    gtk_widget_set_halign(semantic_label, GTK_ALIGN_START);
+    gtk_grid_attach(GTK_GRID(input_grid), semantic_label, 0, 2, 2, 1);
+    
+    semantic_entry = gtk_entry_new();
+    gtk_entry_set_placeholder_text(GTK_ENTRY(semantic_entry), "e.g. keep similar content together");
+    gtk_grid_attach(GTK_GRID(input_grid), semantic_entry, 2, 2, 2, 1);
+
     // Checkbox for move
     move_check = gtk_check_button_new_with_label("Move fitted folders/files to target folder");
-    gtk_grid_attach(GTK_GRID(input_grid), move_check, 2, 2, 2, 1);
+    gtk_grid_attach(GTK_GRID(input_grid), move_check, 2, 3, 2, 1);
     
     // Checkbox for symlinks
     symlink_check = gtk_check_button_new_with_label("Create symbolic links in target folder (Default)");
-    gtk_grid_attach(GTK_GRID(input_grid), symlink_check, 2, 3, 2, 1);
+    gtk_grid_attach(GTK_GRID(input_grid), symlink_check, 2, 4, 2, 1);
     gtk_check_button_set_active(GTK_CHECK_BUTTON(symlink_check), TRUE);
     
     // Checkbox for span
     span_check = gtk_check_button_new_with_label("Span across multiple volumes (Volume_1, Volume_2, etc.)");
-    gtk_grid_attach(GTK_GRID(input_grid), span_check, 2, 4, 2, 1);
+    gtk_grid_attach(GTK_GRID(input_grid), span_check, 2, 5, 2, 1);
     
     // Checkbox for trace
     trace_check = gtk_check_button_new_with_label("Enable detailed solver diagnostic tracing (Trace)");
-    gtk_grid_attach(GTK_GRID(input_grid), trace_check, 2, 5, 2, 1);
+    gtk_grid_attach(GTK_GRID(input_grid), trace_check, 2, 6, 2, 1);
     
     // Exclusivity between move_check and symlink_check
     g_signal_connect(move_check, "toggled", G_CALLBACK(+[](GtkWidget* btn, gpointer user_data) {
@@ -737,9 +793,12 @@ void MainWindow::update_progress(double disc_progress, double overall_progress) 
 void MainWindow::solver_finished() {
     // Re-enable inputs
     gtk_widget_set_sensitive(start_button, TRUE);
+    gtk_widget_set_sensitive(test_button, TRUE);
+    gtk_widget_grab_focus(start_button);
     gtk_widget_set_sensitive(stop_button, FALSE);
     gtk_widget_set_sensitive(source_entry, TRUE);
     gtk_widget_set_sensitive(target_entry, TRUE);
+    gtk_widget_set_sensitive(semantic_entry, TRUE);
     gtk_widget_set_sensitive(move_check, TRUE);
     gtk_widget_set_sensitive(symlink_check, TRUE);
     gtk_widget_set_sensitive(span_check, TRUE);
@@ -775,6 +834,19 @@ void MainWindow::solver_finished() {
                                1, std::to_string(vol.itemSizes[i]).c_str(),
                                2, "Fitted",
                                -1);
+            
+            // If it is a semantic or rules group, add nested files under it!
+            if (i < vol.itemGroupedPaths.size() && !vol.itemGroupedPaths[i].empty()) {
+                for (const auto& subPath : vol.itemGroupedPaths[i]) {
+                    GtkTreeIter subChild;
+                    gtk_tree_store_append(tree_store, &subChild, &child);
+                    gtk_tree_store_set(tree_store, &subChild,
+                                       0, subPath.c_str(),
+                                       1, "",
+                                       2, "Fitted",
+                                       -1);
+                }
+            }
         }
     }
     
@@ -805,8 +877,22 @@ void MainWindow::solver_finished() {
                                1, std::to_string(item->sizeBytes).c_str(),
                                2, "Not Fitted",
                                -1);
+            
+            // If it is a group, add nested files under it!
+            if (!item->groupedPaths.empty()) {
+                for (const auto& subPath : item->groupedPaths) {
+                    GtkTreeIter subChild;
+                    gtk_tree_store_append(tree_store, &subChild, &child);
+                    gtk_tree_store_set(tree_store, &subChild,
+                                       0, subPath.c_str(),
+                                       1, "",
+                                       2, "Not Fitted",
+                                       -1);
+                }
+            }
         }
     }
+    gtk_tree_view_expand_all(GTK_TREE_VIEW(tree_view));
 }
 
 } // namespace bttb

@@ -20,11 +20,13 @@ public:
     GtkWidget* window;
     GtkWidget* source_entry;
     GtkWidget* target_entry;
+    GtkWidget* semantic_entry;
     GtkWidget* move_check;
     GtkWidget* symlink_check;
     GtkWidget* span_check;
     GtkWidget* trace_check;
     GtkWidget* log_text_view;
+    GtkWidget* test_button;
     GtkWidget* progress_bar_disc;
     GtkWidget* progress_label_disc;
     GtkWidget* start_button;

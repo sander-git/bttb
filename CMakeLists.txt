@@ -36,11 +36,12 @@ target_include_directories(test_solver PRIVATE src)
 # Install targets
 install(TARGETS bttb DESTINATION bin)
 install(FILES README.md LICENSE DESTINATION share/doc/bttb)
+install(PROGRAMS src/bttb_embed.py DESTINATION bin)
 
 # CPack packaging configuration
 set(CPACK_PACKAGE_NAME "bttb-cpp")
 set(CPACK_PACKAGE_VENDOR "BurnToTheBrim")
-set(CPACK_PACKAGE_VERSION "3.3.0")
+set(CPACK_PACKAGE_VERSION "4.0.0")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Burn to the Brim (C++ Port)")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
