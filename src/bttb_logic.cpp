@@ -9,6 +9,7 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#include <shlobj.h>
 #endif
 
 namespace bttb {
@@ -260,12 +261,116 @@ bool createPlatformSymlink(const std::string& target, const std::string& link, b
 #endif
 }
 
+std::filesystem::path GetConfigPath() {
+    std::filesystem::path configDir;
+#ifdef _WIN32
+    wchar_t szPath[MAX_PATH];
+    if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_APPDATA, NULL, 0, szPath))) {
+        configDir = std::filesystem::path(szPath) / "bttb";
+    } else {
+        configDir = std::filesystem::current_path();
+    }
+#else
+    const char* home = std::getenv("HOME");
+    if (home) {
+        configDir = std::filesystem::path(home) / ".config" / "bttb";
+    } else {
+        configDir = std::filesystem::current_path();
+    }
+#endif
+    try {
+        std::filesystem::create_directories(configDir);
+    } catch (...) {}
+    return configDir / "settings.txt";
+}
+
+void BttbSolver::loadSettings() {
+    std::filesystem::path path = GetConfigPath();
+    if (!std::filesystem::exists(path)) return;
+    
+    std::ifstream f(path);
+    if (!f.is_open()) return;
+    
+    customVolumes.clear();
+    std::string line;
+    while (std::getline(f, line)) {
+        size_t eq = line.find('=');
+        if (eq == std::string::npos) continue;
+        std::string key = line.substr(0, eq);
+        std::string val = line.substr(eq + 1);
+        
+        if (key == "ruleBasedWins") {
+            ruleBasedWins = (val == "1");
+        } else if (key == "lastSelectedVolumeIndex") {
+            try { lastSelectedVolumeIndex = std::stoi(val); } catch (...) {}
+        } else if (key == "enableAutoVolume") {
+            enableAutoVolume = (val == "1");
+        } else if (key == "skipUnreadable") {
+            skipUnreadable = (val == "1");
+        } else if (key == "skipEmpty") {
+            skipEmpty = (val == "1");
+        } else if (key == "maxSearchTimeSeconds") {
+            try { maxSearchTimeSeconds = std::stoi(val); } catch (...) {}
+        } else if (key == "splitDepth") {
+            try { splitDepth = std::stoi(val); } catch (...) {}
+        } else if (key == "mediumCapacity") {
+            try { mediumInfo.capacityBytes = std::stoll(val); } catch (...) {}
+        } else if (key == "mediumSector") {
+            try { mediumInfo.sectorSize = std::stoll(val); } catch (...) {}
+        } else if (key == "mediumSlack") {
+            try { mediumInfo.slackBytes = std::stoll(val); } catch (...) {}
+        } else if (key.rfind("customVolume_", 0) == 0) {
+            std::stringstream ss(val);
+            std::string name, capStr, secStr, slkStr;
+            if (std::getline(ss, name, ',') &&
+                std::getline(ss, capStr, ',') &&
+                std::getline(ss, secStr, ',') &&
+                std::getline(ss, slkStr, ',')) {
+                CustomVolume cv;
+                cv.name = name;
+                try {
+                    cv.capacityBytes = std::stoll(capStr);
+                    cv.sectorSize = std::stoll(secStr);
+                    cv.slackBytes = std::stoll(slkStr);
+                    customVolumes.push_back(cv);
+                } catch (...) {}
+            }
+        }
+    }
+}
+
+void BttbSolver::saveSettings() {
+    std::filesystem::path path = GetConfigPath();
+    std::ofstream f(path);
+    if (!f.is_open()) return;
+    
+    f << "ruleBasedWins=" << (ruleBasedWins ? "1" : "0") << "\n";
+    f << "lastSelectedVolumeIndex=" << lastSelectedVolumeIndex << "\n";
+    f << "enableAutoVolume=" << (enableAutoVolume ? "1" : "0") << "\n";
+    f << "skipUnreadable=" << (skipUnreadable ? "1" : "0") << "\n";
+    f << "skipEmpty=" << (skipEmpty ? "1" : "0") << "\n";
+    f << "maxSearchTimeSeconds=" << maxSearchTimeSeconds << "\n";
+    f << "splitDepth=" << splitDepth << "\n";
+    f << "mediumCapacity=" << mediumInfo.capacityBytes << "\n";
+    f << "mediumSector=" << mediumInfo.sectorSize << "\n";
+    f << "mediumSlack=" << mediumInfo.slackBytes << "\n";
+    
+    for (size_t i = 0; i < customVolumes.size(); ++i) {
+        f << "customVolume_" << i << "=" 
+          << customVolumes[i].name << ","
+          << customVolumes[i].capacityBytes << ","
+          << customVolumes[i].sectorSize << ","
+          << customVolumes[i].slackBytes << "\n";
+    }
+}
+
 BttbSolver::BttbSolver() {
     // Default log notifier
     logNotify = [](const std::string& msg, int) {
         std::cout << msg << std::endl;
     };
     progressNotify = [](double, double) {};
+    timeLeftNotify = [](double) {};
     recommendCapacityNotify = nullptr;
     skipUnreadable = true;
 
@@ -274,11 +379,18 @@ BttbSolver::BttbSolver() {
     enableSemanticPacking = false;
     testOnlyMode = false;
     semanticCoherenceFactor = 0.7;
+
+    loadSettings();
 }
 
 void BttbSolver::addEntry(const std::string& relPath, const std::string& absPath, int64_t size, bool isDir) {
-    // Check if it matches any grouping rules
-    for (size_t i = 0; i < groupingRules.size(); ++i) {
+    bool bypassRule = false;
+    if (enableSemanticPacking && !semanticPrompt.empty() && !ruleBasedWins) {
+        bypassRule = true;
+    }
+
+    if (!bypassRule) {
+        for (size_t i = 0; i < groupingRules.size(); ++i) {
         const auto& rule = groupingRules[i];
         if ((isDir && !rule.matchFolders) || (!isDir && !rule.matchFiles)) {
             continue;
@@ -321,6 +433,7 @@ void BttbSolver::addEntry(const std::string& relPath, const std::string& absPath
             return;
         }
     }
+}
 
     auto entry = std::make_unique<DirEntry>();
     entry->relativePath = relPath;
@@ -563,8 +676,12 @@ void BttbSolver::run() {
             }
         }
         
-        // Check if the maximum file size exceeds the medium capacity
-        if (maxItemSize > mediumInfo.capacityBytes) {
+        if (enableAutoVolume) {
+            int64_t sectors = (maxItemSize + mediumInfo.sectorSize - 1) / mediumInfo.sectorSize;
+            if (sectors == 0) sectors = 1;
+            mediumInfo.capacityBytes = sectors * mediumInfo.sectorSize;
+            logNotify("Auto Volume capacity set to: " + std::to_string(mediumInfo.capacityBytes) + " bytes (" + std::to_string((double)mediumInfo.capacityBytes / (1024.0 * 1024.0)) + " MB)", 1);
+        } else if (maxItemSize > mediumInfo.capacityBytes) {
             logNotify("Warning: Item '" + maxItemName + "' (" + std::to_string(maxItemSize) + " bytes) is larger than target volume size (" + std::to_string(mediumInfo.capacityBytes) + " bytes).", 2);
             if (recommendCapacityNotify) {
                 int64_t recommendedBytes = ((maxItemSize + mediumInfo.sectorSize - 1) / mediumInfo.sectorSize) * mediumInfo.sectorSize;
@@ -618,6 +735,18 @@ void BttbSolver::run() {
     
     logNotify("Medium Capacity: " + std::to_string(maxSectors) + " sectors (" + std::to_string(mediumInfo.capacityBytes) + " bytes)", 0);
     
+    int64_t totalBytesToOrganize = 0;
+    if (!targetDirectory.empty() && !testOnlyMode && (moveFiles || createSymlinks)) {
+        for (const auto& item : itemsToSplit) {
+            totalBytesToOrganize += item->sizeBytes;
+        }
+    }
+    int64_t bytesOrganizedSoFar = 0;
+    auto organizationStartTime = std::chrono::steady_clock::now();
+    if (timeLeftNotify) {
+        timeLeftNotify(-1.0);
+    }
+
     int volumeIndex = 1;
     
     while (!itemsToSplit.empty() && !stopRequested) {
@@ -744,6 +873,20 @@ void BttbSolver::run() {
                             }
                         } catch (const std::exception& e) {
                             logNotify("Failed to organize " + relItem + ": " + e.what(), 2);
+                        }
+                        
+                        bytesOrganizedSoFar += std::max<int64_t>(1, itemsToSplit[idx]->sizeBytes / relPaths.size());
+                        auto now = std::chrono::steady_clock::now();
+                        auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(now - organizationStartTime).count();
+                        if (elapsedMs > 500 && bytesOrganizedSoFar > 0 && timeLeftNotify) {
+                            double bytesPerMs = (double)bytesOrganizedSoFar / elapsedMs;
+                            int64_t remainingBytes = totalBytesToOrganize - bytesOrganizedSoFar;
+                            if (remainingBytes > 0 && bytesPerMs > 0) {
+                                double secondsLeft = (remainingBytes / bytesPerMs) / 1000.0;
+                                timeLeftNotify(secondsLeft);
+                            } else {
+                                timeLeftNotify(0.0);
+                            }
                         }
                     }
                 }

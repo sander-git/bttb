@@ -5,7 +5,7 @@ import subprocess
 
 base_dir = "/home/sander/src/antigravity/project1/bttb_cpp"
 build_dir = os.path.join(base_dir, "build")
-version = "4.0.0"
+version = "4.1.0"
 
 os.makedirs(build_dir, exist_ok=True)
 
@@ -71,4 +71,4 @@ with zipfile.ZipFile(source_zip_path, 'w', zipfile.ZIP_DEFLATED) as z:
         if os.path.isfile(file_path):
             z.write(file_path, os.path.join(source_zip_name, "scratch", f))
 
-print("All BTTB v4.0.0 packages generated successfully!")
+print("All BTTB v4.1.0 packages generated successfully!")

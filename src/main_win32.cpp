@@ -23,6 +23,8 @@
 
 #define WM_ISO_LOG         (WM_USER + 10)
 #define WM_ISO_FINISHED    (WM_USER + 11)
+#define WM_SOLVER_TIMELEFT (WM_USER + 4)
+#define TIMER_SPINNER 1001
 
 // Control IDs
 #define ID_BTN_SRC_BROWSE  1001
@@ -64,6 +66,9 @@
 #define ID_PREF_LABEL_CAP_MB    3017
 #define ID_PREF_CHK_CONTEXT_MENU 3018
 #define ID_PREF_CHK_UNREADABLE  3019
+#define ID_PREF_EDIT_CV_NAME    3020
+#define ID_PREF_BTN_CV_SAVE     3021
+#define ID_PREF_CHK_RULE_WINS   3022
 
 #define ID_BTN_ADD_FOLDERS      1013
 #define ID_TREE_RESULTS         1014
@@ -118,6 +123,12 @@ HWND g_chkPrefFolders = NULL;
 HWND g_chkPrefRegex = NULL;
 HWND g_btnPrefAddRule = NULL;
 HWND g_btnPrefDelRule = NULL;
+
+HWND g_labelTimeLeft = NULL;
+HWND g_labelSpinner = NULL;
+HWND g_editPrefCvName = NULL;
+HWND g_btnPrefCvSave = NULL;
+HWND g_chkPrefRuleWins = NULL;
 
 // ISO Dialog State
 HWND g_hwndIso = NULL;
@@ -190,26 +201,31 @@ bool IsExplorerContextMenuRegistered() {
     return registered;
 }
 
+void CreateToolTip(HWND hwndParent, HWND hwndControl, const char* text) {
+    HWND hwndToolTip = CreateWindowEx(
+        WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
+        WS_POPUP | TTS_ALWAYSTIP | TTS_NOPREFIX,
+        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+        hwndParent, NULL, GetModuleHandle(NULL), NULL
+    );
+    if (!hwndToolTip) return;
+    
+    TOOLINFO ti = {0};
+    ti.cbSize = sizeof(ti);
+    ti.uFlags = TTF_SUBCLASS | TTF_IDISHWND;
+    ti.hwnd = hwndParent;
+    ti.uId = (UINT_PTR)hwndControl;
+    ti.lpszText = const_cast<LPSTR>(text);
+    
+    SendMessage(hwndToolTip, TTM_ADDTOOL, 0, (LPARAM)&ti);
+}
+
 void LoadRegistrySettings() {
-    HKEY hKey;
-    g_solver.skipUnreadable = true; // default
-    if (RegOpenKeyExW(HKEY_CURRENT_USER, L"Software\\BurnToTheBrim", 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
-        DWORD type, size, val;
-        size = sizeof(DWORD);
-        if (RegQueryValueExW(hKey, L"SkipUnreadable", NULL, &type, (LPBYTE)&val, &size) == ERROR_SUCCESS) {
-            g_solver.skipUnreadable = (val != 0);
-        }
-        RegCloseKey(hKey);
-    }
+    g_solver.loadSettings();
 }
 
 void SaveRegistrySettings() {
-    HKEY hKey;
-    if (RegCreateKeyExW(HKEY_CURRENT_USER, L"Software\\BurnToTheBrim", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &hKey, NULL) == ERROR_SUCCESS) {
-        DWORD val = g_solver.skipUnreadable ? 1 : 0;
-        RegSetValueExW(hKey, L"SkipUnreadable", 0, REG_DWORD, (const BYTE*)&val, sizeof(DWORD));
-        RegCloseKey(hKey);
-    }
+    g_solver.saveSettings();
 }
 
 // Append text helper for multiline Edit control
@@ -569,6 +585,58 @@ LRESULT CALLBACK FolderListWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
     return 0;
 }
 
+// About Dialog Window Procedure
+LRESULT CALLBACK AboutWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    switch (msg) {
+        case WM_CREATE: {
+            HWND hIcon = CreateWindow("STATIC", "", WS_CHILD | WS_VISIBLE | SS_ICON, 20, 20, 32, 32, hwnd, NULL, NULL, NULL);
+            HICON hIco = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(1));
+            SendMessage(hIcon, STM_SETICON, (WPARAM)hIco, 0);
+            
+            CreateWindow("STATIC", "Burn to the Brim", WS_CHILD | WS_VISIBLE, 70, 20, 300, 20, hwnd, NULL, NULL, NULL);
+            CreateWindow("STATIC", "Version 4.1.0", WS_CHILD | WS_VISIBLE, 70, 40, 300, 20, hwnd, NULL, NULL, NULL);
+            CreateWindow("STATIC", "Copyright \u00a9 2001-2004 Sander Raaijmakers, Elwin Oost and the Burn to the Brim team", WS_CHILD | WS_VISIBLE, 70, 60, 350, 40, hwnd, NULL, NULL, NULL);
+            
+            std::string comments = 
+                "Burn to the Brim (BTTB) is a modern C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums.\r\n\r\n"
+                "Features in v4.1.0:\r\n"
+                "- Named Custom Volume profiles & dynamic Auto Volume sizing\r\n"
+                "- Settings memory restoring the last selected volume configuration\r\n"
+                "- Rule conflict overrides allowing rule-based or semantic grouping to win\r\n"
+                "- Transfer-rate estimated Time Left & status activity spinner\r\n"
+                "- Entropy-Aware Semantic Packing based on MiniLM embeddings\r\n"
+                "- Explorer Context Menu integration & long path support\r\n\r\n"
+                "Authors: Sander Raaijmakers, Elwin Oost and the Burn to the Brim team";
+            CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", comments.c_str(), WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_READONLY | WS_VSCROLL, 20, 110, 440, 180, hwnd, NULL, NULL, NULL);
+            
+            CreateWindow("BUTTON", "OK", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 190, 305, 100, 30, hwnd, (HMENU)IDOK, NULL, NULL);
+            
+            HFONT hFont = CreateFont(15, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "MS Shell Dlg");
+            EnumChildWindows(hwnd, [](HWND hwndChild, LPARAM lParam) -> BOOL {
+                SendMessage(hwndChild, WM_SETFONT, lParam, TRUE);
+                return TRUE;
+            }, (LPARAM)hFont);
+            break;
+        }
+        case WM_COMMAND: {
+            if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL) {
+                SendMessage(hwnd, WM_CLOSE, 0, 0);
+            }
+            break;
+        }
+        case WM_CLOSE:
+            DestroyWindow(hwnd);
+            break;
+        case WM_DESTROY:
+            EnableWindow(g_hwndMain, TRUE);
+            SetForegroundWindow(g_hwndMain);
+            break;
+        default:
+            return DefWindowProc(hwnd, msg, wParam, lParam);
+    }
+    return 0;
+}
+
 // Preferences Dialog Window Procedure
 LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
@@ -595,11 +663,21 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"USB (64 GB)");
             SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"USB (256 GB)");
             SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"USB (512 GB)");
+            SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"Auto Size");
             SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"Custom Size");
+            for (const auto& cv : g_solver.customVolumes) {
+                SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)cv.name.c_str());
+            }
             
             CreateWindow("STATIC", "Capacity:", WS_CHILD | WS_VISIBLE, 280, y + 2, 80, 20, hwnd, NULL, NULL, NULL);
             g_editPrefCap = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 370, y, 100, 22, hwnd, (HMENU)ID_PREF_EDIT_CAP, NULL, NULL);
             g_labelPrefCapMB = CreateWindow("STATIC", "(0.00 MB)", WS_CHILD | WS_VISIBLE, 370, y + 23, 100, 15, hwnd, (HMENU)ID_PREF_LABEL_CAP_MB, NULL, NULL);
+
+            // Custom volume naming fields
+            CreateWindow("STATIC", "Save Custom Vol:", WS_CHILD | WS_VISIBLE, 20, y + 23, 105, 20, hwnd, NULL, NULL, NULL);
+            g_editPrefCvName = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 130, y + 21, 140, 22, hwnd, (HMENU)ID_PREF_EDIT_CV_NAME, NULL, NULL);
+            SendMessage(g_editPrefCvName, EM_SETCUEBANNER, FALSE, (LPARAM)L"Enter name");
+            g_btnPrefCvSave = CreateWindow("BUTTON", "Save", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 280, y + 21, 50, 22, hwnd, (HMENU)ID_PREF_BTN_CV_SAVE, NULL, NULL);
             
             y += 45;
             // Row 2: Cluster & Slack
@@ -625,6 +703,10 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             y += 30;
             // Row 4.5: Context Menu Integration
             g_chkPrefContextMenu = CreateWindow("BUTTON", "Integrate with Windows Explorer Context Menu", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 20, y, 400, 20, hwnd, (HMENU)ID_PREF_CHK_CONTEXT_MENU, NULL, NULL);
+
+            y += 30;
+            // Conflict Override
+            g_chkPrefRuleWins = CreateWindow("BUTTON", "Rule-based grouping wins over semantic prompt", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 20, y, 400, 20, hwnd, (HMENU)ID_PREF_CHK_RULE_WINS, NULL, NULL);
             
             y += 30;
             // Group 5: Grouping Rules
@@ -704,27 +786,32 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             SendMessage(g_chkPrefEmpty, BM_SETCHECK, g_solver.skipEmpty ? BST_CHECKED : BST_UNCHECKED, 0);
             SendMessage(g_chkPrefUnreadable, BM_SETCHECK, g_solver.skipUnreadable ? BST_CHECKED : BST_UNCHECKED, 0);
             SendMessage(g_chkPrefContextMenu, BM_SETCHECK, IsExplorerContextMenuRegistered() ? BST_CHECKED : BST_UNCHECKED, 0);
+            SendMessage(g_chkPrefRuleWins, BM_SETCHECK, g_solver.ruleBasedWins ? BST_CHECKED : BST_UNCHECKED, 0);
             
-            // Select correct Media combobox index
-            int index = 12; // Custom Size
-            if (g_solver.mediumInfo.capacityBytes == 681574400) index = 0;
-            else if (g_solver.mediumInfo.capacityBytes == 734003200) index = 1;
-            else if (g_solver.mediumInfo.capacityBytes == 4700000000LL) index = 2;
-            else if (g_solver.mediumInfo.capacityBytes == 8500000000LL) index = 3;
-            else if (g_solver.mediumInfo.capacityBytes == 25000000000LL) index = 4;
-            else if (g_solver.mediumInfo.capacityBytes == 50000000000LL) index = 5;
-            else if (g_solver.mediumInfo.capacityBytes == 8000000000LL) index = 6;
-            else if (g_solver.mediumInfo.capacityBytes == 16000000000LL) index = 7;
-            else if (g_solver.mediumInfo.capacityBytes == 32000000000LL) index = 8;
-            else if (g_solver.mediumInfo.capacityBytes == 64000000000LL) index = 9;
-            else if (g_solver.mediumInfo.capacityBytes == 256000000000LL) index = 10;
-            else if (g_solver.mediumInfo.capacityBytes == 512000000000LL) index = 11;
-            
+            // Select correct Media combobox index from settings memory
+            int index = g_solver.lastSelectedVolumeIndex;
+            if (index < 0 || index >= (int)SendMessage(g_comboPrefMedia, CB_GETCOUNT, 0, 0)) {
+                index = 2; // Default to DVD (4.7 GB)
+            }
             SendMessage(g_comboPrefMedia, CB_SETCURSEL, index, 0);
-            EnableWindow(g_editPrefCap, (index == 12) ? TRUE : FALSE);
+            EnableWindow(g_editPrefCap, (index == 13) ? TRUE : FALSE);
             
             // Initial dynamic calculation
             SendMessage(hwnd, WM_COMMAND, MAKEWPARAM(ID_PREF_EDIT_CAP, EN_CHANGE), (LPARAM)g_editPrefCap);
+            
+            // Tooltips
+            CreateToolTip(hwnd, g_comboPrefMedia, "Select standard capacity media profile or named custom volumes.");
+            CreateToolTip(hwnd, g_editPrefCap, "Enter target storage volume capacity size (e.g. 700MB, 4.7GB).");
+            CreateToolTip(hwnd, g_editPrefClus, "Sector size in bytes (normally 2048 for ISO 9660 / CDs / DVDs).");
+            CreateToolTip(hwnd, g_editPrefSlack, "Allowable empty space tolerance per volume.");
+            CreateToolTip(hwnd, g_editPrefTime, "Max time solver is allowed to backtracking search a solution.");
+            CreateToolTip(hwnd, g_editPrefDepth, "Maximum folder tree depth directory contents are allowed to be split.");
+            CreateToolTip(hwnd, g_chkPrefEmpty, "Filter out empty directories from target volumes.");
+            CreateToolTip(hwnd, g_chkPrefUnreadable, "Silently ignore files that fail reading permissions or IO errors.");
+            CreateToolTip(hwnd, g_chkPrefContextMenu, "Add right-click explorer menu option to quickly add files.");
+            CreateToolTip(hwnd, g_chkPrefRuleWins, "If checked, rule pattern-matching takes precedence over MiniLM prompt.");
+            CreateToolTip(hwnd, g_editPrefCvName, "Name your custom capacity profile to save and use later.");
+            CreateToolTip(hwnd, g_btnPrefCvSave, "Save custom volume profile based on currently input values.");
             
             // Load Rules list
             int rowIndex = 0;
@@ -762,58 +849,40 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             
             if (wmId == ID_PREF_COMBO_MEDIA && wmEvent == CBN_SELCHANGE) {
                 int index = SendMessage(g_comboPrefMedia, CB_GETCURSEL, 0, 0);
-                if (index == 0) { // CD 650
-                    SetWindowText(g_editPrefCap, "650 MB");
+                if (index >= 0 && index < 12) {
+                    if (index == 0) { SetWindowText(g_editPrefCap, "650 MB"); SetWindowText(g_editPrefClus, "2048"); }
+                    else if (index == 1) { SetWindowText(g_editPrefCap, "700 MB"); SetWindowText(g_editPrefClus, "2048"); }
+                    else if (index == 2) { SetWindowText(g_editPrefCap, "4.7 GB"); SetWindowText(g_editPrefClus, "2048"); }
+                    else if (index == 3) { SetWindowText(g_editPrefCap, "8.5 GB"); SetWindowText(g_editPrefClus, "2048"); }
+                    else if (index == 4) { SetWindowText(g_editPrefCap, "25 GB"); SetWindowText(g_editPrefClus, "2048"); }
+                    else if (index == 5) { SetWindowText(g_editPrefCap, "50 GB"); SetWindowText(g_editPrefClus, "2048"); }
+                    else if (index == 6) { SetWindowText(g_editPrefCap, "8 GB"); SetWindowText(g_editPrefClus, "4096"); }
+                    else if (index == 7) { SetWindowText(g_editPrefCap, "16 GB"); SetWindowText(g_editPrefClus, "4096"); }
+                    else if (index == 8) { SetWindowText(g_editPrefCap, "32 GB"); SetWindowText(g_editPrefClus, "4096"); }
+                    else if (index == 9) { SetWindowText(g_editPrefCap, "64 GB"); SetWindowText(g_editPrefClus, "4096"); }
+                    else if (index == 10) { SetWindowText(g_editPrefCap, "256 GB"); SetWindowText(g_editPrefClus, "4096"); }
+                    else if (index == 11) { SetWindowText(g_editPrefCap, "512 GB"); SetWindowText(g_editPrefClus, "4096"); }
+                    EnableWindow(g_editPrefCap, FALSE);
+                } else if (index == 12) { // Auto Size
+                    SetWindowText(g_editPrefCap, "Auto");
                     SetWindowText(g_editPrefClus, "2048");
                     EnableWindow(g_editPrefCap, FALSE);
-                } else if (index == 1) { // CD 700
-                    SetWindowText(g_editPrefCap, "700 MB");
-                    SetWindowText(g_editPrefClus, "2048");
-                    EnableWindow(g_editPrefCap, FALSE);
-                } else if (index == 2) { // DVD 4.7
-                    SetWindowText(g_editPrefCap, "4.7 GB");
-                    SetWindowText(g_editPrefClus, "2048");
-                    EnableWindow(g_editPrefCap, FALSE);
-                } else if (index == 3) { // DVD DL 8.5
-                    SetWindowText(g_editPrefCap, "8.5 GB");
-                    SetWindowText(g_editPrefClus, "2048");
-                    EnableWindow(g_editPrefCap, FALSE);
-                } else if (index == 4) { // BD 25
-                    SetWindowText(g_editPrefCap, "25 GB");
-                    SetWindowText(g_editPrefClus, "2048");
-                    EnableWindow(g_editPrefCap, FALSE);
-                } else if (index == 5) { // BD DL 50
-                    SetWindowText(g_editPrefCap, "50 GB");
-                    SetWindowText(g_editPrefClus, "2048");
-                    EnableWindow(g_editPrefCap, FALSE);
-                } else if (index == 6) { // USB 8
-                    SetWindowText(g_editPrefCap, "8 GB");
-                    SetWindowText(g_editPrefClus, "4096");
-                    EnableWindow(g_editPrefCap, FALSE);
-                } else if (index == 7) { // USB 16
-                    SetWindowText(g_editPrefCap, "16 GB");
-                    SetWindowText(g_editPrefClus, "4096");
-                    EnableWindow(g_editPrefCap, FALSE);
-                } else if (index == 8) { // USB 32
-                    SetWindowText(g_editPrefCap, "32 GB");
-                    SetWindowText(g_editPrefClus, "4096");
-                    EnableWindow(g_editPrefCap, FALSE);
-                } else if (index == 9) { // USB 64
-                    SetWindowText(g_editPrefCap, "64 GB");
-                    SetWindowText(g_editPrefClus, "4096");
-                    EnableWindow(g_editPrefCap, FALSE);
-                } else if (index == 10) { // USB 256
-                    SetWindowText(g_editPrefCap, "256 GB");
-                    SetWindowText(g_editPrefClus, "4096");
-                    EnableWindow(g_editPrefCap, FALSE);
-                } else if (index == 11) { // USB 512
-                    SetWindowText(g_editPrefCap, "512 GB");
-                    SetWindowText(g_editPrefClus, "4096");
-                    EnableWindow(g_editPrefCap, FALSE);
-                } else { // Custom
+                } else if (index == 13) { // Custom Size
                     SetWindowText(g_editPrefCap, "64 GB");
                     SetWindowText(g_editPrefClus, "4096");
                     EnableWindow(g_editPrefCap, TRUE);
+                } else if (index >= 14) { // Custom Volumes
+                    int cvIdx = index - 14;
+                    if (cvIdx >= 0 && cvIdx < (int)g_solver.customVolumes.size()) {
+                        const auto& cv = g_solver.customVolumes[cvIdx];
+                        double gb = (double)cv.capacityBytes / (1024.0 * 1024.0 * 1024.0);
+                        char buf[64];
+                        snprintf(buf, sizeof(buf), "%.3f GB", gb);
+                        SetWindowText(g_editPrefCap, buf);
+                        SetWindowText(g_editPrefClus, std::to_string(cv.sectorSize).c_str());
+                        SetWindowText(g_editPrefSlack, std::to_string(cv.slackBytes).c_str());
+                        EnableWindow(g_editPrefCap, FALSE);
+                    }
                 }
             }
             
@@ -849,6 +918,44 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
                 }
             }
             
+            if (wmId == ID_PREF_BTN_CV_SAVE) {
+                char name[128];
+                GetWindowText(g_editPrefCvName, name, 128);
+                if (strlen(name) > 0) {
+                    char capText[128];
+                    GetWindowText(g_editPrefCap, capText, 128);
+                    int64_t capacity = bttb::parseHumanSize(capText);
+                    
+                    char clusText[64];
+                    GetWindowText(g_editPrefClus, clusText, 64);
+                    int64_t cluster = 2048;
+                    try { if (strlen(clusText) > 0) cluster = std::stoll(clusText); } catch (...) {}
+                    
+                    char slackText[64];
+                    GetWindowText(g_editPrefSlack, slackText, 64);
+                    int64_t slack = 0;
+                    try { if (strlen(slackText) > 0) slack = std::stoll(slackText); } catch (...) {}
+                    
+                    bttb::CustomVolume cv;
+                    cv.name = name;
+                    cv.capacityBytes = capacity;
+                    cv.sectorSize = cluster;
+                    cv.slackBytes = slack;
+                    
+                    g_solver.customVolumes.push_back(cv);
+                    g_solver.saveSettings();
+                    
+                    SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)cv.name.c_str());
+                    int idx = SendMessage(g_comboPrefMedia, CB_GETCOUNT, 0, 0) - 1;
+                    SendMessage(g_comboPrefMedia, CB_SETCURSEL, idx, 0);
+                    
+                    SetWindowText(g_editPrefCvName, "");
+                    MessageBox(hwnd, "Custom volume saved successfully!", "Success", MB_OK | MB_ICONINFORMATION);
+                } else {
+                    MessageBox(hwnd, "Please enter a name for the custom volume.", "Error", MB_OK | MB_ICONERROR);
+                }
+            }
+            
             if (wmId == ID_PREF_BTN_OK) {
                 char buf[64];
                 char capText[128];
@@ -870,6 +977,13 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
                 
                 g_solver.skipEmpty = (SendMessage(g_chkPrefEmpty, BM_GETCHECK, 0, 0) == BST_CHECKED);
                 g_solver.skipUnreadable = (SendMessage(g_chkPrefUnreadable, BM_GETCHECK, 0, 0) == BST_CHECKED);
+                
+                int selIdx = SendMessage(g_comboPrefMedia, CB_GETCURSEL, 0, 0);
+                if (selIdx >= 0) {
+                    g_solver.lastSelectedVolumeIndex = selIdx;
+                    g_solver.enableAutoVolume = (selIdx == 12);
+                }
+                g_solver.ruleBasedWins = (SendMessage(g_chkPrefRuleWins, BM_GETCHECK, 0, 0) == BST_CHECKED);
                 
                 bool enableMenu = (SendMessage(g_chkPrefContextMenu, BM_GETCHECK, 0, 0) == BST_CHECKED);
                 RegisterExplorerContextMenu(enableMenu);
@@ -1126,6 +1240,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             CreateWindow("BUTTON", "Solver Output Log", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 284, 300, 510, 160, hwnd, NULL, NULL, NULL);
             g_editLog = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL | ES_READONLY, 296, 324, 480, 120, hwnd, NULL, NULL, NULL);
             
+            // Status bar with Spinner and Time Left under log output
+            g_labelSpinner = CreateWindow("STATIC", "", WS_CHILD | WS_VISIBLE, 296, 450, 30, 20, hwnd, NULL, NULL, NULL);
+            g_labelTimeLeft = CreateWindow("STATIC", "Estimated Time Left: --:--", WS_CHILD | WS_VISIBLE, 330, 450, 350, 20, hwnd, NULL, NULL, NULL);
+            
             // Bottom Action buttons row (Shifted to y=475)
             g_btnTest = CreateWindow("BUTTON", "Test", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 284, 475, 70, 30, hwnd, (HMENU)ID_BTN_TEST, NULL, NULL);
             g_btnStart = CreateWindow("BUTTON", "Start", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 360, 475, 70, 30, hwnd, (HMENU)ID_BTN_START, NULL, NULL);
@@ -1143,6 +1261,19 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 SendMessage(hwndChild, WM_SETFONT, lParam, TRUE);
                 return TRUE;
             }, (LPARAM)hFont);
+            
+            // Premium Tooltips
+            CreateToolTip(hwnd, g_btnTest, "Simulate packing without performing file operations to test volume utilization.");
+            CreateToolTip(hwnd, g_btnStart, "Run solver and organize files/folders according to preferences.");
+            CreateToolTip(hwnd, g_btnStop, "Abort current running packing or file organization process.");
+            CreateToolTip(hwnd, g_btnCreateIso, "Create ISO filesystem images from the solved volumes.");
+            CreateToolTip(hwnd, g_editSrc, "Semicolon-separated paths of folders to pack and consolidate.");
+            CreateToolTip(hwnd, g_editDest, "Destination path where volumes will be organized and written.");
+            CreateToolTip(hwnd, g_editSemantic, "Enter a prompt like 'keep audio together' to analyze files via MiniLM.");
+            CreateToolTip(hwnd, g_chkMove, "Move/cut original files/folders directly into target volume folders.");
+            CreateToolTip(hwnd, g_chkSymlink, "Create filesystem symbolic links in target volume folders (non-destructive).");
+            CreateToolTip(hwnd, g_chkSpan, "Enable spanning contents into multiple sequentially named folders.");
+            CreateToolTip(hwnd, g_chkTrace, "Log detailed diagnostics showing how folders/files are selected and split.");
             
             break;
         }
@@ -1291,6 +1422,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                     PostMessage(hwnd, WM_SOLVER_PROGRESS, static_cast<WPARAM>(percent), 0);
                 };
                 
+                g_solver.timeLeftNotify = [hwnd](double secondsLeft) {
+                    int percentSec = static_cast<int>(secondsLeft * 10.0);
+                    PostMessage(hwnd, WM_SOLVER_TIMELEFT, static_cast<WPARAM>(percentSec), 0);
+                };
+                
                 g_solver.recommendCapacityNotify = [hwnd](int64_t recommendedBytes) -> bool {
                     double recMB = (double)recommendedBytes / (1024.0 * 1024.0);
                     char buf[512];
@@ -1302,6 +1438,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                     return (res == IDYES);
                 };
                 
+                // Start text-based activity spinner animation
+                SetTimer(hwnd, 1, 150, NULL);
+                
                 // Run background solver thread
                 g_solver_thread = std::jthread([hwnd]() {
                     g_solver.run();
@@ -1311,6 +1450,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             
             if (wmId == ID_BTN_STOP) {
                 g_solver.stopRequested = true;
+                KillTimer(hwnd, 1);
+                SetWindowText(g_labelSpinner, "");
+                SetWindowText(g_labelTimeLeft, "Estimated Time Left: Cancelled");
                 AppendTextToLog(g_editLog, "Cancellation requested by user...");
                 EnableWindow(g_btnStop, FALSE);
             }
@@ -1423,21 +1565,24 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             }
             
             if (wmId == ID_BTN_ABOUT) {
-                std::string aboutText = 
-                    "Burn to the Brim (BTTB)\r\n"
-                    "Version 4.0.0\r\n\r\n"
-                    "Authors:\r\n"
-                    "Sander Raaijmakers, Elwin Oost and the Burn to the Brim team\r\n\r\n"
-                    "Licensing:\r\n"
-                    "This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2 of the License (GPLv2).\r\n\r\n"
-                    "Features in v4.0.0:\r\n"
-                    "- Entropy-Aware Semantic Packing based on MiniLM embeddings\r\n"
-                    "- Interactive Test Simulation Mode with volume coherence metrics\r\n"
-                    "- Unicode & Long Path (>256 characters) support\r\n"
-                    "- Hybrid GUI / CLI integrated binary execution\r\n"
-                    "- Optional Windows Explorer Context Menu integration\r\n"
-                    "- Smart adaptive capacity recommendation & retrying";
-                MessageBox(hwnd, aboutText.c_str(), "About Burn to the Brim", MB_OK | MB_ICONINFORMATION);
+                // Disable main window
+                EnableWindow(hwnd, FALSE);
+                
+                // Create About Window
+                HWND hwndAbout = CreateWindowEx(
+                    WS_EX_CONTROLPARENT,
+                    "BttbWin32AboutDialog",
+                    "About Burn to the Brim",
+                    WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
+                    CW_USEDEFAULT, CW_USEDEFAULT, 490, 385,
+                    hwnd, NULL, GetModuleHandle(NULL), NULL
+                );
+                
+                if (hwndAbout != NULL) {
+                    ShowWindow(hwndAbout, SW_SHOW);
+                } else {
+                    EnableWindow(hwnd, TRUE);
+                }
             }
             
             break;
@@ -1469,6 +1614,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case WM_SOLVER_FINISHED: {
             AppendTextToLog(g_editLog, "\nSolver processing complete.");
             
+            // Stop spinner timer
+            KillTimer(hwnd, 1);
+            SetWindowText(g_labelSpinner, "");
+            SetWindowText(g_labelTimeLeft, "Estimated Time Left: Complete");
+            
             // Re-enable start and control inputs
             EnableWindow(g_btnStart, TRUE);
             EnableWindow(g_btnTest, TRUE);
@@ -1487,7 +1637,37 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             break;
         }
         
+        case WM_SOLVER_TIMELEFT: {
+            int percentSec = static_cast<int>(wParam);
+            if (percentSec < 0) {
+                SetWindowText(g_labelTimeLeft, "Estimated Time Left: Calculating...");
+            } else if (percentSec == 0) {
+                SetWindowText(g_labelTimeLeft, "Estimated Time Left: 00:00");
+            } else {
+                int totalSec = percentSec / 10;
+                int mins = totalSec / 60;
+                int secs = totalSec % 60;
+                char buf[128];
+                snprintf(buf, sizeof(buf), "Estimated Time Left: %02d:%02d", mins, secs);
+                SetWindowText(g_labelTimeLeft, buf);
+            }
+            break;
+        }
+        
+        case WM_TIMER: {
+            if (wParam == 1) {
+                static const char spinnerChars[] = {'|', '/', '-', '\\'};
+                static int spinnerIndex = 0;
+                char buf[8];
+                snprintf(buf, sizeof(buf), "[ %c ]", spinnerChars[spinnerIndex]);
+                SetWindowText(g_labelSpinner, buf);
+                spinnerIndex = (spinnerIndex + 1) % 4;
+            }
+            break;
+        }
+        
         case WM_DESTROY: {
+            KillTimer(hwnd, 1);
             if (g_solver_thread.joinable()) {
                 g_solver_thread.join();
             }
@@ -1615,8 +1795,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wcPref.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(1));
     wcPref.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
     
-    if (!RegisterClassEx(&wcPref)) {
-        MessageBox(NULL, "Preferences Dialog Registration Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
+    // Register About Dialog Window Class
+    WNDCLASSEX wcAbout = {0};
+    wcAbout.cbSize = sizeof(WNDCLASSEX);
+    wcAbout.style = CS_HREDRAW | CS_VREDRAW;
+    wcAbout.lpfnWndProc = AboutWndProc;
+    wcAbout.hInstance = hInstance;
+    wcAbout.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wcAbout.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
+    wcAbout.lpszClassName = "BttbWin32AboutDialog";
+    wcAbout.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(1));
+    wcAbout.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+    
+    if (!RegisterClassEx(&wcAbout)) {
+        MessageBox(NULL, "About Dialog Registration Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
         return 0;
     }
     

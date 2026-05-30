@@ -244,19 +244,19 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
         gtk_window_set_transient_for(GTK_WINDOW(about), GTK_WINDOW(self->window));
         
         gtk_about_dialog_set_program_name(GTK_ABOUT_DIALOG(about), "Burn to the Brim");
-        gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(about), "4.0.0");
+        gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(about), "4.1.0");
         gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(about), "Copyright \u00a9 2001-2004 Sander Raaijmakers, Elwin Oost and the Burn to the Brim team");
         gtk_about_dialog_set_license_type(GTK_ABOUT_DIALOG(about), GTK_LICENSE_GPL_2_0);
         gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(about), "https://sourceforge.net/projects/bttb/");
         gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(about), 
             "Burn to the Brim (BTTB) is a modern C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums (CDs, DVDs, Blu-rays, or USBs).\n\n"
-            "Features in v4.0.0:\n"
+            "Features in v4.1.0:\n"
+            "- Named Custom Volume profiles & dynamic Auto Volume sizing\n"
+            "- Settings memory restoring the last selected volume configuration\n"
+            "- Rule conflict overrides allowing rule-based or semantic grouping to win\n"
+            "- Transfer-rate estimated Time Left & status activity spinner\n"
             "- Entropy-Aware Semantic Packing based on MiniLM embeddings\n"
-            "- Interactive Test Simulation Mode with volume coherence metrics\n"
-            "- Unicode & Long Path (>256 characters) support\n"
-            "- Hybrid GUI / CLI integrated binary execution\n"
-            "- Optional Windows Explorer Context Menu integration\n"
-            "- Smart adaptive capacity recommendation & retrying\n\n"
+            "- Explorer Context Menu integration & long path support\n\n"
             "Authors: Sander Raaijmakers, Elwin Oost and the Burn to the Brim team");
             
         // Load and set logo texture
@@ -273,6 +273,14 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
             if (texture) {
                 gtk_about_dialog_set_logo(GTK_ABOUT_DIALOG(about), GDK_PAINTABLE(texture));
                 g_object_unref(texture);
+            } else {
+                file = g_file_new_for_path("/usr/share/bttb/bttb.png");
+                texture = gdk_texture_new_from_file(file, NULL);
+                g_object_unref(file);
+                if (texture) {
+                    gtk_about_dialog_set_logo(GTK_ABOUT_DIALOG(about), GDK_PAINTABLE(texture));
+                    g_object_unref(texture);
+                }
             }
         }
 
@@ -282,14 +290,17 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
     // Start / Test / Stop buttons
     start_button = gtk_button_new_with_label("Start");
     gtk_widget_add_css_class(start_button, "suggested-action");
+    gtk_widget_set_tooltip_text(start_button, "Start organizing files into optimal volumes");
     gtk_header_bar_pack_end(GTK_HEADER_BAR(header), start_button);
 
     test_button = gtk_button_new_with_label("Test");
     gtk_widget_add_css_class(test_button, "suggested-action");
+    gtk_widget_set_tooltip_text(test_button, "Simulate organizing files and calculate metrics without modifying files on disk");
     gtk_header_bar_pack_end(GTK_HEADER_BAR(header), test_button);
     
     stop_button = gtk_button_new_with_label("Stop");
     gtk_widget_add_css_class(stop_button, "destructive-action");
+    gtk_widget_set_tooltip_text(stop_button, "Stop the current solver or copy operation");
     gtk_widget_set_sensitive(stop_button, FALSE);
     gtk_header_bar_pack_end(GTK_HEADER_BAR(header), stop_button);
     
@@ -423,6 +434,9 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
         self->solver.testOnlyMode = testMode;
         
         // UI updates before starting
+        gtk_spinner_start(GTK_SPINNER(self->activity_spinner));
+        gtk_label_set_text(GTK_LABEL(self->time_left_label), "Time Left: Calculating...");
+
         gtk_widget_set_sensitive(self->stop_button, TRUE);
         gtk_widget_grab_focus(self->stop_button);
         
@@ -528,9 +542,11 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
     
     source_entry = gtk_entry_new();
     gtk_widget_set_hexpand(source_entry, TRUE);
+    gtk_widget_set_tooltip_text(source_entry, "Source directory containing the files to organize");
     gtk_grid_attach(GTK_GRID(input_grid), source_entry, 2, 0, 1, 1);
     
     GtkWidget* src_browse = gtk_button_new_with_label("Browse...");
+    gtk_widget_set_tooltip_text(src_browse, "Browse for source directory");
     gtk_grid_attach(GTK_GRID(input_grid), src_browse, 3, 0, 1, 1);
     
     g_signal_connect(src_add, "clicked", G_CALLBACK(+[](GtkWidget* btn, gpointer user_data) {
@@ -566,9 +582,11 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
     gtk_grid_attach(GTK_GRID(input_grid), dest_label, 0, 1, 2, 1);
     
     target_entry = gtk_entry_new();
+    gtk_widget_set_tooltip_text(target_entry, "Destination directory where organized volumes will be created");
     gtk_grid_attach(GTK_GRID(input_grid), target_entry, 2, 1, 1, 1);
     
     GtkWidget* dest_browse = gtk_button_new_with_label("Browse...");
+    gtk_widget_set_tooltip_text(dest_browse, "Browse for destination directory");
     gtk_grid_attach(GTK_GRID(input_grid), dest_browse, 3, 1, 1, 1);
     
     g_signal_connect(dest_browse, "clicked", G_CALLBACK(+[](GtkWidget* btn, gpointer user_data) {
@@ -600,23 +618,28 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
     
     semantic_entry = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(semantic_entry), "e.g. keep similar content together");
+    gtk_widget_set_tooltip_text(semantic_entry, "Specify a semantic description to cluster similar files using MiniLM AI");
     gtk_grid_attach(GTK_GRID(input_grid), semantic_entry, 2, 2, 2, 1);
 
     // Checkbox for move
     move_check = gtk_check_button_new_with_label("Move fitted folders/files to target folder");
+    gtk_widget_set_tooltip_text(move_check, "Move files to their destination volumes instead of copying or symlinking them");
     gtk_grid_attach(GTK_GRID(input_grid), move_check, 2, 3, 2, 1);
     
     // Checkbox for symlinks
     symlink_check = gtk_check_button_new_with_label("Create symbolic links in target folder (Default)");
+    gtk_widget_set_tooltip_text(symlink_check, "Create symbolic links of the files at their destination instead of copying them");
     gtk_grid_attach(GTK_GRID(input_grid), symlink_check, 2, 4, 2, 1);
     gtk_check_button_set_active(GTK_CHECK_BUTTON(symlink_check), TRUE);
     
     // Checkbox for span
     span_check = gtk_check_button_new_with_label("Span across multiple volumes (Volume_1, Volume_2, etc.)");
+    gtk_widget_set_tooltip_text(span_check, "Fit remaining files into multiple volumes sequentially instead of just the first volume");
     gtk_grid_attach(GTK_GRID(input_grid), span_check, 2, 5, 2, 1);
     
     // Checkbox for trace
     trace_check = gtk_check_button_new_with_label("Enable detailed solver diagnostic tracing (Trace)");
+    gtk_widget_set_tooltip_text(trace_check, "Show extra verbose tracing and performance metrics in the logs");
     gtk_grid_attach(GTK_GRID(input_grid), trace_check, 2, 6, 2, 1);
     
     // Exclusivity between move_check and symlink_check
@@ -671,6 +694,21 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
     gtk_text_buffer_create_tag(log_buffer, "success", "foreground", "green", "weight", PANGO_WEIGHT_BOLD, NULL);
     gtk_text_buffer_create_tag(log_buffer, "error", "foreground", "darkred", "weight", PANGO_WEIGHT_BOLD, NULL);
     gtk_text_buffer_create_tag(log_buffer, "important", "foreground", "blue", "weight", PANGO_WEIGHT_BOLD, NULL);
+
+    // Status bar with Spinner and Time Left
+    GtkWidget* status_bar_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_widget_set_margin_start(status_bar_box, 8);
+    gtk_widget_set_margin_end(status_bar_box, 8);
+    gtk_widget_set_margin_top(status_bar_box, 4);
+    gtk_widget_set_margin_bottom(status_bar_box, 4);
+    gtk_box_append(GTK_BOX(right_box), status_bar_box);
+
+    activity_spinner = gtk_spinner_new();
+    gtk_box_append(GTK_BOX(status_bar_box), activity_spinner);
+
+    time_left_label = gtk_label_new("Time Left: --:--");
+    gtk_widget_set_halign(time_left_label, GTK_ALIGN_START);
+    gtk_box_append(GTK_BOX(status_bar_box), time_left_label);
     
     // Wire thread-safe notifications into solver
     solver.logNotify = [this](const std::string& msg, int type) {
@@ -680,6 +718,19 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
             delete p;
             return G_SOURCE_REMOVE;
         }, new LogPayload{this, msg, type});
+    };
+
+    struct TimeLeftPayload {
+        MainWindow* win;
+        double secondsLeft;
+    };
+    solver.timeLeftNotify = [this](double secondsLeft) {
+        g_idle_add([](gpointer data) -> gboolean {
+            auto* p = static_cast<TimeLeftPayload*>(data);
+            p->win->update_time_left(p->secondsLeft);
+            delete p;
+            return G_SOURCE_REMOVE;
+        }, new TimeLeftPayload{this, secondsLeft});
     };
     
     solver.progressNotify = [this](double disc, double overall) {
@@ -785,12 +836,27 @@ void MainWindow::append_log(const std::string& message, int type) {
 void MainWindow::update_progress(double disc_progress, double overall_progress) {
     gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress_bar_disc), disc_progress);
     
-    char label_buf[64];
+    char label_buf[128];
     snprintf(label_buf, sizeof(label_buf), "Filled: %.2f%%", disc_progress * 100.0);
     gtk_label_set_text(GTK_LABEL(progress_label_disc), label_buf);
 }
 
+void MainWindow::update_time_left(double secondsLeft) {
+    if (secondsLeft < 0) {
+        gtk_label_set_text(GTK_LABEL(time_left_label), "Time Left: Estimating...");
+    } else {
+        int mins = static_cast<int>(secondsLeft) / 60;
+        int secs = static_cast<int>(secondsLeft) % 60;
+        char buf[64];
+        snprintf(buf, sizeof(buf), "Time Left: %02d:%02d", mins, secs);
+        gtk_label_set_text(GTK_LABEL(time_left_label), buf);
+    }
+}
+
 void MainWindow::solver_finished() {
+    gtk_spinner_stop(GTK_SPINNER(activity_spinner));
+    gtk_label_set_text(GTK_LABEL(time_left_label), "Time Left: Complete");
+
     // Re-enable inputs
     gtk_widget_set_sensitive(start_button, TRUE);
     gtk_widget_set_sensitive(test_button, TRUE);

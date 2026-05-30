@@ -14,6 +14,8 @@ struct DialogData {
     GtkWidget* split_depth_entry;
     GtkWidget* skip_empty_switch;
     GtkWidget* capacity_mb_label;
+    GtkWidget* cv_name_entry;
+    GtkWidget* conflict_switch;
     
     GtkListStore* rule_store;
     GtkWidget* rule_tree_view;
@@ -75,11 +77,26 @@ static void on_media_changed(GtkComboBox* combo, gpointer user_data) {
         gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "512 GB");
         gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "4096");
         gtk_widget_set_sensitive(data->capacity_entry, FALSE);
-    } else { // Custom
-        // Default custom volume is set to 64GB
+    } else if (active == 12) { // Auto Size
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "Auto");
+        gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "2048");
+        gtk_widget_set_sensitive(data->capacity_entry, FALSE);
+    } else if (active == 13) { // Custom Size
         gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "64 GB");
         gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "4096");
         gtk_widget_set_sensitive(data->capacity_entry, TRUE);
+    } else if (active >= 14) { // Custom Volumes
+        int cvIdx = active - 14;
+        if (cvIdx >= 0 && cvIdx < (int)data->solver->customVolumes.size()) {
+            const auto& cv = data->solver->customVolumes[cvIdx];
+            double gb = (double)cv.capacityBytes / (1024.0 * 1024.0 * 1024.0);
+            char buf[64];
+            snprintf(buf, sizeof(buf), "%.3f GB", gb);
+            gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), buf);
+            gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), std::to_string(cv.sectorSize).c_str());
+            gtk_editable_set_text(GTK_EDITABLE(data->slack_entry), std::to_string(cv.slackBytes).c_str());
+            gtk_widget_set_sensitive(data->capacity_entry, FALSE);
+        }
     }
 }
 
@@ -157,7 +174,11 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "USB (64 GB)");
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "USB (256 GB)");
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "USB (512 GB)");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "Auto Size");
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "Custom Size");
+    for (const auto& cv : solver.customVolumes) {
+        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), cv.name.c_str());
+    }
     gtk_grid_attach(GTK_GRID(grid), data->media_combo, 1, 0, 1, 1);
     
     // Capacity
@@ -168,51 +189,93 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     data->capacity_entry = gtk_entry_new();
     gtk_grid_attach(GTK_GRID(grid), data->capacity_entry, 1, 1, 1, 1);
     
+    // Save Custom Volume name and button
+    GtkWidget* save_cv_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    gtk_grid_attach(GTK_GRID(grid), save_cv_box, 1, 2, 1, 1);
+    
+    data->cv_name_entry = gtk_entry_new();
+    gtk_entry_set_placeholder_text(GTK_ENTRY(data->cv_name_entry), "Custom Volume Name");
+    gtk_box_append(GTK_BOX(save_cv_box), data->cv_name_entry);
+    
+    GtkWidget* cv_save_btn = gtk_button_new_with_label("Save");
+    gtk_widget_set_tooltip_text(cv_save_btn, "Save current capacity, sector, and slack as a named custom volume");
+    gtk_box_append(GTK_BOX(save_cv_box), cv_save_btn);
+    
+    g_signal_connect(cv_save_btn, "clicked", G_CALLBACK(+[](GtkButton* btn, gpointer user_data) {
+        auto* data = static_cast<DialogData*>(user_data);
+        const char* name = gtk_editable_get_text(GTK_EDITABLE(data->cv_name_entry));
+        if (!name || strlen(name) == 0) return;
+        
+        CustomVolume cv;
+        cv.name = name;
+        cv.capacityBytes = parseHumanSize(gtk_editable_get_text(GTK_EDITABLE(data->capacity_entry)));
+        cv.sectorSize = std::stoll(gtk_editable_get_text(GTK_EDITABLE(data->cluster_entry)));
+        cv.slackBytes = std::stoll(gtk_editable_get_text(GTK_EDITABLE(data->slack_entry)));
+        
+        data->solver->customVolumes.push_back(cv);
+        data->solver->saveSettings();
+        
+        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), cv.name.c_str());
+        
+        int newIdx = 14 + data->solver->customVolumes.size() - 1;
+        gtk_combo_box_set_active(GTK_COMBO_BOX(data->media_combo), newIdx);
+        gtk_editable_set_text(GTK_EDITABLE(data->cv_name_entry), "");
+    }), data);
+    
     // Capacity MB Dynamic Label
     data->capacity_mb_label = gtk_label_new("(0.00 MB)");
     gtk_widget_set_halign(data->capacity_mb_label, GTK_ALIGN_START);
-    gtk_grid_attach(GTK_GRID(grid), data->capacity_mb_label, 1, 2, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), data->capacity_mb_label, 1, 3, 1, 1);
     
     // Cluster
     GtkWidget* label_clus = gtk_label_new("Cluster Size (Bytes):");
     gtk_widget_set_halign(label_clus, GTK_ALIGN_START);
-    gtk_grid_attach(GTK_GRID(grid), label_clus, 0, 3, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), label_clus, 0, 4, 1, 1);
     
     data->cluster_entry = gtk_entry_new();
-    gtk_grid_attach(GTK_GRID(grid), data->cluster_entry, 1, 3, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), data->cluster_entry, 1, 4, 1, 1);
     
     // Slack
     GtkWidget* label_slack = gtk_label_new("Slack Bytes:");
     gtk_widget_set_halign(label_slack, GTK_ALIGN_START);
-    gtk_grid_attach(GTK_GRID(grid), label_slack, 0, 4, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), label_slack, 0, 5, 1, 1);
     
     data->slack_entry = gtk_entry_new();
-    gtk_grid_attach(GTK_GRID(grid), data->slack_entry, 1, 4, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), data->slack_entry, 1, 5, 1, 1);
     
     // Search Time
     GtkWidget* label_time = gtk_label_new("Max Search Time (sec):");
     gtk_widget_set_halign(label_time, GTK_ALIGN_START);
-    gtk_grid_attach(GTK_GRID(grid), label_time, 0, 5, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), label_time, 0, 6, 1, 1);
     
     data->search_time_entry = gtk_entry_new();
-    gtk_grid_attach(GTK_GRID(grid), data->search_time_entry, 1, 5, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), data->search_time_entry, 1, 6, 1, 1);
     
     // Split Depth
     GtkWidget* label_depth = gtk_label_new("Directory Split Depth:");
     gtk_widget_set_halign(label_depth, GTK_ALIGN_START);
-    gtk_grid_attach(GTK_GRID(grid), label_depth, 0, 6, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), label_depth, 0, 7, 1, 1);
     
     data->split_depth_entry = gtk_entry_new();
-    gtk_grid_attach(GTK_GRID(grid), data->split_depth_entry, 1, 6, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), data->split_depth_entry, 1, 7, 1, 1);
     
     // Skip empty switch
     GtkWidget* label_empty = gtk_label_new("Skip Empty Files/Dirs:");
     gtk_widget_set_halign(label_empty, GTK_ALIGN_START);
-    gtk_grid_attach(GTK_GRID(grid), label_empty, 0, 7, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), label_empty, 0, 8, 1, 1);
     
     data->skip_empty_switch = gtk_switch_new();
     gtk_widget_set_halign(data->skip_empty_switch, GTK_ALIGN_START);
-    gtk_grid_attach(GTK_GRID(grid), data->skip_empty_switch, 1, 7, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), data->skip_empty_switch, 1, 8, 1, 1);
+
+    // Rule conflict override
+    GtkWidget* label_conflict = gtk_label_new("Rule-based grouping wins:");
+    gtk_widget_set_halign(label_conflict, GTK_ALIGN_START);
+    gtk_grid_attach(GTK_GRID(grid), label_conflict, 0, 9, 1, 1);
+
+    data->conflict_switch = gtk_switch_new();
+    gtk_widget_set_halign(data->conflict_switch, GTK_ALIGN_START);
+    gtk_grid_attach(GTK_GRID(grid), data->conflict_switch, 1, 9, 1, 1);
     
     // Grouping Rules list frame
     GtkWidget* rules_frame = gtk_frame_new("File/Folder Grouping Rules");
@@ -314,11 +377,16 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     gtk_editable_set_text(GTK_EDITABLE(data->search_time_entry), std::to_string(solver.maxSearchTimeSeconds).c_str());
     gtk_editable_set_text(GTK_EDITABLE(data->split_depth_entry), std::to_string(solver.splitDepth).c_str());
     gtk_switch_set_active(GTK_SWITCH(data->skip_empty_switch), solver.skipEmpty);
+    gtk_switch_set_active(GTK_SWITCH(data->conflict_switch), solver.ruleBasedWins);
     
     // Listen for capacity edit changes to show dynamic parsed size in MB
     g_signal_connect(data->capacity_entry, "changed", G_CALLBACK(+[](GtkEditable* editable, gpointer user_data) {
         auto* data = static_cast<DialogData*>(user_data);
         const char* text = gtk_editable_get_text(editable);
+        if (text && strcmp(text, "Auto") == 0) {
+            gtk_label_set_text(GTK_LABEL(data->capacity_mb_label), "(Auto-Sized)");
+            return;
+        }
         int64_t bytes = parseHumanSize(text ? text : "");
         double mb = (double)bytes / (1024.0 * 1024.0);
         char buf[128];
@@ -339,19 +407,11 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     }
     
     // Select custom/standard size default index
-    int combo_index = 12; // Custom Size
-    if (solver.mediumInfo.capacityBytes == 681574400) combo_index = 0;
-    else if (solver.mediumInfo.capacityBytes == 734003200) combo_index = 1;
-    else if (solver.mediumInfo.capacityBytes == 4700000000LL) combo_index = 2;
-    else if (solver.mediumInfo.capacityBytes == 8500000000LL) combo_index = 3;
-    else if (solver.mediumInfo.capacityBytes == 25000000000LL) combo_index = 4;
-    else if (solver.mediumInfo.capacityBytes == 50000000000LL) combo_index = 5;
-    else if (solver.mediumInfo.capacityBytes == 8000000000LL) combo_index = 6;
-    else if (solver.mediumInfo.capacityBytes == 16000000000LL) combo_index = 7;
-    else if (solver.mediumInfo.capacityBytes == 32000000000LL) combo_index = 8;
-    else if (solver.mediumInfo.capacityBytes == 64000000000LL) combo_index = 9;
-    else if (solver.mediumInfo.capacityBytes == 256000000000LL) combo_index = 10;
-    else if (solver.mediumInfo.capacityBytes == 512000000000LL) combo_index = 11;
+    int combo_index = solver.lastSelectedVolumeIndex;
+    int num_items = 14 + (int)solver.customVolumes.size();
+    if (combo_index < 0 || combo_index >= num_items) {
+        combo_index = 2; // Default to DVD (4.7 GB)
+    }
     
     gtk_combo_box_set_active(GTK_COMBO_BOX(data->media_combo), combo_index);
     on_media_changed(GTK_COMBO_BOX(data->media_combo), data);
@@ -366,12 +426,24 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
         auto* data = static_cast<DialogData*>(user_data);
         
         // Save values using parseHumanSize
-        data->solver->mediumInfo.capacityBytes = parseHumanSize(gtk_editable_get_text(GTK_EDITABLE(data->capacity_entry)));
+        const char* cap_txt = gtk_editable_get_text(GTK_EDITABLE(data->capacity_entry));
+        if (cap_txt && strcmp(cap_txt, "Auto") == 0) {
+            data->solver->mediumInfo.capacityBytes = 0;
+        } else {
+            data->solver->mediumInfo.capacityBytes = parseHumanSize(cap_txt);
+        }
         data->solver->mediumInfo.sectorSize = std::stoll(gtk_editable_get_text(GTK_EDITABLE(data->cluster_entry)));
         data->solver->mediumInfo.slackBytes = std::stoll(gtk_editable_get_text(GTK_EDITABLE(data->slack_entry)));
         data->solver->maxSearchTimeSeconds = std::stoi(gtk_editable_get_text(GTK_EDITABLE(data->search_time_entry)));
         data->solver->splitDepth = std::stoi(gtk_editable_get_text(GTK_EDITABLE(data->split_depth_entry)));
         data->solver->skipEmpty = gtk_switch_get_active(GTK_SWITCH(data->skip_empty_switch));
+        
+        data->solver->lastSelectedVolumeIndex = gtk_combo_box_get_active(GTK_COMBO_BOX(data->media_combo));
+        data->solver->enableAutoVolume = (data->solver->lastSelectedVolumeIndex == 12);
+        data->solver->ruleBasedWins = gtk_switch_get_active(GTK_SWITCH(data->conflict_switch));
+        
+        // Persist settings to settings.txt
+        data->solver->saveSettings();
         
         // Save rules
         data->solver->groupingRules.clear();

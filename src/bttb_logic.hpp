@@ -17,6 +17,13 @@ struct CDInfo {
     int64_t slackBytes = 0;    // allowable slack/tolerance
 };
 
+struct CustomVolume {
+    std::string name;
+    int64_t capacityBytes = 0;
+    int64_t sectorSize = 2048;
+    int64_t slackBytes = 0;
+};
+
 struct DirEntry {
     std::string relativePath;  // path relative to the scanned base directory
     std::string absolutePath;  // actual full absolute path on filesystem
@@ -50,6 +57,7 @@ struct PackedVolume {
 using LogCallback = std::function<void(const std::string&, int msgType)>;
 using ProgressCallback = std::function<void(double currentMediumProgress, double overallProgress)>;
 using RecommendCapacityCallback = std::function<bool(int64_t recommendedCapacityBytes)>;
+using TimeLeftCallback = std::function<void(double secondsLeft)>;
 
 class BttbSolver {
 public:
@@ -83,6 +91,12 @@ public:
     bool testOnlyMode = false;
     double semanticCoherenceFactor = 0.7;
 
+    // v4.1.0 Enhancements
+    std::vector<CustomVolume> customVolumes;
+    bool ruleBasedWins = true;
+    int lastSelectedVolumeIndex = 2;
+    bool enableAutoVolume = false;
+
     // Control
     std::atomic<bool> stopRequested{false};
     std::atomic<bool> searchTimedOut{false};
@@ -91,9 +105,12 @@ public:
     LogCallback logNotify;
     ProgressCallback progressNotify;
     RecommendCapacityCallback recommendCapacityNotify;
+    TimeLeftCallback timeLeftNotify;
 
     // Public API
     void run();
+    void loadSettings();
+    void saveSettings();
 
     // Semantic Helpers
     double computeCosineSimilarity(const std::vector<float>& a, const std::vector<float>& b);

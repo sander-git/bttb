@@ -34,12 +34,16 @@ public:
     GtkWidget* tree_view;
     GtkTreeStore* tree_store;
 
+    GtkWidget* activity_spinner;
+    GtkWidget* time_left_label;
+
     // Solver settings (backed up in logic)
     BttbSolver solver;
     std::jthread solver_thread;
 
     void append_log(const std::string& message, int type);
     void update_progress(double disc_progress, double overall_progress);
+    void update_time_left(double secondsLeft);
     void solver_finished();
 };
 

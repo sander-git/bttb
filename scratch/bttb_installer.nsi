@@ -2,8 +2,8 @@ Unicode true
 
 !include "MUI2.nsh"
 
-Name "Burn to the Brim 4.0.0"
-OutFile "../build/bttb-cpp-4.0.0-Win64-Installer.exe"
+Name "Burn to the Brim 4.1.0"
+OutFile "../build/bttb-cpp-4.1.0-Win64-Installer.exe"
 InstallDir "$LOCALAPPDATA\BurnToTheBrim"
 InstallDirRegKey HKCU "Software\BurnToTheBrim" "InstallDir"
 
@@ -44,7 +44,7 @@ Section "Burn to the Brim (Required)" SecCore
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "DisplayName" "Burn to the Brim"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "DisplayIcon" "$INSTDIR\bttb_win32.exe,0"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "UninstallString" '"$INSTDIR\uninstall.exe"'
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "DisplayVersion" "4.0.0"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "DisplayVersion" "4.1.0"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "Publisher" "BurnToTheBrim Team"
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "NoModify" 1
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "NoRepair" 1
