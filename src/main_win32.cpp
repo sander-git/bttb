@@ -1794,6 +1794,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wcPref.lpszClassName = "BttbWin32PrefDialog";
     wcPref.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(1));
     wcPref.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+    if (!RegisterClassEx(&wcPref)) {
+        MessageBox(NULL, "Preferences Dialog Registration Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
+        return 0;
+    }
     
     // Register About Dialog Window Class
     WNDCLASSEX wcAbout = {0};
