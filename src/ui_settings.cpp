@@ -16,6 +16,7 @@ struct DialogData {
     GtkWidget* capacity_mb_label;
     GtkWidget* cv_name_entry;
     GtkWidget* conflict_switch;
+    GtkWidget* dark_theme_switch;
     
     GtkListStore* rule_store;
     GtkWidget* rule_tree_view;
@@ -277,6 +278,15 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     gtk_widget_set_halign(data->conflict_switch, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(grid), data->conflict_switch, 1, 9, 1, 1);
     
+    // Enable Dark Theme switch
+    GtkWidget* label_dark = gtk_label_new("Enable Dark Theme:");
+    gtk_widget_set_halign(label_dark, GTK_ALIGN_START);
+    gtk_grid_attach(GTK_GRID(grid), label_dark, 0, 10, 1, 1);
+
+    data->dark_theme_switch = gtk_switch_new();
+    gtk_widget_set_halign(data->dark_theme_switch, GTK_ALIGN_START);
+    gtk_grid_attach(GTK_GRID(grid), data->dark_theme_switch, 1, 10, 1, 1);
+    
     // Grouping Rules list frame
     GtkWidget* rules_frame = gtk_frame_new("File/Folder Grouping Rules");
     gtk_box_append(GTK_BOX(main_box), rules_frame);
@@ -378,6 +388,7 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     gtk_editable_set_text(GTK_EDITABLE(data->split_depth_entry), std::to_string(solver.splitDepth).c_str());
     gtk_switch_set_active(GTK_SWITCH(data->skip_empty_switch), solver.skipEmpty);
     gtk_switch_set_active(GTK_SWITCH(data->conflict_switch), solver.ruleBasedWins);
+    gtk_switch_set_active(GTK_SWITCH(data->dark_theme_switch), solver.enableDarkTheme);
     
     // Listen for capacity edit changes to show dynamic parsed size in MB
     g_signal_connect(data->capacity_entry, "changed", G_CALLBACK(+[](GtkEditable* editable, gpointer user_data) {
@@ -441,6 +452,11 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
         data->solver->lastSelectedVolumeIndex = gtk_combo_box_get_active(GTK_COMBO_BOX(data->media_combo));
         data->solver->enableAutoVolume = (data->solver->lastSelectedVolumeIndex == 12);
         data->solver->ruleBasedWins = gtk_switch_get_active(GTK_SWITCH(data->conflict_switch));
+        data->solver->enableDarkTheme = gtk_switch_get_active(GTK_SWITCH(data->dark_theme_switch));
+        
+        // Apply immediately
+        GtkSettings *settings = gtk_settings_get_default();
+        g_object_set(settings, "gtk-application-prefer-dark-theme", data->solver->enableDarkTheme ? TRUE : FALSE, NULL);
         
         // Persist settings to settings.txt
         data->solver->saveSettings();

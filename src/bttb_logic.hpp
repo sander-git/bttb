@@ -91,11 +91,12 @@ public:
     bool testOnlyMode = false;
     double semanticCoherenceFactor = 0.7;
 
-    // v4.1.0 Enhancements
+    // v4.1.0-4.1.1 Enhancements
     std::vector<CustomVolume> customVolumes;
     bool ruleBasedWins = true;
     int lastSelectedVolumeIndex = 2;
     bool enableAutoVolume = false;
+    bool enableDarkTheme = false;
 
     // Control
     std::atomic<bool> stopRequested{false};

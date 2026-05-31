@@ -5,7 +5,7 @@ import subprocess
 
 base_dir = "/home/sander/src/antigravity/project1/bttb_cpp"
 build_dir = os.path.join(base_dir, "build")
-version = "4.1.0"
+version = "4.1.1"
 
 os.makedirs(build_dir, exist_ok=True)
 
@@ -16,14 +16,18 @@ subprocess.run(["make", "-j", "4"], cwd=build_dir, check=True)
 subprocess.run(["make", "package"], cwd=build_dir, check=True)
 
 # 2. Cross-compile Windows GUI binary
-print("Cross-compiling Windows Win32 Native binary...")
+print("Cross-compiling Windows Win32 Native binary with exploit mitigations...")
 win_cmd = [
     "x86_64-w64-mingw32-g++", "-O3", "-std=c++20", "-static", "-mwindows",
     "src/main_win32.cpp", "src/bttb_logic.cpp", "src/bttb_rc.o",
-    "-lcomctl32", "-lshell32", "-lole32", "-lcomdlg32",
+    "-lcomctl32", "-lshell32", "-lole32", "-lcomdlg32", "-ldwmapi", "-luxtheme",
+    "-Wl,--dynamicbase", "-Wl,--nxcompat", "-Wl,--high-entropy-va",
     "-o", "build/bttb_win32.exe"
 ]
 subprocess.run(win_cmd, cwd=base_dir, check=True)
+
+print("Stripping debug symbols from Windows binary to eliminate Defender ML false positives...")
+subprocess.run(["x86_64-w64-mingw32-strip", "build/bttb_win32.exe"], cwd=base_dir, check=True)
 
 # 3. Create Linux GTK4 release ZIP
 linux_zip_name = f"bttb-cpp-{version}-Linux-GTK4"
@@ -71,4 +75,4 @@ with zipfile.ZipFile(source_zip_path, 'w', zipfile.ZIP_DEFLATED) as z:
         if os.path.isfile(file_path):
             z.write(file_path, os.path.join(source_zip_name, "scratch", f))
 
-print("All BTTB v4.1.0 packages generated successfully!")
+print("All BTTB v4.1.1 packages generated successfully!")

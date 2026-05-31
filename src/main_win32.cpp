@@ -10,6 +10,51 @@
 #include <iostream>
 #include "bttb_logic.hpp"
 #include "cli_engine.hpp"
+#include <dwmapi.h>
+#include <uxtheme.h>
+
+#ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
+#define DWMWA_USE_IMMERSIVE_DARK_MODE 20
+#endif
+
+// Preferred App Mode for native dark theme support in Windows 10 & 11
+extern bttb::BttbSolver g_solver;
+typedef enum PreferredAppMode {
+    APPMODE_DEFAULT = 0,
+    APPMODE_ALLOWDARK = 1,
+    APPMODE_FORCEDARK = 2,
+    APPMODE_FORCELIGHT = 3,
+    APPMODE_MAX = 4
+} PreferredAppMode;
+
+typedef PreferredAppMode (WINAPI *pfnSetPreferredAppMode)(PreferredAppMode appMode);
+
+void InitDarkModeUxTheme() {
+    // Reverted for Windows completely: always use native system light theme
+}
+
+// Dark Theme Resources (kept as NULL)
+HBRUSH g_hbrDarkBackground = NULL;
+HBRUSH g_hbrDarkEdit = NULL;
+
+void ApplyWindowTheme(HWND hwnd) {
+    // Reverted for Windows completely: always use native system light theme
+}
+
+void ApplyThemeToTreeView(HWND hwndTV) {
+    SetWindowTheme(hwndTV, L"Explorer", NULL);
+    TreeView_SetBkColor(hwndTV, GetSysColor(COLOR_WINDOW));
+    TreeView_SetTextColor(hwndTV, GetSysColor(COLOR_WINDOWTEXT));
+}
+
+void ApplyThemeToListView(HWND hwndLV) {
+    SetWindowTheme(hwndLV, L"Explorer", NULL);
+    ListView_SetBkColor(hwndLV, GetSysColor(COLOR_WINDOW));
+    ListView_SetTextBkColor(hwndLV, GetSysColor(COLOR_WINDOW));
+    ListView_SetTextColor(hwndLV, GetSysColor(COLOR_WINDOWTEXT));
+}
+
+
 
 #pragma comment(lib, "comctl32.lib")
 #pragma comment(lib, "shell32.lib")
@@ -69,6 +114,7 @@
 #define ID_PREF_EDIT_CV_NAME    3020
 #define ID_PREF_BTN_CV_SAVE     3021
 #define ID_PREF_CHK_RULE_WINS   3022
+#define ID_PREF_CHK_DARK_THEME  3023
 
 #define ID_BTN_ADD_FOLDERS      1013
 #define ID_TREE_RESULTS         1014
@@ -129,6 +175,7 @@ HWND g_labelSpinner = NULL;
 HWND g_editPrefCvName = NULL;
 HWND g_btnPrefCvSave = NULL;
 HWND g_chkPrefRuleWins = NULL;
+HWND g_chkPrefDarkTheme = NULL;
 
 // ISO Dialog State
 HWND g_hwndIso = NULL;
@@ -363,6 +410,7 @@ void RunIsoGeneration(HWND hwnd, std::string srcDir, std::string isoPath, std::s
 // ISO Dialog Window Procedure
 LRESULT CALLBACK IsoWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
+
         case WM_CREATE: {
             int y = 20;
             
@@ -394,6 +442,7 @@ LRESULT CALLBACK IsoWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 return TRUE;
             }, (LPARAM)hFont);
             
+            ApplyWindowTheme(hwnd);
             break;
         }
         
@@ -480,6 +529,7 @@ LRESULT CALLBACK IsoWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 // Window Procedure for Folder List Dialog
 LRESULT CALLBACK FolderListWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
+
         case WM_CREATE: {
             CreateWindow("STATIC", "Complete list of source folders:", WS_CHILD | WS_VISIBLE, 12, 12, 300, 20, hwnd, NULL, NULL, NULL);
             
@@ -514,6 +564,7 @@ LRESULT CALLBACK FolderListWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
             if (!path.empty()) {
                 SendMessage(g_listFolders, LB_ADDSTRING, 0, (LPARAM)path.c_str());
             }
+            ApplyWindowTheme(hwnd);
             break;
         }
         
@@ -588,18 +639,21 @@ LRESULT CALLBACK FolderListWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 // About Dialog Window Procedure
 LRESULT CALLBACK AboutWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
+
         case WM_CREATE: {
             HWND hIcon = CreateWindow("STATIC", "", WS_CHILD | WS_VISIBLE | SS_ICON, 20, 20, 32, 32, hwnd, NULL, NULL, NULL);
             HICON hIco = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(1));
             SendMessage(hIcon, STM_SETICON, (WPARAM)hIco, 0);
             
             CreateWindow("STATIC", "Burn to the Brim", WS_CHILD | WS_VISIBLE, 70, 20, 300, 20, hwnd, NULL, NULL, NULL);
-            CreateWindow("STATIC", "Version 4.1.0", WS_CHILD | WS_VISIBLE, 70, 40, 300, 20, hwnd, NULL, NULL, NULL);
+            CreateWindow("STATIC", "Version 4.1.1", WS_CHILD | WS_VISIBLE, 70, 40, 300, 20, hwnd, NULL, NULL, NULL);
             CreateWindow("STATIC", "Copyright \u00a9 2001-2004 Sander Raaijmakers, Elwin Oost and the Burn to the Brim team", WS_CHILD | WS_VISIBLE, 70, 60, 350, 40, hwnd, NULL, NULL, NULL);
             
             std::string comments = 
                 "Burn to the Brim (BTTB) is a modern C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums.\r\n\r\n"
-                "Features in v4.1.0:\r\n"
+                "Features in v4.1.1:\r\n"
+                "- Modern dark theme styling on Linux GTK4 and native light theming on Windows\r\n"
+                "- Improved Estimated Time Left calculation immediately at startup\r\n"
                 "- Named Custom Volume profiles & dynamic Auto Volume sizing\r\n"
                 "- Settings memory restoring the last selected volume configuration\r\n"
                 "- Rule conflict overrides allowing rule-based or semantic grouping to win\r\n"
@@ -616,6 +670,8 @@ LRESULT CALLBACK AboutWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 SendMessage(hwndChild, WM_SETFONT, lParam, TRUE);
                 return TRUE;
             }, (LPARAM)hFont);
+            
+            ApplyWindowTheme(hwnd);
             break;
         }
         case WM_COMMAND: {
@@ -640,6 +696,7 @@ LRESULT CALLBACK AboutWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 // Preferences Dialog Window Procedure
 LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
+
         case WM_CREATE: {
             INITCOMMONCONTROLSEX icex;
             icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
@@ -708,12 +765,17 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             // Conflict Override
             g_chkPrefRuleWins = CreateWindow("BUTTON", "Rule-based grouping wins over semantic prompt", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 20, y, 400, 20, hwnd, (HMENU)ID_PREF_CHK_RULE_WINS, NULL, NULL);
             
-            y += 30;
+            y += 24;
+            // Dark Theme Toggle (Disabled completely on Windows)
+            g_chkPrefDarkTheme = NULL;
+            
+            y += 28;
             // Group 5: Grouping Rules
             CreateWindow("BUTTON", "File / Folder Grouping Rules", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 10, y, 480, 240, hwnd, NULL, NULL, NULL);
             
             g_listPrefRules = CreateWindowEx(WS_EX_CLIENTEDGE, WC_LISTVIEW, "", WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SINGLESEL, 20, y + 20, 460, 110, hwnd, (HMENU)ID_PREF_LIST_RULES, NULL, NULL);
             ListView_SetExtendedListViewStyle(g_listPrefRules, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
+            ApplyThemeToListView(g_listPrefRules);
             
             LVCOLUMN lvc = {0};
             lvc.mask = LVCF_TEXT | LVCF_WIDTH;
@@ -787,6 +849,9 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             SendMessage(g_chkPrefUnreadable, BM_SETCHECK, g_solver.skipUnreadable ? BST_CHECKED : BST_UNCHECKED, 0);
             SendMessage(g_chkPrefContextMenu, BM_SETCHECK, IsExplorerContextMenuRegistered() ? BST_CHECKED : BST_UNCHECKED, 0);
             SendMessage(g_chkPrefRuleWins, BM_SETCHECK, g_solver.ruleBasedWins ? BST_CHECKED : BST_UNCHECKED, 0);
+            if (g_chkPrefDarkTheme) {
+                SendMessage(g_chkPrefDarkTheme, BM_SETCHECK, g_solver.enableDarkTheme ? BST_CHECKED : BST_UNCHECKED, 0);
+            }
             
             // Select correct Media combobox index from settings memory
             int index = g_solver.lastSelectedVolumeIndex;
@@ -810,8 +875,13 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             CreateToolTip(hwnd, g_chkPrefUnreadable, "Silently ignore files that fail reading permissions or IO errors.");
             CreateToolTip(hwnd, g_chkPrefContextMenu, "Add right-click explorer menu option to quickly add files.");
             CreateToolTip(hwnd, g_chkPrefRuleWins, "If checked, rule pattern-matching takes precedence over MiniLM prompt.");
+            if (g_chkPrefDarkTheme) {
+                CreateToolTip(hwnd, g_chkPrefDarkTheme, "Toggle modern dark theme colors across the application.");
+            }
             CreateToolTip(hwnd, g_editPrefCvName, "Name your custom capacity profile to save and use later.");
             CreateToolTip(hwnd, g_btnPrefCvSave, "Save custom volume profile based on currently input values.");
+            
+            ApplyWindowTheme(hwnd);
             
             // Load Rules list
             int rowIndex = 0;
@@ -984,6 +1054,15 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
                     g_solver.enableAutoVolume = (selIdx == 12);
                 }
                 g_solver.ruleBasedWins = (SendMessage(g_chkPrefRuleWins, BM_GETCHECK, 0, 0) == BST_CHECKED);
+                if (g_chkPrefDarkTheme) {
+                    g_solver.enableDarkTheme = (SendMessage(g_chkPrefDarkTheme, BM_GETCHECK, 0, 0) == BST_CHECKED);
+                } else {
+                    g_solver.enableDarkTheme = false;
+                }
+                ApplyWindowTheme(g_hwndMain);
+                ApplyThemeToTreeView(g_hwndTreeView);
+                ApplyWindowTheme(hwnd);
+                ApplyThemeToListView(g_listPrefRules);
                 
                 bool enableMenu = (SendMessage(g_chkPrefContextMenu, BM_GETCHECK, 0, 0) == BST_CHECKED);
                 RegisterExplorerContextMenu(enableMenu);
@@ -1153,6 +1232,7 @@ void PopulateTreeView(HWND hwndTV) {
 // Window Procedure for Main Window
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
+
         case WM_COPYDATA: {
             PCOPYDATASTRUCT pcds = (PCOPYDATASTRUCT)lParam;
             if (pcds && pcds->dwData == 1) {
@@ -1274,6 +1354,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             CreateToolTip(hwnd, g_chkSymlink, "Create filesystem symbolic links in target volume folders (non-destructive).");
             CreateToolTip(hwnd, g_chkSpan, "Enable spanning contents into multiple sequentially named folders.");
             CreateToolTip(hwnd, g_chkTrace, "Log detailed diagnostics showing how folders/files are selected and split.");
+            ApplyWindowTheme(hwnd);
+            ApplyThemeToTreeView(g_hwndTreeView);
             
             break;
         }
@@ -1395,6 +1477,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 // Clear old logs and tree
                 SetWindowText(g_editLog, "");
                 TreeView_DeleteAllItems(g_hwndTreeView);
+                SetWindowText(g_labelTimeLeft, "Estimated Time Left: Calculating...");
                 if (g_solver.testOnlyMode) {
                     AppendTextToLog(g_editLog, "Starting test packing simulation...");
                 } else {
@@ -1683,6 +1766,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
 // Windows entry point
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+    g_hbrDarkBackground = CreateSolidBrush(RGB(24, 24, 24));
+    g_hbrDarkEdit = CreateSolidBrush(RGB(38, 38, 38));
+    
     // 1. Parse Command Line Arguments in Unicode
     int nArgs = 0;
     LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
@@ -1718,7 +1804,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         if (szArglist) LocalFree(szArglist);
         return status;
     }
-    
+    g_solver.loadSettings();
+    g_solver.enableDarkTheme = false; // Always force light theme under Windows
+    InitDarkModeUxTheme();
+
     // 3. Detect initial folder path passed via arguments (e.g. context menus)
     if (szArglist && nArgs > 1) {
         std::wstring firstArg = szArglist[1];
@@ -1858,5 +1947,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         DispatchMessage(&Msg);
     }
     if (g_hMutex) CloseHandle(g_hMutex);
+    
+    if (g_hbrDarkBackground) DeleteObject(g_hbrDarkBackground);
+    if (g_hbrDarkEdit) DeleteObject(g_hbrDarkEdit);
+    
     return Msg.wParam;
 }

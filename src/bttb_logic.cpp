@@ -305,6 +305,8 @@ void BttbSolver::loadSettings() {
             try { lastSelectedVolumeIndex = std::stoi(val); } catch (...) {}
         } else if (key == "enableAutoVolume") {
             enableAutoVolume = (val == "1");
+        } else if (key == "enableDarkTheme") {
+            enableDarkTheme = (val == "1");
         } else if (key == "skipUnreadable") {
             skipUnreadable = (val == "1");
         } else if (key == "skipEmpty") {
@@ -347,6 +349,7 @@ void BttbSolver::saveSettings() {
     f << "ruleBasedWins=" << (ruleBasedWins ? "1" : "0") << "\n";
     f << "lastSelectedVolumeIndex=" << lastSelectedVolumeIndex << "\n";
     f << "enableAutoVolume=" << (enableAutoVolume ? "1" : "0") << "\n";
+    f << "enableDarkTheme=" << (enableDarkTheme ? "1" : "0") << "\n";
     f << "skipUnreadable=" << (skipUnreadable ? "1" : "0") << "\n";
     f << "skipEmpty=" << (skipEmpty ? "1" : "0") << "\n";
     f << "maxSearchTimeSeconds=" << maxSearchTimeSeconds << "\n";
@@ -662,6 +665,23 @@ void BttbSolver::run() {
             return;
         }
 
+        // Fast initial Estimated Time Left calculation immediately after scanning
+        if (timeLeftNotify) {
+            int64_t totalBytesToFit = 0;
+            for (const auto& item : itemsToSplit) {
+                totalBytesToFit += item->sizeBytes;
+            }
+            double initialEstSeconds = 0.5; // Baseline backtracking solver search time
+            if (totalBytesToFit > 0) {
+                if (createSymlinks) {
+                    initialEstSeconds += itemsToSplit.size() * 0.015;
+                } else {
+                    initialEstSeconds += (double)totalBytesToFit / (80.0 * 1024.0 * 1024.0);
+                }
+            }
+            timeLeftNotify(initialEstSeconds);
+        }
+
         if (enableSemanticPacking && !semanticPrompt.empty()) {
             runSemanticClustering();
         }
@@ -744,7 +764,15 @@ void BttbSolver::run() {
     int64_t bytesOrganizedSoFar = 0;
     auto organizationStartTime = std::chrono::steady_clock::now();
     if (timeLeftNotify) {
-        timeLeftNotify(-1.0);
+        double initialEstSeconds = 0.5; // Baseline backtracking solver search time
+        if (totalBytesToOrganize > 0) {
+            if (createSymlinks) {
+                initialEstSeconds += itemsToSplit.size() * 0.01;
+            } else {
+                initialEstSeconds += (double)totalBytesToOrganize / (80.0 * 1024.0 * 1024.0);
+            }
+        }
+        timeLeftNotify(initialEstSeconds);
     }
 
     int volumeIndex = 1;
