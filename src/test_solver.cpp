@@ -52,6 +52,7 @@ void run_test1() {
     create_mock_file(test_dir + "/file5.bin", 16384); // 8 sectors
     
     bttb::BttbSolver solver;
+    solver.enablePar3 = false;
     solver.sourceDirectory = test_dir;
     solver.mediumInfo.capacityBytes = 20480; // 10 sectors * 2048 bytes
     solver.mediumInfo.sectorSize = 2048;
@@ -106,6 +107,7 @@ void run_test2() {
     std::filesystem::create_directories(dest);
     
     bttb::BttbSolver solver;
+    solver.enablePar3 = false;
     solver.sourceDirectory = src.string();
     solver.targetDirectory = dest.string();
     solver.moveFiles = true;
@@ -147,6 +149,7 @@ void run_test3() {
     std::cout << "Source directory resolved: " << src.string() << std::endl;
     
     bttb::BttbSolver solver;
+    solver.enablePar3 = false;
     solver.sourceDirectory = src.string();
     solver.moveFiles = false;
     solver.spanMultipleVolumes = false;
@@ -228,6 +231,7 @@ void run_test4() {
     }
     
     bttb::BttbSolver solver;
+    solver.enablePar3 = false;
     solver.sourceDirectories = { mock_root1, mock_root2 };
     solver.targetDirectory = mock_dest;
     solver.createSymlinks = true;
@@ -286,6 +290,7 @@ void run_test5() {
     std::cout << "Long unicode path created: " << unicodeFile.size() << " characters." << std::endl;
     
     bttb::BttbSolver solver;
+    solver.enablePar3 = false;
     solver.sourceDirectory = baseUnicode;
     solver.mediumInfo.capacityBytes = 1000;
     solver.mediumInfo.sectorSize = 2048;
@@ -312,6 +317,7 @@ void run_test5() {
     }
     
     bttb::BttbSolver solverExceed;
+    solverExceed.enablePar3 = false;
     solverExceed.sourceDirectory = test_dir;
     solverExceed.mediumInfo.capacityBytes = 2048; // only 2048 bytes capacity!
     solverExceed.mediumInfo.sectorSize = 2048;
@@ -362,6 +368,7 @@ void run_test6() {
     
     // 1. Verify Cosine Similarity
     bttb::BttbSolver solver;
+    solver.enablePar3 = false;
     std::vector<float> vecA = {1.0f, 0.0f, 0.0f};
     std::vector<float> vecB = {1.0f, 0.0f, 0.0f};
     std::vector<float> vecC = {0.0f, 1.0f, 0.0f};
@@ -557,6 +564,9 @@ void run_test7() {
         std::ofstream f2(file2);
         f2 << "Another important configuration file here. Keep it safe!";
     }
+    
+    // Create a symlink in the volume to test symlink protection support
+    std::filesystem::create_symlink("file2.txt", test_vol + "/file3_sym.txt");
     
     // 1. Create PAR3 parity files
     std::string errorMsg;

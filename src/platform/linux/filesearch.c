@@ -153,14 +153,17 @@ static int findnext_impl(struct findstate *fs, struct _finddatai64_t *fileinfo) 
     fileinfo->name[namelen] = '\0';
 
     struct stat st;
-    if (fstatat(dirfd(fs->dir), de->d_name, &st, AT_SYMLINK_NOFOLLOW) != 0) {
-        errno = EINVAL;
-        return -1;
+    if (fstatat(dirfd(fs->dir), de->d_name, &st, 0) != 0) {
+        if (fstatat(dirfd(fs->dir), de->d_name, &st, AT_SYMLINK_NOFOLLOW) != 0) {
+            errno = EINVAL;
+            return -1;
+        }
     }
 
     /* Fill in rest of fileinfo struct: */
     fileinfo->attrib =
         S_ISREG(st.st_mode) ? _A_NORMAL :
+        S_ISLNK(st.st_mode) ? _A_NORMAL :
         S_ISDIR(st.st_mode) ? _A_SUBDIR : _A_SYSTEM;
     if (de->d_name[0] == '.') {
         fileinfo->attrib |= _A_HIDDEN;

@@ -23,7 +23,6 @@ c_compiler = "x86_64-w64-mingw32-gcc"
 cpp_compiler = "x86_64-w64-mingw32-g++"
 common_flags = [
     "-O3", "-static",
-    "-DBLAKE3_NO_AVX512", "-DBLAKE3_NO_AVX2", "-DBLAKE3_NO_SSE41", "-DBLAKE3_NO_SSE2",
     "-mssse3",
     "-Isrc", "-Isrc/libpar3", "-Isrc/blake3", "-Isrc/leopard", "-Isrc/platform"
 ]
@@ -32,7 +31,11 @@ c_sources = glob.glob("src/libpar3/*.c") + [
     "src/platform/windows/get_absolute_path.c",
     "src/blake3/blake3.c",
     "src/blake3/blake3_dispatch.c",
-    "src/blake3/blake3_portable.c"
+    "src/blake3/blake3_portable.c",
+    "src/blake3/blake3_sse2.c",
+    "src/blake3/blake3_sse41.c",
+    "src/blake3/blake3_avx2.c",
+    "src/blake3/blake3_avx512.c"
 ]
 
 cpp_sources = [
@@ -47,7 +50,16 @@ for src in c_sources:
     flat_name = src.replace("/", "_").replace("\\", "_").replace(".c", ".o")
     obj_path = os.path.join(build_dir, flat_name)
     print(f"Compiling C file: {src} -> {obj_path}")
-    cmd = [c_compiler, "-std=c99"] + common_flags + ["-c", src, "-o", obj_path]
+    cmd = [c_compiler, "-std=c99"] + common_flags
+    if "blake3_sse2.c" in src:
+        cmd.append("-msse2")
+    elif "blake3_sse41.c" in src:
+        cmd.append("-msse4.1")
+    elif "blake3_avx2.c" in src:
+        cmd.append("-mavx2")
+    elif "blake3_avx512.c" in src:
+        cmd.append("-mavx512vl")
+    cmd += ["-c", src, "-o", obj_path]
     subprocess.run(cmd, cwd=base_dir, check=True)
     obj_files.append(obj_path)
 
@@ -56,7 +68,12 @@ for src in cpp_sources:
     flat_name = src.replace("/", "_").replace("\\", "_").replace(".cpp", ".o")
     obj_path = os.path.join(build_dir, flat_name)
     print(f"Compiling C++ file: {src} -> {obj_path}")
-    cmd = [cpp_compiler, "-std=c++20"] + common_flags + ["-c", src, "-o", obj_path]
+    cmd = [cpp_compiler, "-std=c++20"] + common_flags
+    if "src/leopard" in src:
+        if "-mssse3" in cmd:
+            cmd.remove("-mssse3")
+        cmd.append("-mavx2")
+    cmd += ["-c", src, "-o", obj_path]
     subprocess.run(cmd, cwd=base_dir, check=True)
     obj_files.append(obj_path)
 

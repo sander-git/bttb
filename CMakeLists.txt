@@ -37,7 +37,7 @@ add_library(leopard STATIC
     src/leopard/LeopardFF8.cpp
     src/leopard/LeopardFF16.cpp
 )
-set_source_files_properties(src/leopard/LeopardFF8.cpp src/leopard/LeopardFF16.cpp PROPERTIES COMPILE_OPTIONS "-mssse3")
+set_source_files_properties(src/leopard/leopard.cpp src/leopard/LeopardCommon.cpp src/leopard/LeopardFF8.cpp src/leopard/LeopardFF16.cpp PROPERTIES COMPILE_OPTIONS "-mavx2")
 
 # Platform static library
 if(UNIX)
