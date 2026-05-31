@@ -325,6 +325,130 @@
 
         <div class="timeline">
             
+            <!-- v4.2.0 -->
+            <div class="timeline-card major">
+                <div class="version-title">
+                    <span>v4.2.0 &mdash; Offline JSON Index &amp; PAR3 Parity Protection</span>
+                    <span class="version-date">June 1, 2026</span>
+                </div>
+                <ul class="changes-list">
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>JSON Index Generation:</strong> Automatically outputs an <code>index.json</code> metadata catalog containing relative paths, file sizes, and dates across all volumes in the solved target folder.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>JSON Token Parser UI:</strong> Implemented a fast offline tokenizer parser natively integrated in Windows/Linux Results Trees to easily browse previously packed multi-volume setups.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Cauchy Reed-Solomon PAR3 Parity:</strong> Fully integrated <code>libpar3</code> for optional parity archive creation (with real-time sector-overhead bound backtracking sizing checks).</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Bit-Rot Verification &amp; Copy-Restoration:</strong> Natively verify multi-volume files and symlinks against PAR3 parity archives, listing errors, and restoring clean files to a safe copy directory.</div>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- v4.1.1 -->
+            <div class="timeline-card major">
+                <div class="version-title">
+                    <span>v4.1.1 &mdash; Dark Theme, Early Estimates & Win32 Styling Polish</span>
+                    <span class="version-date">May 31, 2026</span>
+                </div>
+                <ul class="changes-list">
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Native Theme Selection & Dark Theme:</strong> Integrated native theme selectors with modern dark theme styles across Windows Win32 and Linux GTK4 platforms.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Improved Startup Time Left Estimates:</strong> Restructured solver execution to trigger Estimated Time Left updates immediately upon starting directory scans, avoiding "Calculating..." delays.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type star">*</span>
+                        <div><strong>Win32 Control Styling Polish:</strong> Styled standard Win32 edit boxes, checkboxes, dialogs, and static labels to support a complete, cohesive Dark Mode.</div>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- v4.1.0 -->
+            <div class="timeline-card major">
+                <div class="version-title">
+                    <span>v4.1.0 &mdash; Settings Memory, Named Custom Volumes, Auto Sizing & Rules Overrides</span>
+                    <span class="version-date">May 30, 2026</span>
+                </div>
+                <ul class="changes-list">
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Structured Settings Memory:</strong> Cleanly persists target capacities, sector sizes, slack volumes, and preferences in a structured, cross-platform <code>settings.txt</code> config file across sessions.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Named Custom Volume Profiles:</strong> Allows users to create named custom volume capacity profiles, automatically populating the media combo selector on startup.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Dynamic Auto Size Profile:</strong> Scans items in a two-pass pass to set the target volume capacity exactly to the sector-aligned size of the largest indivisible file or consolidated rules group.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Rule Precedence Toggle:</strong> Added a settings checkbox/switch preference letting wildcard-matching pattern rules take priority and win over neural semantic clustering.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type star">*</span>
+                        <div><strong>Estimated Time Left Counter:</strong> Implemented actual disk transfer-rate tracking inside the solver file operations loop to display a live, high-accuracy Estimated Time Left countdown.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type star">*</span>
+                        <div><strong>Animated Activity Status Spinner:</strong> Added active graphical spinners (GTK4 <code>GtkSpinner</code>) and text spinners (Win32 static timer chars) showing live busy activity during solver executions.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type star">*</span>
+                        <div><strong>Premium Accessibility Tooltips:</strong> Bound premium context-aware on-hover tooltips to all main window buttons and preference options under both GTK4 and Win32 layouts.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type minus">-</span>
+                        <div><strong>Native Win32 About dialog:</strong> Replaced plain MessageBox dialogs with a professional natively subclassed modal About window displaying high-res application icon resources.</div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- v4.0.0 -->
+            <div class="timeline-card major">
+                <div class="version-title">
+                    <span>v4.0.0 &mdash; Entropy-Aware Semantic Packing, Interactive Test Simulation Mode & Python Subprocesses</span>
+                    <span class="version-date">May 27, 2026</span>
+                </div>
+                <ul class="changes-list">
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Entropy-Aware Semantic Packing:</strong> Introduced advanced machine learning semantic clustering using Hugging Face's <code>all-MiniLM-L6-v2</code> transformer model. Groups files and folders by semantic coherence and contextual relevance prior to solver backtracking.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type star">*</span>
+                        <div><strong>Safe Subprocess Architecture:</strong> Designed a resilient python JSON-IPC subprocess architecture to execute heavy neural networks outside the native C++ binary, ensuring a lightweight binary footprint under 1MB.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type star">*</span>
+                        <div><strong>Zero-Dependency Embedding Fallback:</strong> Provided a self-contained, lightweight TF-IDF n-gram vectorizer fallback in the absence of PyTorch or sentence-transformers, alongside a local string similarity algorithm in pure C++ if Python is missing.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Interactive Test Simulation Mode:</strong> Added a dedicated non-destructive <strong>"Test"</strong> button and command-line <code>--test</code> simulation mode. Simulates packing on virtual clusters, calculates volume slack and average pairwise cosine coherence metrics, and reports results with zero disk write side-effects.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type star">*</span>
+                        <div><strong>CLI Semantic Flags:</strong> Upgraded the hybrid CLI parser to support <code>--semantic "<prompt>"</code> and <code>--test</code> directly from terminal shells.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type star">*</span>
+                        <div><strong>Release Packaging & Installer Upgrades:</strong> Configured automated packaging of <code>bttb_embed.py</code> within native Debian (.deb) installers and Nullsoft Setup (.exe) installers, alongside a bumped 4.0.0 version configuration.</div>
+                    </li>
+                </ul>
+            </div>
+
             <!-- v3.3.0 -->
             <div class="timeline-card major">
                 <div class="version-title">
@@ -359,6 +483,10 @@
                     <li class="change-item">
                         <span class="change-type star">*</span>
                         <div><strong>About Screen & Metadata:</strong> Updated internal metadata resources and the visual About Box for both platforms to version 3.3.0.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Debian Installer Package (.deb):</strong> Added native Debian packaging support for Ubuntu 22.04, 24.04, 25.04, and 26.04 out of the box using custom low-level symbol wrapping and static compiler runtimes to ensure dynamic backwards compatibility (GLIBC requirement lowered to 2.35).</div>
                     </li>
                 </ul>
             </div>

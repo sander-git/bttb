@@ -323,11 +323,11 @@
             <p>Comprehensive guide to the C++20 bin-packing solver and dual-platform graphical interfaces.</p>
         </div>
 
-        <!-- BTTB 3.3.0 Manual -->
+        <!-- BTTB 4.2.0 Manual -->
         <div class="content-card">
-            <h2>BTTB 3.3.0 Core Functionality Manual</h2>
+            <h2>BTTB 4.2.0 Core Functionality Manual</h2>
             <p>
-                Version 3.3.0 introduces deep shell integration, robust file system utilities, and full cross-platform capabilities in C++20. This manual explains BTTB's advanced algorithms, folder constraints, rule structures, and user interface implementations in detail.
+                Version 4.2.0 introduces an automatic index.json creator, a native offline JSON TreeView tokenizer parser, and Cauchy Reed-Solomon PAR3 parity verification and copy-restoration, alongside native Theme Selection with complete Modern Dark Theme options on Linux and light native visual polish on Windows. This manual explains BTTB's advanced algorithms, folder constraints, rule structures, and user interface implementations in detail.
             </p>
 
             <h3>1. The Backtracking Subset-Sum Solver</h3>
@@ -335,6 +335,34 @@
                 BTTB fits files and folders onto storage media by solving a constrained knapsack / subset-sum mathematical model.
             </p>
             <ul class="feature-bullets">
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&bull;</span>
+                    <div><strong>Entropy-Aware Semantic Packing (v4.0.0):</strong> Leverages deep sentence embeddings (Hugging Face's <code>all-MiniLM-L6-v2</code> transformer model) to cluster files and folders by contextual relevance prior to solver backtracking. Enter a prompt like <i>"keep similar content together"</i>, and BTTB will group similar files into virtual cohesive units. If Python/ML libraries are missing, BTTB gracefully falls back to char-level N-gram TF-IDF vectorizers or native C++ string similarity clustering, ensuring it is completely self-contained.</div>
+                </li>
+                <li class="feature-bullet-item" style="margin-left: 20px; border-left: 2px solid var(--accent); padding-left: 15px; margin-top: 10px; margin-bottom: 10px;">
+                    <div>
+                        <strong>MiniLM Neural Model Setup Tutorial (Preferred Approach):</strong><br>
+                        To achieve optimal contextual coherence, BTTB utilizes neural sentence embeddings. While a robust fallback is included, installing MiniLM is highly recommended. Follow these step-by-step instructions to set up the preferred deep learning extension:<br><br>
+                        <strong>STEP 1: Install Python 3 & Pip</strong><br>
+                        - <em>Linux (Ubuntu/Debian):</em> Open a terminal and run: <code>sudo apt install python3 python3-pip python3-venv</code><br>
+                        - <em>Windows:</em> Download the official Python 3 installer from <a href="https://www.python.org/" target="_blank" style="color: var(--accent);">python.org</a>. <strong>CRITICAL:</strong> Ensure you check the box that says <strong>"Add Python to PATH"</strong> during installation.<br><br>
+                        <strong>STEP 2: Install sentence-transformers via pip</strong><br>
+                        Choose one of the following installation methods:<br>
+                        - <em>Option A: Global/User Installation (Simplest)</em><br>
+                        Run in your terminal or Command Prompt:<br>
+                        <code>pip install sentence-transformers</code> (or <code>python3 -m pip install sentence-transformers</code>)<br>
+                        - <em>Option B: Virtual Environment Isolation (Recommended for developers)</em><br>
+                        <code>python3 -m venv bttb_env</code><br>
+                        <code>source bttb_env/bin/activate</code> (Windows: <code>bttb_env\Scripts\activate</code>)<br>
+                        <code>pip install sentence-transformers</code><br><br>
+                        <strong>STEP 3: Restart Burn to the Brim</strong><br>
+                        Relaunch the BTTB graphical or command-line app. It will automatically detect the Python environment and load the high-accuracy <code>all-MiniLM-L6-v2</code> transformer model!
+                    </div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&bull;</span>
+                    <div><strong>Interactive Test Simulation Mode (v4.0.0):</strong> Added a non-destructive simulation mode accessible via the graphical interfaces and command-line shell with <code>--test</code>. It runs the full clustering and backtracking logic, computes simulated volume slack, prints average pairwise cosine coherence metrics inside volumes, and lists optimal selections with absolutely zero disk write side-effects.</div>
+                </li>
                 <li class="feature-bullet-item">
                     <span class="bullet-icon">&bull;</span>
                     <div><strong>Unicode & Long-Path Handling (>256 chars):</strong> Standardizes full wide-character Unicode compatibility on both Windows and Linux, utilizing standard normalized absolute paths and Windows <code>\\?\</code> prefixes to support paths up to 32,767 characters. Gracefully skips unreadable files or aborts scanning based on user choices.</div>
@@ -440,6 +468,10 @@
                     <span class="bullet-icon">&bull;</span>
                     <div><strong>Sidebar Result Trees:</strong> Displays a dynamic sidebar `GtkTreeView` that populates fitted and unfitted categories in visual nested node structures.</div>
                 </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&bull;</span>
+                    <div><strong>Universal Debian Installer (.deb) Compatibility:</strong> Packaged in a native `.deb` container supporting Ubuntu 22.04, 24.04, 25.04, and 26.04 out of the box. Low-level dynamic symbol wrapping (lowering glibc requirement from 2.38 down to 2.35) and static runtime linking eliminates all library and distribution conflicts.</div>
+                </li>
             </ul>
 
             <h3>Windows Native Win32 SDK GUI</h3>
@@ -487,7 +519,7 @@
         <!-- Footer -->
         <footer>
             <span>&copy; BTTB Team. All rights reserved.</span>
-            <span>Redesigned for version 3.3.0</span>
+            <span>Redesigned for version 4.2.0</span>
         </footer>
 
     </div>

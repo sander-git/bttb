@@ -319,16 +319,54 @@
             </ul>
         </div>
 
-        <!-- Spanning & Modern Media Block -->
+        <!-- Semantic Packing Card -->
         <div class="content-card">
-            <h2>Unicode Long Paths, Explorer Shell Menus, Hybrid GUI/CLI & Multi-Volume Spanning</h2>
+            <h2>Entropy-Aware Semantic Packing, Neural Embeddings & Interactive Test Simulations</h2>
             <p>
-                **Burn to the Brim 3.3.0** introduces robust integration, advanced platform support, and cutting-edge shell mechanics:
+                <strong>Burn to the Brim 4.2.0</strong> introduces a complete offline JSON Index creator and token parser, and Cauchy Reed-Solomon PAR3 parity verification and copy-based restoration, alongside our state-of-the-art neural semantic packing algorithms:
             </p>
             <ul class="feature-bullets">
                 <li class="feature-bullet-item">
                     <span class="bullet-icon">&rarr;</span>
-                    <div><strong>Unicode & Long Path Support (>256 chars):</strong> BTTB is now fully compatible with international characters and paths of arbitrary length (supporting standard Windows UNC <code>\\?\</code> absolute path prefixes up to 32,767 characters). Scans unreadable files gracefully with skip/abort prompt choices.</div>
+                    <div><strong>Offline JSON Indexing (v4.2.0+):</strong> Automatically generates a standardized <code>index.json</code> catalog file in the destination folder during multi-volume solved output, capturing file relative paths, exact sizes, and system timestamps. A high-performance, offline tokenizer parser is integrated directly into the GUI results panel for seamless catalog browsing.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&rarr;</span>
+                    <div><strong>Entropy-Aware Semantic Packing:</strong> Clusters files and folders together based on context and meaning instead of just hard pattern rules. Enter a prompt like <i>"keep similar content together"</i>, and BTTB will generate sentence-embeddings to group relevant items prior to knapsack solving.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&rarr;</span>
+                    <div><strong>MiniLM Neural Embeddings:</strong> Integrates Hugging Face's <code>all-MiniLM-L6-v2</code> transformer model to generate high-dimensional (384 float) embeddings. Runs via an out-of-process JSON-IPC python helper, keeping the native C++ binary size extremely lightweight.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&rarr;</span>
+                    <div><strong>Robust Python & C++ Fallbacks:</strong> In the absence of heavy ML packages (PyTorch/sentence-transformers), BTTB falls back to a built-in character-level N-gram TF-IDF vectorizer or native C++ edit-distance string similarity metrics, ensuring the application remains fully functional out-of-the-box.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&rarr;</span>
+                    <div><strong>Interactive Test Simulation Mode:</strong> A dedicated, non-destructive simulation run mode is now accessible in GTK4 GUI, Win32 GUI, and CLI shells. The solver runs simulations, computes individual volume slack and semantic coherence metrics (average pairwise cosine similarities of items in each volume), and reports them directly without modifying any files on disk.</div>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Spanning & Modern Media Block -->
+        <div class="content-card">
+            <h2>Unicode Long Paths, Explorer Shell Menus, Hybrid GUI/CLI & Multi-Volume Spanning</h2>
+            <p>
+                <strong>Burn to the Brim 4.2.0</strong> combines the classical backtracking subset-sum engine with highly optimized data integrity features:
+            </p>
+            <ul class="feature-bullets">
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&rarr;</span>
+                    <div><strong>Reed-Solomon PAR3 Parity (v4.2.0+):</strong> Adds support for robust PAR3 parity archive creation (<code>Volume_1.par3</code>) using Cauchy Reed-Solomon error correction. Dynamically incorporates estimated PAR3 sector overhead during backtracking bounds checks, securing multi-volume sets.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&rarr;</span>
+                    <div><strong>Bit-Rot Integrity Verification &amp; Copy-Restoration (v4.2.0+):</strong> Natively verifies individual volume files and symlinks against their PAR3 parity archives, listing all corrupted or missing items. Executes an in-place copy-based repair process inside a clean, safe target directory chosen by the user, leaving the original sources completely untouched.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&rarr;</span>
+                    <div><strong>Unicode &amp; Long Path Support (&gt;256 chars):</strong> BTTB is now fully compatible with international characters and paths of arbitrary length (supporting standard Windows UNC <code>\\?\</code> absolute path prefixes up to 32,767 characters). Scans unreadable files gracefully with skip/abort prompt choices.</div>
                 </li>
                 <li class="feature-bullet-item">
                     <span class="bullet-icon">&rarr;</span>
@@ -345,6 +383,10 @@
                 <li class="feature-bullet-item">
                     <span class="bullet-icon">&rarr;</span>
                     <div><strong>Windows Setup Installer Package:</strong> We now provide a native setup installer executable compiled via NSIS, offering desktop and Start Menu shortcuts and a clean uninstallation utility.</div>
+                </li>
+                <li class="feature-bullet-item">
+                    <span class="bullet-icon">&rarr;</span>
+                    <div><strong>Debian Package Installer (.deb) for Ubuntu:</strong> We now distribute a native Debian package supporting Ubuntu 22.04, 24.04, 25.04, and 26.04 out of the box, engineered using dynamic symbol compatibility wrapping and static runtimes to target a low glibc requirement (GLIBC 2.35).</div>
                 </li>
                 <li class="feature-bullet-item">
                     <span class="bullet-icon">&rarr;</span>

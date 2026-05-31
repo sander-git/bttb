@@ -322,6 +322,75 @@
 
         <div class="news-container">
             
+            <!-- News Item 4.2.0 -->
+            <div class="news-card">
+                <div class="news-date">June 1, 2026</div>
+                <h2>Version 4.2.0 Released: Offline JSON Index, PAR3 Parity Integrity &amp; Safe Error Correction</h2>
+                <p>
+                    Today we are pleased to announce **Burn to the Brim 4.2.0**, a massive data integrity and cataloging release bringing automatic offline multi-volume JSON index catalog generation, a high-performance offline JSON TreeView parser, and optional, robust Cauchy Reed-Solomon PAR3 parity verification and copy-based restoration.
+                </p>
+                <p>
+                    <strong>Offline JSON Indexing &amp; Parser:</strong> Solving multi-volume sets now automatically generates an <code>index.json</code> catalog in the destination folder, mapping files, exact bytes, and system timestamps. Click "Import JSON Index..." to load this catalog offline and browse your entire archive structure instantly.
+                </p>
+                <p>
+                    <strong>Cauchy Reed-Solomon PAR3 Parity:</strong> Optional PAR3 protection uses the state-of-the-art <code>libpar3</code> engine. Backtracking knapsack solving dynamically incorporates estimated PAR3 sector overhead. Natively verify volumes against bit rot and repair files inside a clean target directory, preserving original source files in an untouched state under all circumstances.
+                </p>
+            </div>
+            
+            <!-- News Item 4.1.1 -->
+            <div class="news-card">
+                <div class="news-date">May 31, 2026</div>
+                <h2>Version 4.1.1 Released: Theme Selection, Modern Dark Theme & Startup Estimate Improvements</h2>
+                <p>
+                    Today we are pleased to announce **Burn to the Brim 4.1.1**, a feature and styling release bringing complete Theme Selection support, immersive Modern Dark Theme options on Windows & Linux, and high-accuracy startup Estimated Time Left calculations.
+                </p>
+                <p>
+                    <strong>Modern Dark Theme Integration:</strong> Standard dark theme selectors are now wired natively across platforms. On Linux GTK4, BTTB leverages application preferences instantly. On Windows Win32, BTTB implements solid brushes hooks for dialogs, edit fields, checklists, and static text controls, rendering a premium, native Dark Mode experience.
+                </p>
+                <p>
+                    <strong>Improved Startup Estimated Time Left:</strong> Directory scanning has been restructured to calculate and dispatch Estimated Time Left countdowns immediately upon starting. This provides immediate, realistic visual feedback to the user before time-consuming neural embeddings or backtracking solver recursions commence.
+                </p>
+            </div>
+            
+            <!-- News Item 4.1.0 -->
+            <div class="news-card">
+                <div class="news-date">May 30, 2026</div>
+                <h2>Version 4.1.0 Released: Settings Memory, Named Custom Volumes, Auto Sizing & Rules Overrides</h2>
+                <p>
+                    Today we are pleased to announce **Burn to the Brim 4.1.0**, a refinement and feature release stabilizing structured settings memory, named custom volume capacity profiles, dynamic Auto Volume sizing, rules-based pattern precedence overrides, and Estimated Time Left feedback.
+                </p>
+                <p>
+                    <strong>Structured Settings Memory & Named Custom Volumes:</strong> BTTB now cleanly persists all selected capacity profiles, cluster sizes, slack limits, and preferences into a structured, cross-platform config file (<code>settings.txt</code>) under standard OS directories. You can also name custom capacity profiles (e.g. "Backup Drive") and save them natively to populate in your combo selectors upon future launches.
+                </p>
+                <p>
+                    <strong>Dynamic Auto Sizing & Rules Overrides:</strong> A brand new <i>"Auto Size"</i> media profile runs a two-pass scan on items to determine the exact sector-aligned capacity matching the largest indivisible file or consolidated rules group, automatically optimizing slack perfectly. In addition, users can now toggle a rule precedence switch in Preferences so wildcard-matching rules take priority over neural semantic clustering.
+                </p>
+                <p>
+                    <strong>Time Left Countdown, Activity Spinners & Tooltips:</strong> Graphical user interfaces (Linux GTK4 and Windows Win32) now include standard active spinner visualizers and highly accurate Estimated Time Left countdowns during solver execution, tracking real file transfer write rates. Native tooltips are bound to all buttons for professional accessibility, and the native Win32 About modal dialog has been completely redesigned with high-resolution app icon visualizers.
+                </p>
+            </div>
+
+            <!-- News Item 4.0.0 -->
+            <div class="news-card">
+                <div class="news-date">May 27, 2026</div>
+                <h2>Version 4.0.0 Major Release: Entropy-Aware Semantic Packing based on MiniLM & Interactive Test Simulation Mode</h2>
+                <p>
+                    Today we are thrilled to announce **Burn to the Brim 4.0.0**, a monumental major release introducing cutting-edge semantic coherence intelligence to storage optimization! BTTB v4.0.0 marks a huge leap forward by using machine learning models to group files logically.
+                </p>
+                <p>
+                    <strong>Entropy-Aware Semantic Packing:</strong> In addition to classical size-based knapsack optimization and standard wildcards, BTTB now supports semantic clustering using deep learning sentence embedding models (Hugging Face's <code>all-MiniLM-L6-v2</code>). By entering a prompt (such as <i>"keep similar content together"</i>), files are vectorized and grouped prior to solver backtracking, ensuring files with related context end up on the same storage medium.
+                </p>
+                <p>
+                    <strong>Extensible and Safe Fallback:</strong> If PyTorch/sentence-transformers are missing or python is completely absent, BTTB gracefully falls back to a highly optimized char-level N-gram TF-IDF vectorizer and native C++ string clustering heuristics. High-dimensional vector calculations happen out of process via JSON-IPC piping.
+                </p>
+                <p>
+                    <strong>Interactive Test Simulation Mode:</strong> A dedicated <strong>"Test"</strong> run mode is now accessible in both the graphical interfaces (Linux GTK4 / Windows Win32) and CLI console. In test mode, BTTB simulates solver passes, calculates volume slack and semantic coherence metrics (average cosine similarity inside packed volumes), and reports the exact simulated organization without performing any disk write operations.
+                </p>
+                <p>
+                    <strong>Major CLI Upgrades:</strong> Run pure simulations or semantic organization from the shell using the new <code>--semantic "<prompt>"</code> and <code>--test</code> flags.
+                </p>
+            </div>
+
             <!-- News Item 3.3.0 -->
             <div class="news-card">
                 <div class="news-date">May 25, 2026</div>
@@ -343,6 +412,9 @@
                 </p>
                 <p>
                     <strong>Smart Adaptive Capacity Warning:</strong> When a file size exceeds the target volume size during scanning, BTTB prompts the user (CLI console prompt or graphical message dialog) to automatically adapt the volume size based on the largest file and retries solving in a seamless, optimized loop.
+                </p>
+                <p>
+                    <strong>Native Debian Package (.deb) for Ubuntu:</strong> For Linux desktop environments, we now distribute a native Debian package installer supporting all active Ubuntu distributions—Ubuntu 22.04 (Jammy), 24.04 (Noble), 25.04 (Plucky), and 26.04 out of the box! System symbol conflicts are solved by statically linking compiler runtimes and crafting low-level dynamic wrapping for all modern glibc conversion functions (reducing the GLIBC version requirement from 2.38 down to 2.35).
                 </p>
             </div>
 

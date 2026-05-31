@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Burn to the Brim: Announcing Version 3.3.0</title>
+    <title>Burn to the Brim: Announcing Version 4.2.0</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
 
@@ -580,13 +580,13 @@
     <!-- Main Content -->
     <div class="main-content">
         <div class="hero">
-            <span class="version-badge">Version 3.3.0 Released</span>
-            <h1>Announcing BTTB v3.3.0: Unicode Long Paths, Setup Installers, Shell Context Menus & Hybrid GUI/CLI!</h1>
+            <span class="version-badge">Version 4.2.0 Released</span>
+            <h1>Announcing BTTB v4.2.0: Offline JSON Index, PAR3 Parity Protection & Error Correction!</h1>
             <p>
-                Burn to the Brim (BTTB) has been upgraded to v3.3.0! This release introduces robust Unicode and long-path support (>256 chars), an optional Windows Explorer context menu integration with Single-Instance IPC folder appending, a hybrid integrated GUI/CLI binary on both Windows and Linux, adaptive capacity warning recommendation dialogs, and a native Windows Setup Installer package.
+                Burn to the Brim (BTTB) has been upgraded to v4.2.0! This landmark release introduces a comprehensive offline JSON Index creator and parser, enabling seamless multi-volume catalog browsing. It also adds an optional, highly robust Reed-Solomon Cauchy-based PAR3 parity archive generator, native verification of multi-volume integrity, and completely safe, copy-based restoration and repair.
             </p>
             <div class="cta-group">
-                <a href="http://sourceforge.net/project/showfiles.php?group_id=49999" class="btn btn-primary" target="_blank">Download BTTB 3.3.0</a>
+                <a href="http://sourceforge.net/project/showfiles.php?group_id=49999" class="btn btn-primary" target="_blank">Download BTTB 4.2.0</a>
                 <a href="overview.html" class="btn btn-secondary">Learn More</a>
             </div>
             <div class="badges-row" style="margin-top: 25px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
@@ -607,27 +607,52 @@
 
         <!-- Features Grid -->
         <div class="features-section">
-            <h2 class="section-title">New C++20 Core Features</h2>
+            <h2 class="section-title">Key Features</h2>
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon">⚡</div>
                     <h3>Recursive Backtracking</h3>
-                    <p>Calculates optimal subset-sum selections in milliseconds using a completely responsive, thread-safe background architecture.</p>
+                    <p>Calculates mathematically optimal subset-sum selections in milliseconds using a responsive, thread-safe C++20 background architecture.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🧠</div>
+                    <h3>Neural Semantic Packing</h3>
+                    <p>Group files together intelligently by extensions, sizes, or context using out-of-process MiniLM sentence embeddings vectors. (v4.0.0+)</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">📂</div>
                     <h3>Split-Depth Control</h3>
-                    <p>Establish recursive traversal waterlevels, giving you exact command over atomic vs granular directory mappings.</p>
+                    <p>Establish traversal waterlevels, giving you precise recursive command over atomic versus granular folder mappings.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">🎯</div>
                     <h3>RegEx Rule Groupings</h3>
-                    <p>Compile matching files or folders together on specific mediums utilizing standard wildcards or powerful regular expressions.</p>
+                    <p>Force matching items to pack together on specific volumes utilizing standard wildcards or regular expressions.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💿</div>
+                    <h3>Auto Volume Sizing</h3>
+                    <p>Automatically calculates optimal volume capacity bounds based on the size of the largest indivisible file or folder. (v4.1.0+)</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💾</div>
+                    <h3>Settings Memory &amp; Custom Profiles</h3>
+                    <p>Restores your last selected volume profile upon startup, with full support for creating and saving named custom volume sizes. (v4.1.0+)</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h3>Offline JSON Index File</h3>
+                    <p>Creates a detailed <code>index.json</code> containing relative paths, sizes, and dates across all volumes, with a built-in fast JSON token parser for offline retrieval. (v4.2.0+)</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>PAR3 Parity Protection</h3>
+                    <p>Integrates Reed-Solomon Cauchy codes (via libpar3) to build, verify, and restore damaged multi-volume sets securely, keeping source data untouched. (v4.2.0+)</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">💻</div>
-                    <h3>Native Windows GUI</h3>
-                    <p>A super lightweight ~160KB standalone binary that runs with zero external DLL requirements, remaining 100% license-compliant.</p>
+                    <h3>Modern Cross-Platform GUIs</h3>
+                    <p>Gorgeous GTK4 desktop interface with dark theme support on Linux and lightweight, native visual styling under Windows. (v4.2.0+)</p>
                 </div>
             </div>
         </div>
@@ -681,7 +706,7 @@
             <div class="alert-card warning">
                 <h4>Notice for Legacy Users</h4>
                 <p>
-                    BTTB 3.3.0 completely replaces the old 2.9.0 Delphi version. You no longer need to worry about installing ASPI drivers on modern Windows systems!
+                    BTTB 4.0.0 completely replaces the old 2.9.0 Delphi version. You no longer need to worry about installing ASPI drivers on modern Windows systems!
                 </p>
             </div>
 
@@ -792,7 +817,7 @@
         <!-- Footer -->
         <footer>
             <span>&copy; BTTB Team. All rights reserved.</span>
-            <span>Redesigned for version 3.3.0</span>
+            <span>Redesigned for version 4.2.0</span>
         </footer>
 
     </div>
