@@ -51,6 +51,7 @@ struct PackedVolume {
     std::vector<std::string> itemPaths;
     std::vector<int64_t> itemSizes;
     std::vector<std::vector<std::string>> itemGroupedPaths;
+    std::vector<std::string> itemDates;
 };
 
 // Callback types for thread-safe UI notifications
@@ -98,6 +99,11 @@ public:
     bool enableAutoVolume = false;
     bool enableDarkTheme = false;
 
+    // v4.2.0 PAR3 & JSON Enhancements
+    bool enablePar3 = false;
+    int64_t par3BlockSize = 2048;
+    int par3RedundancyPercent = 10;
+
     // Control
     std::atomic<bool> stopRequested{false};
     std::atomic<bool> searchTimedOut{false};
@@ -129,7 +135,7 @@ private:
     void addEntry(const std::string& relPath, const std::string& absPath, int64_t size, bool isDir);
     
     // Core subset-sum recursive backtracking search
-    bool findAWay(int64_t currentSectors, int poz);
+    bool findAWay(int64_t currentSectors, int poz, int selectedFileCount);
     
     void saveBestSelection();
     int countClusters(const std::string& path);
@@ -152,5 +158,11 @@ std::wstring utf8ToWstring(const std::string& str);
 std::filesystem::path utf8Path(const std::string& utf8Str);
 std::string toUtf8Str(const std::filesystem::path& p);
 std::filesystem::path makeLongPath(const std::filesystem::path& p);
+
+// PAR3 & JSON functions (v4.2.0)
+bool createVolumePar3(const std::string& volumePath, const std::string& parBaseName, int64_t blockSize, int redundancyPercent, std::string& errorMsg);
+int verifyVolumePar3(const std::string& volumePath, const std::string& parBaseName, std::vector<std::string>& damagedFiles, std::string& logOutput);
+bool restoreVolumePar3(const std::string& volumePath, const std::string& destPath, const std::string& parBaseName, std::string& logOutput);
+bool parseIndexJson(const std::string& jsonFilePath, std::vector<PackedVolume>& volumes, std::string& errorMsg);
 
 } // namespace bttb

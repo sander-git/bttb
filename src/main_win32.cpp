@@ -115,6 +115,22 @@ void ApplyThemeToListView(HWND hwndLV) {
 #define ID_PREF_BTN_CV_SAVE     3021
 #define ID_PREF_CHK_RULE_WINS   3022
 #define ID_PREF_CHK_DARK_THEME  3023
+#define ID_PREF_CHK_PAR3 3024
+#define ID_PREF_EDIT_PAR3_BLOCK 3025
+#define ID_PREF_EDIT_PAR3_REDUNDANCY 3026
+
+#define ID_BTN_IMPORT_JSON 1020
+#define ID_BTN_VERIFY_RESTORE 1021
+
+#define WM_VERIFY_LOG      (WM_USER + 20)
+#define WM_VERIFY_FINISHED (WM_USER + 21)
+
+#define ID_BTN_VERIFY_VOL_BROWSE 4001
+#define ID_BTN_VERIFY_DEST_BROWSE 4002
+#define ID_BTN_VERIFY_RUN 4003
+#define ID_BTN_VERIFY_RESTORE_ACTION 4004
+#define ID_BTN_VERIFY_CLOSE 4005
+
 
 #define ID_BTN_ADD_FOLDERS      1013
 #define ID_TREE_RESULTS         1014
@@ -176,6 +192,20 @@ HWND g_editPrefCvName = NULL;
 HWND g_btnPrefCvSave = NULL;
 HWND g_chkPrefRuleWins = NULL;
 HWND g_chkPrefDarkTheme = NULL;
+HWND g_chkPrefPar3 = NULL;
+HWND g_editPrefPar3Block = NULL;
+HWND g_editPrefPar3Redundancy = NULL;
+
+HWND g_btnImportJson = NULL;
+HWND g_btnVerifyRestore = NULL;
+HWND g_hwndVerify = NULL;
+HWND g_editVerifyVol = NULL;
+HWND g_editVerifyDest = NULL;
+HWND g_editVerifyParName = NULL;
+HWND g_editVerifyLog = NULL;
+HWND g_btnVerifyRun = NULL;
+HWND g_btnVerifyRestoreAction = NULL;
+std::jthread g_verify_thread;
 
 // ISO Dialog State
 HWND g_hwndIso = NULL;
@@ -320,6 +350,230 @@ std::string SaveFileDialog(HWND hwnd, const std::string& title) {
         return std::string(szFile);
     }
     return "";
+}
+
+// Native Open File Dialog helper for JSON Files
+std::string OpenJsonFileDialog(HWND hwnd, const std::string& title) {
+    OPENFILENAME ofn;
+    char szFile[MAX_PATH] = {0};
+    ZeroMemory(&ofn, sizeof(ofn));
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner = hwnd;
+    ofn.lpstrFile = szFile;
+    ofn.nMaxFile = sizeof(szFile);
+    ofn.lpstrFilter = "JSON Files (*.json)\0*.json\0All Files (*.*)\0*.*\0";
+    ofn.nFilterIndex = 1;
+    ofn.lpstrTitle = title.c_str();
+    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+    
+    if (GetOpenFileName(&ofn)) {
+        return std::string(szFile);
+    }
+    return "";
+}
+
+// Background thread runner for volume verification and restoration (PAR3)
+void RunVerifyProcess(HWND hwnd, std::string volumePath, std::string destPath, std::string parBaseName, bool isRestore) {
+    if (isRestore) {
+        auto* pLog = new std::string("Starting volume restoration/repair...\r\n");
+        PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
+        
+        pLog = new std::string("Volume path: " + volumePath + "\r\n");
+        PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
+        pLog = new std::string("Recovery path: " + destPath + "\r\n");
+        PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
+        pLog = new std::string("PAR3 base name: " + parBaseName + "\r\n");
+        PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
+        pLog = new std::string("Copying volume contents and running repair. Please wait...\r\n");
+        PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
+        
+        std::string logOutput;
+        bool res = bttb::restoreVolumePar3(volumePath, destPath, parBaseName, logOutput);
+        
+        if (!logOutput.empty()) {
+            pLog = new std::string("Logs/Errors: " + logOutput + "\r\n");
+            PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
+        }
+        
+        if (res) {
+            pLog = new std::string("\r\nSUCCESS: Volume successfully copied and repaired in separate recovery folder!\r\n");
+            PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
+        } else {
+            pLog = new std::string("\r\nFAILURE: Restoration or repair failed.\r\n");
+            PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
+        }
+    } else {
+        auto* pLog = new std::string("Starting volume verification...\r\n");
+        PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
+        
+        pLog = new std::string("Volume path: " + volumePath + "\r\n");
+        PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
+        pLog = new std::string("PAR3 base name: " + parBaseName + "\r\n");
+        PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
+        
+        std::vector<std::string> damaged;
+        std::string logOutput;
+        int status = bttb::verifyVolumePar3(volumePath, parBaseName, damaged, logOutput);
+        
+        if (!logOutput.empty()) {
+            pLog = new std::string("Logs/Errors: " + logOutput + "\r\n");
+            PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
+        }
+        
+        if (status == 0) {
+            pLog = new std::string("\r\nSUCCESS: All files verified and are clean/bit-perfect!\r\n");
+            PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
+        } else {
+            pLog = new std::string("\r\nVerification detected issues (status " + std::to_string(status) + ").\r\n");
+            PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
+            if (!damaged.empty()) {
+                pLog = new std::string("Damaged or missing files found:\r\n");
+                PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
+                for (const auto& f : damaged) {
+                    pLog = new std::string(" * " + f + "\r\n");
+                    PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
+                }
+            } else {
+                pLog = new std::string("No individual damaged files identified, but the index verification failed. The PAR3 archive itself might be damaged.\r\n");
+                PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
+            }
+        }
+    }
+    PostMessage(hwnd, WM_VERIFY_FINISHED, 0, 0);
+}
+
+// Verification Dialog Window Procedure
+LRESULT CALLBACK VerifyWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    switch (msg) {
+        case WM_CREATE: {
+            int y = 20;
+            
+            CreateWindow("STATIC", "Volume Directory:", WS_CHILD | WS_VISIBLE, 20, y + 2, 120, 20, hwnd, NULL, NULL, NULL);
+            g_editVerifyVol = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 150, y, 250, 22, hwnd, NULL, NULL, NULL);
+            CreateWindow("BUTTON", "Browse...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 410, y - 2, 90, 25, hwnd, (HMENU)ID_BTN_VERIFY_VOL_BROWSE, NULL, NULL);
+            
+            y += 30;
+            CreateWindow("STATIC", "Recovery Directory:", WS_CHILD | WS_VISIBLE, 20, y + 2, 120, 20, hwnd, NULL, NULL, NULL);
+            g_editVerifyDest = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 150, y, 250, 22, hwnd, NULL, NULL, NULL);
+            CreateWindow("BUTTON", "Browse...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 410, y - 2, 90, 25, hwnd, (HMENU)ID_BTN_VERIFY_DEST_BROWSE, NULL, NULL);
+            
+            y += 30;
+            CreateWindow("STATIC", "PAR3 Base Name:", WS_CHILD | WS_VISIBLE, 20, y + 2, 120, 20, hwnd, NULL, NULL, NULL);
+            g_editVerifyParName = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "Volume_1", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 150, y, 150, 22, hwnd, NULL, NULL, NULL);
+            
+            y += 35;
+            CreateWindow("BUTTON", "Verification & Restoration Log", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 12, y, 510, 200, hwnd, NULL, NULL, NULL);
+            g_editVerifyLog = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL | ES_READONLY, 24, y + 20, 480, 165, hwnd, NULL, NULL, NULL);
+            
+            y += 215;
+            g_btnVerifyRun = CreateWindow("BUTTON", "Verify Only", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 110, y, 120, 30, hwnd, (HMENU)ID_BTN_VERIFY_RUN, NULL, NULL);
+            g_btnVerifyRestoreAction = CreateWindow("BUTTON", "Restore & Repair", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 240, y, 120, 30, hwnd, (HMENU)ID_BTN_VERIFY_RESTORE_ACTION, NULL, NULL);
+            CreateWindow("BUTTON", "Close", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 370, y, 120, 30, hwnd, (HMENU)ID_BTN_VERIFY_CLOSE, NULL, NULL);
+            
+            // Set font
+            HFONT hFont = CreateFont(15, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "MS Shell Dlg");
+            EnumChildWindows(hwnd, [](HWND hwndChild, LPARAM lParam) -> BOOL {
+                SendMessage(hwndChild, WM_SETFONT, lParam, TRUE);
+                return TRUE;
+            }, (LPARAM)hFont);
+            
+            ApplyWindowTheme(hwnd);
+            break;
+        }
+        
+        case WM_COMMAND: {
+            int wmId = LOWORD(wParam);
+            
+            if (wmId == ID_BTN_VERIFY_VOL_BROWSE) {
+                std::string path = BrowseForFolder(hwnd, "Select Volume Directory");
+                if (!path.empty()) {
+                    SetWindowText(g_editVerifyVol, path.c_str());
+                    
+                    std::filesystem::path p(path);
+                    std::string volName = p.filename().string();
+                    if (!volName.empty()) {
+                        SetWindowText(g_editVerifyParName, volName.c_str());
+                    }
+                }
+            }
+            
+            if (wmId == ID_BTN_VERIFY_DEST_BROWSE) {
+                std::string path = BrowseForFolder(hwnd, "Select Recovery Directory");
+                if (!path.empty()) {
+                    SetWindowText(g_editVerifyDest, path.c_str());
+                }
+            }
+            
+            if (wmId == ID_BTN_VERIFY_RUN || wmId == ID_BTN_VERIFY_RESTORE_ACTION) {
+                char volPath[MAX_PATH];
+                char destPath[MAX_PATH];
+                char parName[256];
+                GetWindowText(g_editVerifyVol, volPath, MAX_PATH);
+                GetWindowText(g_editVerifyDest, destPath, MAX_PATH);
+                GetWindowText(g_editVerifyParName, parName, 256);
+                
+                if (strlen(volPath) == 0) {
+                    MessageBox(hwnd, "Please specify the Volume Directory to verify.", "Error", MB_ICONERROR);
+                    break;
+                }
+                
+                bool isRestore = (wmId == ID_BTN_VERIFY_RESTORE_ACTION);
+                if (isRestore && strlen(destPath) == 0) {
+                    MessageBox(hwnd, "Please specify the Recovery Directory where copies will be restored and repaired safely.", "Error", MB_ICONERROR);
+                    break;
+                }
+                
+                if (strlen(parName) == 0) {
+                    MessageBox(hwnd, "Please specify the PAR3 base name (e.g., Volume_1).", "Error", MB_ICONERROR);
+                    break;
+                }
+                
+                EnableWindow(g_btnVerifyRun, FALSE);
+                EnableWindow(g_btnVerifyRestoreAction, FALSE);
+                SetWindowText(g_editVerifyLog, "");
+                
+                g_verify_thread = std::jthread(RunVerifyProcess, hwnd, std::string(volPath), std::string(destPath), std::string(parName), isRestore);
+            }
+            
+            if (wmId == ID_BTN_VERIFY_CLOSE) {
+                SendMessage(hwnd, WM_CLOSE, 0, 0);
+            }
+            break;
+        }
+        
+        case WM_VERIFY_LOG: {
+            auto* pStr = reinterpret_cast<std::string*>(lParam);
+            AppendTextToLog(g_editVerifyLog, *pStr);
+            delete pStr;
+            break;
+        }
+        
+        case WM_VERIFY_FINISHED: {
+            EnableWindow(g_btnVerifyRun, TRUE);
+            EnableWindow(g_btnVerifyRestoreAction, TRUE);
+            if (g_verify_thread.joinable()) {
+                g_verify_thread.join();
+            }
+            break;
+        }
+        
+        case WM_CLOSE:
+            DestroyWindow(hwnd);
+            break;
+            
+        case WM_DESTROY:
+            if (g_verify_thread.joinable()) {
+                g_verify_thread.join();
+            }
+            EnableWindow(g_hwndMain, TRUE);
+            SetForegroundWindow(g_hwndMain);
+            g_hwndVerify = NULL;
+            break;
+            
+        default:
+            return DefWindowProc(hwnd, msg, wParam, lParam);
+    }
+    return 0;
 }
 
 // Background thread runner for popen genisoimage / mkisofs fallback
@@ -646,12 +900,15 @@ LRESULT CALLBACK AboutWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             SendMessage(hIcon, STM_SETICON, (WPARAM)hIco, 0);
             
             CreateWindow("STATIC", "Burn to the Brim", WS_CHILD | WS_VISIBLE, 70, 20, 300, 20, hwnd, NULL, NULL, NULL);
-            CreateWindow("STATIC", "Version 4.1.1", WS_CHILD | WS_VISIBLE, 70, 40, 300, 20, hwnd, NULL, NULL, NULL);
-            CreateWindow("STATIC", "Copyright \u00a9 2001-2004 Sander Raaijmakers, Elwin Oost and the Burn to the Brim team", WS_CHILD | WS_VISIBLE, 70, 60, 350, 40, hwnd, NULL, NULL, NULL);
+            CreateWindow("STATIC", "Version 4.2.0", WS_CHILD | WS_VISIBLE, 70, 40, 300, 20, hwnd, NULL, NULL, NULL);
+            CreateWindow("STATIC", "Copyright \u00a9 2001-2026 Sander Raaijmakers, Elwin Oost and the Burn to the Brim team", WS_CHILD | WS_VISIBLE, 70, 60, 350, 40, hwnd, NULL, NULL, NULL);
             
             std::string comments = 
                 "Burn to the Brim (BTTB) is a modern C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums.\r\n\r\n"
-                "Features in v4.1.1:\r\n"
+                "Features in v4.2.0:\r\n"
+                "- Offline JSON Index creation and interactive parser\r\n"
+                "- Optional PAR3 parity file generation and verification\r\n"
+                "- Bit-perfect PAR3 copy-based restoration and repair\r\n"
                 "- Modern dark theme styling on Linux GTK4 and native light theming on Windows\r\n"
                 "- Improved Estimated Time Left calculation immediately at startup\r\n"
                 "- Named Custom Volume profiles & dynamic Auto Volume sizing\r\n"
@@ -660,6 +917,11 @@ LRESULT CALLBACK AboutWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 "- Transfer-rate estimated Time Left & status activity spinner\r\n"
                 "- Entropy-Aware Semantic Packing based on MiniLM embeddings\r\n"
                 "- Explorer Context Menu integration & long path support\r\n\r\n"
+                "Libraries and Attributions Used:\r\n"
+                "- libpar3 (by Yutaka Sawada, LGPL v2.1+): https://github.com/Parchive/par3cmdline\r\n"
+                "- BLAKE3 (by BLAKE3 team, CC0/Apache-2.0): https://github.com/BLAKE3-team/BLAKE3\r\n"
+                "- Leopard-RS (by Christopher A. Taylor, BSD 3-Clause): https://github.com/catid/leopard\r\n"
+                "- Galois Field library (by James S. Plank): http://web.eecs.utk.edu/~jplank/plank/www/software.html\r\n\r\n"
                 "Authors: Sander Raaijmakers, Elwin Oost and the Burn to the Brim team";
             CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", comments.c_str(), WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_READONLY | WS_VSCROLL, 20, 110, 440, 180, hwnd, NULL, NULL, NULL);
             
@@ -769,6 +1031,17 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             // Dark Theme Toggle (Disabled completely on Windows)
             g_chkPrefDarkTheme = NULL;
             
+            y += 30;
+            // PAR3 Settings
+            g_chkPrefPar3 = CreateWindow("BUTTON", "Enable PAR3 Parity Protection", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 20, y, 400, 20, hwnd, (HMENU)ID_PREF_CHK_PAR3, NULL, NULL);
+            
+            y += 30;
+            CreateWindow("STATIC", "PAR3 Block Size (Bytes):", WS_CHILD | WS_VISIBLE, 20, y + 2, 160, 20, hwnd, NULL, NULL, NULL);
+            g_editPrefPar3Block = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_NUMBER, 185, y, 80, 22, hwnd, (HMENU)ID_PREF_EDIT_PAR3_BLOCK, NULL, NULL);
+            
+            CreateWindow("STATIC", "Redundancy (%):", WS_CHILD | WS_VISIBLE, 280, y + 2, 110, 20, hwnd, NULL, NULL, NULL);
+            g_editPrefPar3Redundancy = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_NUMBER, 390, y, 80, 22, hwnd, (HMENU)ID_PREF_EDIT_PAR3_REDUNDANCY, NULL, NULL);
+            
             y += 28;
             // Group 5: Grouping Rules
             CreateWindow("BUTTON", "File / Folder Grouping Rules", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 10, y, 480, 240, hwnd, NULL, NULL, NULL);
@@ -852,6 +1125,9 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             if (g_chkPrefDarkTheme) {
                 SendMessage(g_chkPrefDarkTheme, BM_SETCHECK, g_solver.enableDarkTheme ? BST_CHECKED : BST_UNCHECKED, 0);
             }
+            SendMessage(g_chkPrefPar3, BM_SETCHECK, g_solver.enablePar3 ? BST_CHECKED : BST_UNCHECKED, 0);
+            SetWindowText(g_editPrefPar3Block, std::to_string(g_solver.par3BlockSize).c_str());
+            SetWindowText(g_editPrefPar3Redundancy, std::to_string(g_solver.par3RedundancyPercent).c_str());
             
             // Select correct Media combobox index from settings memory
             int index = g_solver.lastSelectedVolumeIndex;
@@ -878,6 +1154,9 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             if (g_chkPrefDarkTheme) {
                 CreateToolTip(hwnd, g_chkPrefDarkTheme, "Toggle modern dark theme colors across the application.");
             }
+            CreateToolTip(hwnd, g_chkPrefPar3, "Create standard PAR3 recovery files to protect your volumes from corruption.");
+            CreateToolTip(hwnd, g_editPrefPar3Block, "Parity block size in bytes (e.g. 2048).");
+            CreateToolTip(hwnd, g_editPrefPar3Redundancy, "Parity redundancy target percentage (e.g. 10%).");
             CreateToolTip(hwnd, g_editPrefCvName, "Name your custom capacity profile to save and use later.");
             CreateToolTip(hwnd, g_btnPrefCvSave, "Save custom volume profile based on currently input values.");
             
@@ -1054,6 +1333,11 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
                     g_solver.enableAutoVolume = (selIdx == 12);
                 }
                 g_solver.ruleBasedWins = (SendMessage(g_chkPrefRuleWins, BM_GETCHECK, 0, 0) == BST_CHECKED);
+                g_solver.enablePar3 = (SendMessage(g_chkPrefPar3, BM_GETCHECK, 0, 0) == BST_CHECKED);
+                GetWindowText(g_editPrefPar3Block, buf, 64);
+                g_solver.par3BlockSize = std::stoll(buf);
+                GetWindowText(g_editPrefPar3Redundancy, buf, 64);
+                g_solver.par3RedundancyPercent = std::stoi(buf);
                 if (g_chkPrefDarkTheme) {
                     g_solver.enableDarkTheme = (SendMessage(g_chkPrefDarkTheme, BM_GETCHECK, 0, 0) == BST_CHECKED);
                 } else {
@@ -1333,6 +1617,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             CreateWindow("BUTTON", "Help", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 694, 475, 50, 30, hwnd, (HMENU)ID_BTN_HELP, NULL, NULL);
             CreateWindow("BUTTON", "About...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 750, 475, 54, 30, hwnd, (HMENU)ID_BTN_ABOUT, NULL, NULL);
             
+            g_btnImportJson = CreateWindow("BUTTON", "Import JSON...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 12, 475, 120, 30, hwnd, (HMENU)ID_BTN_IMPORT_JSON, NULL, NULL);
+            g_btnVerifyRestore = CreateWindow("BUTTON", "Verify & Restore...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 138, 475, 134, 30, hwnd, (HMENU)ID_BTN_VERIFY_RESTORE, NULL, NULL);
+            
             EnableWindow(g_btnStop, FALSE);
             
             // Setup visual font styles
@@ -1343,6 +1630,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             }, (LPARAM)hFont);
             
             // Premium Tooltips
+            CreateToolTip(hwnd, g_btnImportJson, "Import and parse offline JSON index files to view solved volume file details.");
+            CreateToolTip(hwnd, g_btnVerifyRestore, "Verify solved volumes or copy and restore damaged files using PAR3 archives.");
             CreateToolTip(hwnd, g_btnTest, "Simulate packing without performing file operations to test volume utilization.");
             CreateToolTip(hwnd, g_btnStart, "Run solver and organize files/folders according to preferences.");
             CreateToolTip(hwnd, g_btnStop, "Abort current running packing or file organization process.");
@@ -1555,12 +1844,51 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                     "BttbWin32PrefDialog",
                     "Preferences",
                     WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
-                    CW_USEDEFAULT, CW_USEDEFAULT, 500, 600,
+                    CW_USEDEFAULT, CW_USEDEFAULT, 500, 680,
                     hwnd, NULL, GetModuleHandle(NULL), NULL
                 );
                 
                 if (g_hwndPref != NULL) {
                     ShowWindow(g_hwndPref, SW_SHOW);
+                } else {
+                    EnableWindow(hwnd, TRUE);
+                }
+            }
+
+            if (wmId == ID_BTN_IMPORT_JSON) {
+                std::string path = OpenJsonFileDialog(hwnd, "Select JSON Index File");
+                if (!path.empty()) {
+                    std::string err;
+                    if (bttb::parseIndexJson(path, g_solver.packedVolumes, err)) {
+                        PopulateTreeView(g_hwndTreeView);
+                        AppendTextToLog(g_editLog, "Successfully imported JSON index file: " + path);
+                    } else {
+                        MessageBox(hwnd, ("Failed to parse JSON index:\n" + err).c_str(), "Error", MB_ICONERROR);
+                    }
+                }
+            }
+            
+            if (wmId == ID_BTN_VERIFY_RESTORE) {
+                if (g_hwndVerify != NULL) {
+                    SetForegroundWindow(g_hwndVerify);
+                    break;
+                }
+                
+                // Disable main window
+                EnableWindow(hwnd, FALSE);
+                
+                // Create Verify Window
+                g_hwndVerify = CreateWindowEx(
+                    WS_EX_CONTROLPARENT,
+                    "BttbWin32VerifyDialog",
+                    "Verify & Restore Volumes",
+                    WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
+                    CW_USEDEFAULT, CW_USEDEFAULT, 550, 480,
+                    hwnd, NULL, GetModuleHandle(NULL), NULL
+                );
+                
+                if (g_hwndVerify != NULL) {
+                    ShowWindow(g_hwndVerify, SW_SHOW);
                 } else {
                     EnableWindow(hwnd, TRUE);
                 }
@@ -1919,6 +2247,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     
     if (!RegisterClassEx(&wcFolderList)) {
         MessageBox(NULL, "Folder List Dialog Registration Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
+        return 0;
+    }
+    
+    // Register Verify Dialog Window Class
+    WNDCLASSEX wcVerify = {0};
+    wcVerify.cbSize = sizeof(WNDCLASSEX);
+    wcVerify.style = CS_HREDRAW | CS_VREDRAW;
+    wcVerify.lpfnWndProc = VerifyWndProc;
+    wcVerify.hInstance = hInstance;
+    wcVerify.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wcVerify.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
+    wcVerify.lpszClassName = "BttbWin32VerifyDialog";
+    wcVerify.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(1));
+    wcVerify.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+    
+    if (!RegisterClassEx(&wcVerify)) {
+        MessageBox(NULL, "Verify Dialog Registration Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
         return 0;
     }
     

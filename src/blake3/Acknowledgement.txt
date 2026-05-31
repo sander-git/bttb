@@ -1,0 +1,10 @@
+BLAKE3 Library Attribution
+==========================
+
+This folder contains the official C implementation of the BLAKE3 cryptographic hash function, used in Burn to the Brim v4.2.0.
+
+[ BLAKE3 cryptographic hash function ]
+https://github.com/BLAKE3-team/BLAKE3
+
+This work is released into the public domain with CC0 1.0.
+Alternatively, it is licensed under the Apache License 2.0.

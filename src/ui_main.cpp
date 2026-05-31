@@ -1,6 +1,7 @@
 #include "ui_main.hpp"
 #include "ui_settings.hpp"
 #include "ui_iso.hpp"
+#include "ui_verify.hpp"
 #include <iostream>
 #include <filesystem>
 #include <cstring>
@@ -235,6 +236,98 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
         std::string src = gtk_editable_get_text(GTK_EDITABLE(self->source_entry));
         IsoDialog::run(GTK_WINDOW(self->window), src);
     }), this);
+
+    // Import JSON Index Button
+    GtkWidget* import_btn = gtk_button_new_from_icon_name("document-open");
+    gtk_widget_set_tooltip_text(import_btn, "Import JSON Index...");
+    gtk_header_bar_pack_start(GTK_HEADER_BAR(header), import_btn);
+    
+    g_signal_connect(import_btn, "clicked", G_CALLBACK(+[](GtkWidget* btn, gpointer user_data) {
+        auto* self = static_cast<MainWindow*>(user_data);
+        
+        GtkFileDialog* dialog = gtk_file_dialog_new();
+        gtk_file_dialog_set_title(dialog, "Select JSON Index File");
+        
+        gtk_file_dialog_open(dialog, GTK_WINDOW(self->window), nullptr, +[](GObject* source, GAsyncResult* res, gpointer data) {
+            auto* self = static_cast<MainWindow*>(data);
+            GError* error = nullptr;
+            GFile* file = gtk_file_dialog_open_finish(GTK_FILE_DIALOG(source), res, &error);
+            if (file) {
+                char* path = g_file_get_path(file);
+                std::string jsonPath = path;
+                g_free(path);
+                g_object_unref(file);
+                
+                std::string errMsg;
+                if (parseIndexJson(jsonPath, self->solver.packedVolumes, errMsg)) {
+                    self->append_log("Successfully imported JSON index file: " + jsonPath, 1);
+                    
+                    // Clear and populate tree store
+                    gtk_tree_store_clear(self->tree_store);
+                    for (const auto& vol : self->solver.packedVolumes) {
+                        GtkTreeIter vol_parent;
+                        gtk_tree_store_append(self->tree_store, &vol_parent, nullptr);
+                        
+                        char vol_name[128];
+                        snprintf(vol_name, sizeof(vol_name), "Volume %d (Total: %.2f MB)", vol.volumeIndex, (double)vol.totalBytes / (1024.0 * 1024.0));
+                        
+                        gtk_tree_store_set(self->tree_store, &vol_parent,
+                                           0, vol_name,
+                                           1, "",
+                                           2, "Imported",
+                                           -1);
+                        
+                        for (size_t i = 0; i < vol.itemPaths.size(); ++i) {
+                            GtkTreeIter child;
+                            gtk_tree_store_append(self->tree_store, &child, &vol_parent);
+                            gtk_tree_store_set(self->tree_store, &child,
+                                               0, vol.itemPaths[i].c_str(),
+                                               1, std::to_string(vol.itemSizes[i]).c_str(),
+                                               2, "Imported",
+                                               -1);
+                            
+                            // If it is a semantic or rules group, add nested files under it!
+                            if (i < vol.itemGroupedPaths.size() && !vol.itemGroupedPaths[i].empty()) {
+                                for (const auto& subPath : vol.itemGroupedPaths[i]) {
+                                    GtkTreeIter subChild;
+                                    gtk_tree_store_append(self->tree_store, &subChild, &child);
+                                    gtk_tree_store_set(self->tree_store, &subChild,
+                                                       0, subPath.c_str(),
+                                                       1, "",
+                                                       2, "Imported",
+                                                       -1);
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    self->append_log("Failed to parse JSON index: " + errMsg, 3);
+                    GtkWidget* msg_dialog = gtk_message_dialog_new(GTK_WINDOW(self->window),
+                                                                 GTK_DIALOG_MODAL,
+                                                                 GTK_MESSAGE_ERROR,
+                                                                 GTK_BUTTONS_OK,
+                                                                 "Failed to parse JSON index:\n%s", errMsg.c_str());
+                    g_signal_connect(msg_dialog, "response", G_CALLBACK(+[](GtkWidget* dlg, int response, gpointer) {
+                        gtk_window_destroy(GTK_WINDOW(dlg));
+                    }), nullptr);
+                    gtk_window_present(GTK_WINDOW(msg_dialog));
+                }
+            }
+            if (error) {
+                g_error_free(error);
+            }
+        }, self);
+    }), this);
+    
+    // Verify & Restore Button
+    GtkWidget* verify_btn = gtk_button_new_from_icon_name("system-run");
+    gtk_widget_set_tooltip_text(verify_btn, "Verify & Restore Volumes...");
+    gtk_header_bar_pack_start(GTK_HEADER_BAR(header), verify_btn);
+    
+    g_signal_connect(verify_btn, "clicked", G_CALLBACK(+[](GtkWidget* btn, gpointer user_data) {
+        auto* self = static_cast<MainWindow*>(user_data);
+        VerifyDialog::run(GTK_WINDOW(self->window));
+    }), this);
     
     // About button
     GtkWidget* about_btn = gtk_button_new_from_icon_name("help-about");
@@ -248,14 +341,17 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
         gtk_window_set_transient_for(GTK_WINDOW(about), GTK_WINDOW(self->window));
         
         gtk_about_dialog_set_program_name(GTK_ABOUT_DIALOG(about), "Burn to the Brim");
-        gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(about), "4.1.1");
-        gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(about), "Copyright \u00a9 2001-2004 Sander Raaijmakers, Elwin Oost and the Burn to the Brim team");
+        gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(about), "4.2.0");
+        gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(about), "Copyright \u00a9 2001-2026 Sander Raaijmakers, Elwin Oost and the Burn to the Brim team");
         gtk_about_dialog_set_license_type(GTK_ABOUT_DIALOG(about), GTK_LICENSE_GPL_2_0);
         gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(about), "https://sourceforge.net/projects/bttb/");
         gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(about), 
             "Burn to the Brim (BTTB) is a modern C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums (CDs, DVDs, Blu-rays, or USBs).\n\n"
-            "Features in v4.1.1:\n"
-            "- Theme support including standard dark theme options on Windows & Linux GTK4\n"
+            "Features in v4.2.0:\n"
+            "- Offline JSON Index creation and interactive parser\n"
+            "- Optional PAR3 parity file generation and verification\n"
+            "- Bit-perfect PAR3 copy-based restoration and repair\n"
+            "- Theme support including standard dark theme options on Linux GTK4\n"
             "- Improved Estimated Time Left calculation immediately at startup\n"
             "- Named Custom Volume profiles & dynamic Auto Volume sizing\n"
             "- Settings memory restoring the last selected volume configuration\n"
@@ -263,6 +359,11 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
             "- Transfer-rate estimated Time Left & status activity spinner\n"
             "- Entropy-Aware Semantic Packing based on MiniLM embeddings\n"
             "- Explorer Context Menu integration & long path support\n\n"
+            "Libraries and Attributions Used:\n"
+            "- libpar3 (by Yutaka Sawada, LGPL v2.1+): https://github.com/Parchive/par3cmdline\n"
+            "- BLAKE3 (by BLAKE3 team, CC0/Apache-2.0): https://github.com/BLAKE3-team/BLAKE3\n"
+            "- Leopard-RS (by Christopher A. Taylor, BSD 3-Clause): https://github.com/catid/leopard\n"
+            "- Galois Field library (by James S. Plank): http://web.eecs.utk.edu/~jplank/plank/www/software.html\n\n"
             "Authors: Sander Raaijmakers, Elwin Oost and the Burn to the Brim team");
             
         // Load and set logo texture

@@ -6,11 +6,20 @@
 #include <chrono>
 #include <queue>
 #include <cmath>
+#include <cstring>
 
 #ifdef _WIN32
 #include <windows.h>
 #include <shlobj.h>
+#include <direct.h>
+#else
+#include <unistd.h>
 #endif
+
+extern "C" {
+#include "common.h"
+#include "libpar3.h"
+}
 
 namespace bttb {
 
@@ -75,6 +84,30 @@ std::filesystem::path makeLongPath(const std::filesystem::path& p) {
     }
 }
 #endif
+
+#include <sys/types.h>
+#include <sys/stat.h>
+
+std::string getFileLastWriteTime(const std::string& path) {
+    try {
+#ifdef _WIN32
+        struct __stat64 result;
+        if (_stat64(path.c_str(), &result) == 0) {
+#else
+        struct stat result;
+        if (stat(path.c_str(), &result) == 0) {
+#endif
+            std::time_t mod_time = result.st_mtime;
+            std::tm* gmt = std::gmtime(&mod_time);
+            char buf[64];
+            if (gmt) {
+                std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", gmt);
+                return std::string(buf);
+            }
+        }
+    } catch (...) {}
+    return "1970-01-01 00:00:00";
+}
 
 // Convert standard wildcards/globs to C++ regex patterns
 std::regex globToRegex(const std::string& glob) {
@@ -321,6 +354,12 @@ void BttbSolver::loadSettings() {
             try { mediumInfo.sectorSize = std::stoll(val); } catch (...) {}
         } else if (key == "mediumSlack") {
             try { mediumInfo.slackBytes = std::stoll(val); } catch (...) {}
+        } else if (key == "enablePar3") {
+            enablePar3 = (val == "1");
+        } else if (key == "par3BlockSize") {
+            try { par3BlockSize = std::stoll(val); } catch (...) {}
+        } else if (key == "par3RedundancyPercent") {
+            try { par3RedundancyPercent = std::stoi(val); } catch (...) {}
         } else if (key.rfind("customVolume_", 0) == 0) {
             std::stringstream ss(val);
             std::string name, capStr, secStr, slkStr;
@@ -357,6 +396,9 @@ void BttbSolver::saveSettings() {
     f << "mediumCapacity=" << mediumInfo.capacityBytes << "\n";
     f << "mediumSector=" << mediumInfo.sectorSize << "\n";
     f << "mediumSlack=" << mediumInfo.slackBytes << "\n";
+    f << "enablePar3=" << (enablePar3 ? "1" : "0") << "\n";
+    f << "par3BlockSize=" << par3BlockSize << "\n";
+    f << "par3RedundancyPercent=" << par3RedundancyPercent << "\n";
     
     for (size_t i = 0; i < customVolumes.size(); ++i) {
         f << "customVolume_" << i << "=" 
@@ -364,7 +406,7 @@ void BttbSolver::saveSettings() {
           << customVolumes[i].capacityBytes << ","
           << customVolumes[i].sectorSize << ","
           << customVolumes[i].slackBytes << "\n";
-    }
+     }
 }
 
 BttbSolver::BttbSolver() {
@@ -376,6 +418,11 @@ BttbSolver::BttbSolver() {
     timeLeftNotify = [](double) {};
     recommendCapacityNotify = nullptr;
     skipUnreadable = true;
+
+    // PAR3
+    enablePar3 = false;
+    par3BlockSize = 2048;
+    par3RedundancyPercent = 10;
 
     // Semantic Packing
     semanticPrompt = "";
@@ -560,7 +607,7 @@ bool compareDirEntries(const std::unique_ptr<DirEntry>& a, const std::unique_ptr
 }
 
 // Backtracking solver
-bool BttbSolver::findAWay(int64_t currentSectors, int poz) {
+bool BttbSolver::findAWay(int64_t currentSectors, int poz, int selectedFileCount) {
     exploredStates++;
     if (stopRequested || searchTimedOut) return false;
 
@@ -592,10 +639,17 @@ bool BttbSolver::findAWay(int64_t currentSectors, int poz) {
     
     int64_t testSectors = currentSectors + itemsToSplit[poz]->sectorCount;
     
-    if (testSectors <= maxSectors) {
+    int64_t par3Sectors = 0;
+    if (enablePar3) {
+        int64_t testBytes = testSectors * mediumInfo.sectorSize;
+        int64_t par3Bytes = (testBytes * par3RedundancyPercent / 100) + 65536 + (4096 * (selectedFileCount + 1));
+        par3Sectors = (par3Bytes + mediumInfo.sectorSize - 1) / mediumInfo.sectorSize;
+    }
+
+    if (testSectors + par3Sectors <= maxSectors) {
         itemsToSplit[poz]->isSelected = true;
         
-        if (!findAWay(testSectors, poz - 1)) {
+        if (!findAWay(testSectors, poz - 1, selectedFileCount + 1)) {
             if (testSectors >= currentBestSectors) {
                 if (testSectors > currentBestSectors) {
                     currentBestSectors = testSectors;
@@ -627,10 +681,10 @@ bool BttbSolver::findAWay(int64_t currentSectors, int poz) {
         }
         
         itemsToSplit[poz]->isSelected = false;
-        findAWay(currentSectors, poz - 1);
+        findAWay(currentSectors, poz - 1, selectedFileCount);
         return true;
     } else {
-        return findAWay(currentSectors, poz - 1);
+        return findAWay(currentSectors, poz - 1, selectedFileCount);
     }
 }
 
@@ -806,7 +860,7 @@ void BttbSolver::run() {
         logNotify("Solving optimal bin selection...", 0);
         
         // Start recursion in backtracking
-        findAWay(0, itemsToSplit.size() - 1);
+        findAWay(0, itemsToSplit.size() - 1, 0);
         
         auto endTime = std::chrono::steady_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
@@ -840,6 +894,14 @@ void BttbSolver::run() {
             vol.itemSizes.push_back(itemsToSplit[idx]->sizeBytes);
             vol.itemGroupedPaths.push_back(itemsToSplit[idx]->groupedPaths);
             vol.totalBytes += itemsToSplit[idx]->sizeBytes;
+
+            std::string dateStr = "";
+            if (!itemsToSplit[idx]->absolutePath.empty()) {
+                dateStr = getFileLastWriteTime(itemsToSplit[idx]->absolutePath);
+            } else if (!itemsToSplit[idx]->absoluteGroupedPaths.empty()) {
+                dateStr = getFileLastWriteTime(itemsToSplit[idx]->absoluteGroupedPaths[0]);
+            }
+            vol.itemDates.push_back(dateStr);
         }
         packedVolumes.push_back(vol);
         
@@ -919,6 +981,16 @@ void BttbSolver::run() {
                     }
                 }
             }
+            if (enablePar3) {
+                logNotify("Generating PAR3 parity files for Volume " + std::to_string(volumeIndex) + "...", 3);
+                std::string parBaseName = spanMultipleVolumes ? ("Volume_" + std::to_string(volumeIndex)) : "Volume";
+                std::string err;
+                if (createVolumePar3(toUtf8Str(volDestDir), parBaseName, par3BlockSize, par3RedundancyPercent, err)) {
+                    logNotify("Successfully created PAR3 parity protection for Volume " + std::to_string(volumeIndex), 1);
+                } else {
+                    logNotify("PAR3 creation failed: " + err, 2);
+                }
+            }
         }
         
         // Build list of remaining items that were NOT selected
@@ -949,6 +1021,46 @@ void BttbSolver::run() {
         logNotify("No files were copied, symlinked, or moved on disk.", 1);
     } else if ((moveFiles || createSymlinks) && !targetDirectory.empty()) {
         logNotify("Completed file organization.", 1);
+
+        // JSON Index File Creation
+        if (spanMultipleVolumes) {
+            std::filesystem::path indexJsonPath = makeLongPath(std::filesystem::path(utf8Path(targetDirectory)) / "index.json");
+            std::ofstream indexFile(indexJsonPath);
+            if (indexFile.is_open()) {
+                indexFile << "{\n  \"volumes\": [\n";
+                for (size_t v = 0; v < packedVolumes.size(); ++v) {
+                    const auto& vol = packedVolumes[v];
+                    indexFile << "    {\n";
+                    indexFile << "      \"volumeIndex\": " << vol.volumeIndex << ",\n";
+                    indexFile << "      \"totalBytes\": " << vol.totalBytes << ",\n";
+                    indexFile << "      \"files\": [\n";
+                    for (size_t f = 0; f < vol.itemPaths.size(); ++f) {
+                        indexFile << "        {\n";
+                        
+                        std::string escapedPath = "";
+                        for (char c : vol.itemPaths[f]) {
+                            if (c == '\\') escapedPath += "\\\\";
+                            else if (c == '"') escapedPath += "\\\"";
+                            else if (c == '\n') escapedPath += "\\n";
+                            else if (c == '\r') escapedPath += "\\r";
+                            else if (c == '\t') escapedPath += "\\t";
+                            else escapedPath += c;
+                        }
+                        indexFile << "          \"path\": \"" << escapedPath << "\",\n";
+                        indexFile << "          \"size\": " << vol.itemSizes[f] << ",\n";
+                        indexFile << "          \"date\": \"" << vol.itemDates[f] << "\"\n";
+                        indexFile << "        }" << (f + 1 < vol.itemPaths.size() ? ",\n" : "\n");
+                    }
+                    indexFile << "      ]\n";
+                    indexFile << "    }" << (v + 1 < packedVolumes.size() ? ",\n" : "\n");
+                }
+                indexFile << "  ]\n}\n";
+                indexFile.close();
+                logNotify("Created offline JSON index file: " + toUtf8Str(indexJsonPath), 1);
+            } else {
+                logNotify("Failed to create JSON index file: " + toUtf8Str(indexJsonPath), 2);
+            }
+        }
     }
     
     if (enableTrace) {
@@ -1303,6 +1415,471 @@ void BttbSolver::runSemanticClustering() {
 
     itemsToSplit = std::move(clusteredItems);
     logNotify("Semantic clustering completed. Total consolidated groups: " + std::to_string(itemsToSplit.size()), 1);
+}
+
+bool createVolumePar3(const std::string& volumePath, const std::string& parBaseName, int64_t blockSize, int redundancyPercent, std::string& errorMsg) {
+    PAR3_CTX* par3_ctx = (PAR3_CTX*)malloc(sizeof(PAR3_CTX));
+    if (!par3_ctx) {
+        errorMsg = "Out of memory";
+        return false;
+    }
+    memset(par3_ctx, 0, sizeof(PAR3_CTX));
+    
+    // Set silent mode
+    par3_ctx->noise_level = -2; // qq/silent
+    
+    // Options
+    par3_ctx->block_size = blockSize;
+    par3_ctx->redundancy_size = redundancyPercent;
+    par3_ctx->recovery_file_scheme = -1; // Uniform files
+    
+    // Save current working directory
+    char curDir[4096];
+#ifdef _WIN32
+    if (!_getcwd(curDir, sizeof(curDir))) {
+#else
+    if (!getcwd(curDir, sizeof(curDir))) {
+#endif
+        free(par3_ctx);
+        errorMsg = "Failed to get current directory";
+        return false;
+    }
+    
+    // Change to target directory
+#ifdef _WIN32
+    if (_chdir(volumePath.c_str()) != 0) {
+#else
+    if (chdir(volumePath.c_str()) != 0) {
+#endif
+        free(par3_ctx);
+        errorMsg = "Failed to change directory to volume path: " + volumePath;
+        return false;
+    }
+    
+    // Set PAR filename
+    std::string parFile = parBaseName + ".par3";
+    strncpy(par3_ctx->par_filename, parFile.c_str(), sizeof(par3_ctx->par_filename) - 1);
+    
+    // Add Creator Text
+    add_creator_text(par3_ctx, (char*)"Burn to the Brim 4.2.0 libpar3 integration\n");
+    
+    // Search input files recursively
+    int ret = path_search(par3_ctx, (char*)"*", 'R');
+    if (ret != 0) {
+        errorMsg = "Failed to search volume files recursively (error " + std::to_string(ret) + ")";
+#ifdef _WIN32
+        _chdir(curDir);
+#else
+        chdir(curDir);
+#endif
+        par3_release(par3_ctx);
+        free(par3_ctx);
+        return false;
+    }
+    
+    // Count input files
+    par3_ctx->input_file_count = namez_count(par3_ctx->input_file_name, par3_ctx->input_file_name_len);
+    par3_ctx->input_dir_count = namez_count(par3_ctx->input_dir_name, par3_ctx->input_dir_name_len);
+    
+    if (par3_ctx->input_file_count + par3_ctx->input_dir_count == 0) {
+        errorMsg = "No files found in volume directory to protect";
+#ifdef _WIN32
+        _chdir(curDir);
+#else
+        chdir(curDir);
+#endif
+        par3_release(par3_ctx);
+        free(par3_ctx);
+        return false;
+    }
+    
+    // Get file status
+    ret = get_file_status(par3_ctx);
+    if (ret != 0) {
+        errorMsg = "Failed to get file status (error " + std::to_string(ret) + ")";
+#ifdef _WIN32
+        _chdir(curDir);
+#else
+        chdir(curDir);
+#endif
+        par3_release(par3_ctx);
+        free(par3_ctx);
+        return false;
+    }
+    
+    // Calculate block count
+    par3_ctx->block_count = calculate_block_count(par3_ctx, par3_ctx->block_size);
+    
+    // Sort input set
+    ret = sort_input_set(par3_ctx);
+    if (ret != 0) {
+        errorMsg = "Failed to sort input set (error " + std::to_string(ret) + ")";
+#ifdef _WIN32
+        _chdir(curDir);
+#else
+        chdir(curDir);
+#endif
+        par3_release(par3_ctx);
+        free(par3_ctx);
+        return false;
+    }
+    
+    // Create PAR3 files
+    ret = par3_create(par3_ctx, par3_ctx->par_filename);
+    
+    // Restore current directory
+#ifdef _WIN32
+    _chdir(curDir);
+#else
+    chdir(curDir);
+#endif
+    
+    par3_release(par3_ctx);
+    free(par3_ctx);
+    
+    if (ret != 0) {
+        errorMsg = "Failed to create PAR3 archive (error " + std::to_string(ret) + ")";
+        return false;
+    }
+    
+    return true;
+}
+
+int verifyVolumePar3(const std::string& volumePath, const std::string& parBaseName, std::vector<std::string>& damagedFiles, std::string& logOutput) {
+    PAR3_CTX* par3_ctx = (PAR3_CTX*)malloc(sizeof(PAR3_CTX));
+    if (!par3_ctx) {
+        logOutput = "Out of memory";
+        return RET_MEMORY_ERROR;
+    }
+    memset(par3_ctx, 0, sizeof(PAR3_CTX));
+    
+    par3_ctx->noise_level = -2;
+    
+    char curDir[4096];
+#ifdef _WIN32
+    if (!_getcwd(curDir, sizeof(curDir))) {
+#else
+    if (!getcwd(curDir, sizeof(curDir))) {
+#endif
+        free(par3_ctx);
+        logOutput = "Failed to get current directory";
+        return RET_FILE_IO_ERROR;
+    }
+    
+#ifdef _WIN32
+    if (_chdir(volumePath.c_str()) != 0) {
+#else
+    if (chdir(volumePath.c_str()) != 0) {
+#endif
+        free(par3_ctx);
+        logOutput = "Failed to change directory to volume path: " + volumePath;
+        return RET_FILE_IO_ERROR;
+    }
+    
+    std::string parFile = parBaseName + ".par3";
+    strncpy(par3_ctx->par_filename, parFile.c_str(), sizeof(par3_ctx->par_filename) - 1);
+    
+    // Search PAR files
+    int ret = par_search(par3_ctx, par3_ctx->par_filename, 1);
+    if (ret != 0) {
+        logOutput = "Failed to locate PAR3 files in directory: " + parFile;
+#ifdef _WIN32
+        _chdir(curDir);
+#else
+        chdir(curDir);
+#endif
+        par3_release(par3_ctx);
+        free(par3_ctx);
+        return RET_FILE_IO_ERROR;
+    }
+    
+    // Verify volume
+    ret = par3_verify(par3_ctx);
+    
+    // Record damaged or missing files
+    if (par3_ctx->input_file_list) {
+        for (uint32_t i = 0; i < par3_ctx->input_file_count; ++i) {
+            if (par3_ctx->input_file_list[i].state & 3) {
+                damagedFiles.push_back(par3_ctx->input_file_list[i].name);
+            }
+        }
+    }
+    
+#ifdef _WIN32
+    _chdir(curDir);
+#else
+    chdir(curDir);
+#endif
+    
+    par3_release(par3_ctx);
+    free(par3_ctx);
+    
+    return ret;
+}
+
+bool restoreVolumePar3(const std::string& volumePath, const std::string& destPath, const std::string& parBaseName, std::string& logOutput) {
+    try {
+        std::filesystem::create_directories(utf8Path(destPath));
+        for (const auto& entry : std::filesystem::directory_iterator(utf8Path(volumePath))) {
+            std::filesystem::path dst = utf8Path(destPath) / entry.path().filename();
+            if (std::filesystem::is_directory(entry.path())) {
+                std::filesystem::copy(entry.path(), dst, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+            } else {
+                std::filesystem::copy_file(entry.path(), dst, std::filesystem::copy_options::overwrite_existing);
+            }
+        }
+    } catch (const std::exception& e) {
+        logOutput = "Failed to copy volume contents to recovery folder: " + std::string(e.what());
+        return false;
+    }
+    
+    PAR3_CTX* par3_ctx = (PAR3_CTX*)malloc(sizeof(PAR3_CTX));
+    if (!par3_ctx) {
+        logOutput = "Out of memory";
+        return false;
+    }
+    memset(par3_ctx, 0, sizeof(PAR3_CTX));
+    
+    par3_ctx->noise_level = -2;
+    
+    char curDir[4096];
+#ifdef _WIN32
+    if (!_getcwd(curDir, sizeof(curDir))) {
+#else
+    if (!getcwd(curDir, sizeof(curDir))) {
+#endif
+        free(par3_ctx);
+        logOutput = "Failed to get current directory";
+        return false;
+    }
+    
+#ifdef _WIN32
+    if (_chdir(destPath.c_str()) != 0) {
+#else
+    if (chdir(destPath.c_str()) != 0) {
+#endif
+        free(par3_ctx);
+        logOutput = "Failed to change directory to recovery path: " + destPath;
+        return false;
+    }
+    
+    std::string parFile = parBaseName + ".par3";
+    strncpy(par3_ctx->par_filename, parFile.c_str(), sizeof(par3_ctx->par_filename) - 1);
+    
+    int ret = par_search(par3_ctx, par3_ctx->par_filename, 1);
+    if (ret != 0) {
+        logOutput = "Failed to locate PAR3 files in recovery path: " + parFile;
+#ifdef _WIN32
+        _chdir(curDir);
+#else
+        chdir(curDir);
+#endif
+        par3_release(par3_ctx);
+        free(par3_ctx);
+        return false;
+    }
+    
+    // Call repair
+    char temp_file_name[4096] = {0};
+    ret = par3_repair(par3_ctx, temp_file_name);
+    
+#ifdef _WIN32
+    _chdir(curDir);
+#else
+    chdir(curDir);
+#endif
+    
+    par3_release(par3_ctx);
+    free(par3_ctx);
+    
+    if (ret != 0 && ret != RET_REPAIR_FAILED) {
+        logOutput = "Failed to repair files (error " + std::to_string(ret) + ")";
+        return false;
+    }
+    
+    return true;
+}
+
+bool parseIndexJson(const std::string& jsonFilePath, std::vector<PackedVolume>& volumes, std::string& errorMsg) {
+    std::ifstream f(jsonFilePath);
+    if (!f.is_open()) {
+        errorMsg = "Failed to open file: " + jsonFilePath;
+        return false;
+    }
+    
+    std::stringstream buffer;
+    buffer << f.rdbuf();
+    std::string content = buffer.str();
+    f.close();
+    
+    volumes.clear();
+    
+    size_t i = 0;
+    auto skipWhitespace = [&]() {
+        while (i < content.size() && (content[i] == ' ' || content[i] == '\t' || content[i] == '\r' || content[i] == '\n')) {
+            i++;
+        }
+    };
+    
+    auto parseString = [&]() -> std::string {
+        std::string s = "";
+        if (i < content.size() && content[i] == '"') {
+            i++;
+            while (i < content.size() && content[i] != '"') {
+                if (content[i] == '\\' && i + 1 < content.size()) {
+                    i++;
+                    if (content[i] == '\\') s += '\\';
+                    else if (content[i] == '"') s += '"';
+                    else if (content[i] == 'n') s += '\n';
+                    else if (content[i] == 'r') s += '\r';
+                    else if (content[i] == 't') s += '\t';
+                    else s += content[i];
+                } else {
+                    s += content[i];
+                }
+                i++;
+            }
+            if (i < content.size()) i++;
+        }
+        return s;
+    };
+    
+    auto parseNumber = [&]() -> int64_t {
+        std::string s = "";
+        while (i < content.size() && ((content[i] >= '0' && content[i] <= '9') || content[i] == '-')) {
+            s += content[i];
+            i++;
+        }
+        try {
+            return std::stoll(s);
+        } catch (...) {
+            return 0;
+        }
+    };
+    
+    skipWhitespace();
+    if (i >= content.size() || content[i] != '{') {
+        errorMsg = "Invalid JSON: expected '{' at root";
+        return false;
+    }
+    i++;
+    
+    PackedVolume currentVol;
+    
+    while (i < content.size()) {
+        skipWhitespace();
+        if (i >= content.size()) break;
+        
+        char c = content[i];
+        if (c == '}') {
+            i++;
+            continue;
+        }
+        if (c == ']') {
+            i++;
+            continue;
+        }
+        if (c == ',' || c == ':') {
+            i++;
+            continue;
+        }
+        
+        if (c == '"') {
+            std::string key = parseString();
+            skipWhitespace();
+            if (i < content.size() && content[i] == ':') i++;
+            skipWhitespace();
+            
+            if (key == "volumes") {
+                if (i < content.size() && content[i] == '[') {
+                    i++;
+                }
+            } else if (key == "volumeIndex") {
+                currentVol.volumeIndex = static_cast<int>(parseNumber());
+            } else if (key == "totalBytes") {
+                currentVol.totalBytes = parseNumber();
+            } else if (key == "files") {
+                if (i < content.size() && content[i] == '[') {
+                    i++;
+                    while (i < content.size()) {
+                        skipWhitespace();
+                        if (i >= content.size()) break;
+                        if (content[i] == ']') {
+                            i++;
+                            break;
+                        }
+                        if (content[i] == '{') {
+                            i++;
+                            std::string filePath = "";
+                            int64_t fileSize = 0;
+                            std::string fileDate = "";
+                            
+                            while (i < content.size()) {
+                                skipWhitespace();
+                                if (i >= content.size()) break;
+                                if (content[i] == '}') {
+                                    i++;
+                                    break;
+                                }
+                                if (content[i] == ',' || content[i] == ':') {
+                                    i++;
+                                    continue;
+                                }
+                                if (content[i] == '"') {
+                                    std::string fkey = parseString();
+                                    skipWhitespace();
+                                    if (i < content.size() && content[i] == ':') i++;
+                                    skipWhitespace();
+                                    if (fkey == "path") {
+                                        filePath = parseString();
+                                    } else if (fkey == "size") {
+                                        fileSize = parseNumber();
+                                    } else if (fkey == "date") {
+                                        fileDate = parseString();
+                                    } else {
+                                        if (content[i] == '"') parseString();
+                                        else parseNumber();
+                                    }
+                                }
+                            }
+                            currentVol.itemPaths.push_back(filePath);
+                            currentVol.itemSizes.push_back(fileSize);
+                            currentVol.itemDates.push_back(fileDate);
+                            currentVol.itemGroupedPaths.push_back({});
+                        } else {
+                            i++;
+                        }
+                    }
+                    volumes.push_back(currentVol);
+                    currentVol = PackedVolume();
+                }
+            } else {
+                if (content[i] == '"') parseString();
+                else if (content[i] == '[') {
+                    i++;
+                    int depth = 1;
+                    while (i < content.size() && depth > 0) {
+                        if (content[i] == '[') depth++;
+                        else if (content[i] == ']') depth--;
+                        i++;
+                    }
+                } else if (content[i] == '{') {
+                    i++;
+                    int depth = 1;
+                    while (i < content.size() && depth > 0) {
+                        if (content[i] == '{') depth++;
+                        else if (content[i] == '}') depth--;
+                        i++;
+                    }
+                } else {
+                    parseNumber();
+                }
+            }
+        } else {
+            i++;
+        }
+    }
+    return true;
 }
 
 } // namespace bttb

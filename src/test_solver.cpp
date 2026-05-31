@@ -535,6 +535,92 @@ void run_test6() {
     std::cout << "SUCCESS: Entropy-Aware Semantic Solver test suite completed successfully!" << std::endl;
 }
 
+void run_test7() {
+    std::cout << "\n--- STARTING TEST 7: PAR3 PARITY CREATION, VERIFICATION AND COPY-RESTORATION (BTTB v4.2.0) ---" << std::endl;
+    
+    std::string test_vol = "./mock_par3_volume";
+    std::string test_recovery = "./mock_par3_recovery";
+    std::filesystem::remove_all(test_vol);
+    std::filesystem::remove_all(test_recovery);
+    
+    std::filesystem::create_directories(test_vol);
+    
+    // Create multiple mock files in the volume
+    std::string file1 = test_vol + "/file1.txt";
+    std::string file2 = test_vol + "/file2.txt";
+    {
+        std::ofstream f1(file1);
+        f1 << "This is some important text data that needs protection. Repeating it to cross block boundaries. "
+           << "This is some important text data that needs protection. Repeating it to cross block boundaries. "
+           << "This is some important text data that needs protection. Repeating it to cross block boundaries. ";
+        
+        std::ofstream f2(file2);
+        f2 << "Another important configuration file here. Keep it safe!";
+    }
+    
+    // 1. Create PAR3 parity files
+    std::string errorMsg;
+    bool create_ok = bttb::createVolumePar3(test_vol, "Volume_1", 2048, 15, errorMsg);
+    std::cout << "PAR3 Archive Creation: " << (create_ok ? "SUCCESS" : "FAILED") << std::endl;
+    if (!create_ok) {
+        std::cout << "PAR3 Error details: " << errorMsg << std::endl;
+    }
+    assert(create_ok);
+    
+    // Check that PAR3 file exists
+    assert(std::filesystem::exists(test_vol + "/Volume_1.par3"));
+    std::cout << "PAR3 index file correctly created!" << std::endl;
+    
+    // 2. Initial verification (should be clean)
+    std::vector<std::string> damaged;
+    std::string verifyLog;
+    int status = bttb::verifyVolumePar3(test_vol, "Volume_1", damaged, verifyLog);
+    std::cout << "Initial volume verification status: " << status << " (Expected: 0)" << std::endl;
+    assert(status == 0);
+    assert(damaged.empty());
+    std::cout << "Clean volume verified perfectly!" << std::endl;
+    
+    // 3. Simulate file damage (corruption)
+    {
+        std::ofstream f1(file1, std::ios::binary | std::ios::in | std::ios::out);
+        f1.seekp(10);
+        f1 << "CORRUPT"; // Overwrite some bytes
+    }
+    std::cout << "Simulated corruption in file1.txt!" << std::endl;
+    
+    // 4. Verify volume after damage (should detect corruption)
+    damaged.clear();
+    verifyLog.clear();
+    status = bttb::verifyVolumePar3(test_vol, "Volume_1", damaged, verifyLog);
+    std::cout << "Post-damage volume verification status: " << status << " (Expected: non-zero)" << std::endl;
+    assert(status != 0);
+    std::cout << "Damaged files count: " << damaged.size() << " (Expected: 1)" << std::endl;
+    assert(damaged.size() >= 1);
+    std::cout << "Detected damaged file: " << damaged[0] << std::endl;
+    assert(damaged[0].find("file1.txt") != std::string::npos);
+    std::cout << "PAR3 successfully detected corrupted file!" << std::endl;
+    
+    // 5. Restore and Repair to separate folder
+    std::string restoreLog;
+    bool restore_ok = bttb::restoreVolumePar3(test_vol, test_recovery, "Volume_1", restoreLog);
+    std::cout << "Copy-Restoration/Repair process: " << (restore_ok ? "SUCCESS" : "FAILED") << std::endl;
+    assert(restore_ok);
+    
+    // 6. Verify restored folder is now completely clean
+    damaged.clear();
+    verifyLog.clear();
+    status = bttb::verifyVolumePar3(test_recovery, "Volume_1", damaged, verifyLog);
+    std::cout << "Restored volume verification status: " << status << " (Expected: 0)" << std::endl;
+    assert(status == 0);
+    assert(damaged.empty());
+    std::cout << "Bit-perfect copy-based restoration and repair verified successfully!" << std::endl;
+    
+    // Cleanup
+    std::filesystem::remove_all(test_vol);
+    std::filesystem::remove_all(test_recovery);
+    std::cout << "SUCCESS: PAR3 test suite completed successfully!" << std::endl;
+}
+
 int main() {
     std::cout << "Starting BTTB automated verification suite..." << std::endl;
     run_test1();
@@ -543,6 +629,7 @@ int main() {
     run_test4();
     run_test5();
     run_test6();
+    run_test7();
     std::cout << "\nALL TESTS PASSED SUCCESSFULLY!" << std::endl;
     return 0;
 }

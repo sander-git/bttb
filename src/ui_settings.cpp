@@ -17,6 +17,9 @@ struct DialogData {
     GtkWidget* cv_name_entry;
     GtkWidget* conflict_switch;
     GtkWidget* dark_theme_switch;
+    GtkWidget* enable_par3_switch;
+    GtkWidget* par3_block_size_entry;
+    GtkWidget* par3_redundancy_entry;
     
     GtkListStore* rule_store;
     GtkWidget* rule_tree_view;
@@ -287,6 +290,31 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     gtk_widget_set_halign(data->dark_theme_switch, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(grid), data->dark_theme_switch, 1, 10, 1, 1);
     
+    // Enable PAR3 Parity protection switch
+    GtkWidget* label_par3 = gtk_label_new("Enable PAR3 Parity Protection:");
+    gtk_widget_set_halign(label_par3, GTK_ALIGN_START);
+    gtk_grid_attach(GTK_GRID(grid), label_par3, 0, 11, 1, 1);
+
+    data->enable_par3_switch = gtk_switch_new();
+    gtk_widget_set_halign(data->enable_par3_switch, GTK_ALIGN_START);
+    gtk_grid_attach(GTK_GRID(grid), data->enable_par3_switch, 1, 11, 1, 1);
+
+    // PAR3 Block Size (Bytes) entry
+    GtkWidget* label_par3_block = gtk_label_new("PAR3 Block Size (Bytes):");
+    gtk_widget_set_halign(label_par3_block, GTK_ALIGN_START);
+    gtk_grid_attach(GTK_GRID(grid), label_par3_block, 0, 12, 1, 1);
+
+    data->par3_block_size_entry = gtk_entry_new();
+    gtk_grid_attach(GTK_GRID(grid), data->par3_block_size_entry, 1, 12, 1, 1);
+
+    // PAR3 Redundancy Percent entry
+    GtkWidget* label_par3_red = gtk_label_new("PAR3 Redundancy Percent (%):");
+    gtk_widget_set_halign(label_par3_red, GTK_ALIGN_START);
+    gtk_grid_attach(GTK_GRID(grid), label_par3_red, 0, 13, 1, 1);
+
+    data->par3_redundancy_entry = gtk_entry_new();
+    gtk_grid_attach(GTK_GRID(grid), data->par3_redundancy_entry, 1, 13, 1, 1);
+    
     // Grouping Rules list frame
     GtkWidget* rules_frame = gtk_frame_new("File/Folder Grouping Rules");
     gtk_box_append(GTK_BOX(main_box), rules_frame);
@@ -389,6 +417,9 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     gtk_switch_set_active(GTK_SWITCH(data->skip_empty_switch), solver.skipEmpty);
     gtk_switch_set_active(GTK_SWITCH(data->conflict_switch), solver.ruleBasedWins);
     gtk_switch_set_active(GTK_SWITCH(data->dark_theme_switch), solver.enableDarkTheme);
+    gtk_switch_set_active(GTK_SWITCH(data->enable_par3_switch), solver.enablePar3);
+    gtk_editable_set_text(GTK_EDITABLE(data->par3_block_size_entry), std::to_string(solver.par3BlockSize).c_str());
+    gtk_editable_set_text(GTK_EDITABLE(data->par3_redundancy_entry), std::to_string(solver.par3RedundancyPercent).c_str());
     
     // Listen for capacity edit changes to show dynamic parsed size in MB
     g_signal_connect(data->capacity_entry, "changed", G_CALLBACK(+[](GtkEditable* editable, gpointer user_data) {
@@ -453,6 +484,9 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
         data->solver->enableAutoVolume = (data->solver->lastSelectedVolumeIndex == 12);
         data->solver->ruleBasedWins = gtk_switch_get_active(GTK_SWITCH(data->conflict_switch));
         data->solver->enableDarkTheme = gtk_switch_get_active(GTK_SWITCH(data->dark_theme_switch));
+        data->solver->enablePar3 = gtk_switch_get_active(GTK_SWITCH(data->enable_par3_switch));
+        data->solver->par3BlockSize = std::stoll(gtk_editable_get_text(GTK_EDITABLE(data->par3_block_size_entry)));
+        data->solver->par3RedundancyPercent = std::stoi(gtk_editable_get_text(GTK_EDITABLE(data->par3_redundancy_entry)));
         
         // Apply immediately
         GtkSettings *settings = gtk_settings_get_default();
