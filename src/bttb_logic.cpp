@@ -1432,6 +1432,7 @@ bool createVolumePar3(const std::string& volumePath, const std::string& parBaseN
     par3_ctx->block_size = blockSize;
     par3_ctx->redundancy_size = redundancyPercent;
     par3_ctx->recovery_file_scheme = -1; // Uniform files
+    par3_ctx->ecc_method = 8; // Use high-performance Leopard-RS FFT-based Reed-Solomon by default
     
     // Save current working directory
     char curDir[4096];
