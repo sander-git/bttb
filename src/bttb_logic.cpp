@@ -810,7 +810,7 @@ void BttbSolver::run() {
     logNotify("Medium Capacity: " + std::to_string(maxSectors) + " sectors (" + std::to_string(mediumInfo.capacityBytes) + " bytes)", 0);
     
     int64_t totalBytesToOrganize = 0;
-    if (!targetDirectory.empty() && !testOnlyMode && (moveFiles || createSymlinks)) {
+    if (!targetDirectory.empty() && !testOnlyMode) {
         for (const auto& item : itemsToSplit) {
             totalBytesToOrganize += item->sizeBytes;
         }
@@ -867,9 +867,29 @@ void BttbSolver::run() {
         
         logNotify("Finished solving. Elapsed time: " + std::to_string(elapsed) + " ms", 1);
         
+        if (!spanMultipleVolumes) {
+            logNotify("Single volume solution: forcing selection of all files to guarantee 100% inclusion...", 1);
+            bestSelectionIndices.clear();
+            currentBestSectors = 0;
+            for (size_t i = 0; i < itemsToSplit.size(); ++i) {
+                bestSelectionIndices.push_back(i);
+                currentBestSectors += itemsToSplit[i]->sectorCount;
+            }
+        }
+        
         if (bestSelectionIndices.empty()) {
-            logNotify("Could not fit any remaining items onto the medium.", 2);
-            break;
+            logNotify("Backtracking solver did not find a fit (or timed out). Falling back to greedy allocation to ensure all remaining files are included...", 2);
+            int64_t currentSectors = 0;
+            for (size_t i = 0; i < itemsToSplit.size(); ++i) {
+                if (currentSectors + itemsToSplit[i]->sectorCount <= maxSectors) {
+                    bestSelectionIndices.push_back(i);
+                    currentSectors += itemsToSplit[i]->sectorCount;
+                }
+            }
+            if (bestSelectionIndices.empty()) {
+                logNotify("Forcing progress: packing remaining item larger than medium capacity (" + itemsToSplit[0]->relativePath + ")", 2);
+                bestSelectionIndices.push_back(0);
+            }
         }
         
         double percent = (double)currentBestSectors / maxSectors * 100.0;
@@ -912,55 +932,60 @@ void BttbSolver::run() {
                 volDestDir = makeLongPath(std::filesystem::path(utf8Path(targetDirectory)) / ("Volume_" + std::to_string(volumeIndex)));
             }
             
-            if (moveFiles || createSymlinks) {
-                std::filesystem::create_directories(volDestDir);
-                for (int idx : bestSelectionIndices) {
-                    if (stopRequested) break;
+            std::filesystem::create_directories(volDestDir);
+            for (int idx : bestSelectionIndices) {
+                if (stopRequested) break;
+                
+                std::vector<std::string> relPaths;
+                std::vector<std::string> absPaths;
+                if (!itemsToSplit[idx]->groupedPaths.empty()) {
+                    relPaths = itemsToSplit[idx]->groupedPaths;
+                    absPaths = itemsToSplit[idx]->absoluteGroupedPaths;
+                } else {
+                    relPaths.push_back(itemsToSplit[idx]->relativePath);
+                    absPaths.push_back(itemsToSplit[idx]->absolutePath);
+                }
+                
+                logNotify("Organizing item: " + itemsToSplit[idx]->relativePath, 0);
+                for (size_t i = 0; i < relPaths.size(); ++i) {
+                    const auto& relItem = relPaths[i];
+                    const auto& absItem = absPaths[i];
                     
-                    std::vector<std::string> relPaths;
-                    std::vector<std::string> absPaths;
-                    if (!itemsToSplit[idx]->groupedPaths.empty()) {
-                        relPaths = itemsToSplit[idx]->groupedPaths;
-                        absPaths = itemsToSplit[idx]->absoluteGroupedPaths;
-                    } else {
-                        relPaths.push_back(itemsToSplit[idx]->relativePath);
-                        absPaths.push_back(itemsToSplit[idx]->absolutePath);
-                    }
+                    std::filesystem::path src = makeLongPath(utf8Path(absItem));
+                    std::filesystem::path dest = makeLongPath(volDestDir / utf8Path(relItem));
                     
-                    logNotify("Organizing item: " + itemsToSplit[idx]->relativePath, 0);
-                    for (size_t i = 0; i < relPaths.size(); ++i) {
-                        const auto& relItem = relPaths[i];
-                        const auto& absItem = absPaths[i];
-                        
-                        std::filesystem::path src = makeLongPath(utf8Path(absItem));
-                        std::filesystem::path dest = makeLongPath(volDestDir / utf8Path(relItem));
-                        
-                        try {
-                            std::filesystem::create_directories(dest.parent_path());
-                            if (std::filesystem::exists(src)) {
-                                if (createSymlinks) {
-                                    bool isDir = std::filesystem::is_directory(src);
-                                    if (std::filesystem::exists(dest)) {
-                                        std::filesystem::remove_all(dest);
-                                    }
-                                    if (!createPlatformSymlink(toUtf8Str(src), toUtf8Str(dest), isDir)) {
-                                        logNotify("Failed to create symlink for " + relItem + " (retrying with copy)", 2);
-                                        if (isDir) {
-                                            std::filesystem::copy(src, dest, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
-                                        } else {
-                                            std::filesystem::copy_file(src, dest, std::filesystem::copy_options::overwrite_existing);
-                                        }
-                                    }
-                                } else if (moveFiles) {
-                                    if (std::filesystem::is_directory(src)) {
+                    try {
+                        std::filesystem::create_directories(dest.parent_path());
+                        if (std::filesystem::exists(src)) {
+                            if (createSymlinks) {
+                                bool isDir = std::filesystem::is_directory(src);
+                                if (std::filesystem::exists(dest)) {
+                                    std::filesystem::remove_all(dest);
+                                }
+                                if (!createPlatformSymlink(toUtf8Str(src), toUtf8Str(dest), isDir)) {
+                                    logNotify("Failed to create symlink for " + relItem + " (retrying with copy)", 2);
+                                    if (isDir) {
                                         std::filesystem::copy(src, dest, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
-                                        std::filesystem::remove_all(src);
                                     } else {
                                         std::filesystem::copy_file(src, dest, std::filesystem::copy_options::overwrite_existing);
-                                        std::filesystem::remove(src);
                                     }
                                 }
+                            } else if (moveFiles) {
+                                if (std::filesystem::is_directory(src)) {
+                                    std::filesystem::copy(src, dest, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+                                    std::filesystem::remove_all(src);
+                                } else {
+                                    std::filesystem::copy_file(src, dest, std::filesystem::copy_options::overwrite_existing);
+                                    std::filesystem::remove(src);
+                                }
+                            } else { // Copy files
+                                if (std::filesystem::is_directory(src)) {
+                                    std::filesystem::copy(src, dest, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+                                } else {
+                                    std::filesystem::copy_file(src, dest, std::filesystem::copy_options::overwrite_existing);
+                                }
                             }
+                        }
                         } catch (const std::exception& e) {
                             logNotify("Failed to organize " + relItem + ": " + e.what(), 2);
                         }
@@ -980,7 +1005,6 @@ void BttbSolver::run() {
                         }
                     }
                 }
-            }
             if (enablePar3) {
                 logNotify("Generating PAR3 parity files for Volume " + std::to_string(volumeIndex) + "...", 3);
                 std::string parBaseName = spanMultipleVolumes ? ("Volume_" + std::to_string(volumeIndex)) : "Volume";
@@ -1019,7 +1043,7 @@ void BttbSolver::run() {
     if (testOnlyMode) {
         logNotify("--- TEST SIMULATION COMPLETE ---", 3);
         logNotify("No files were copied, symlinked, or moved on disk.", 1);
-    } else if ((moveFiles || createSymlinks) && !targetDirectory.empty()) {
+    } else if (!targetDirectory.empty()) {
         logNotify("Completed file organization.", 1);
 
         // JSON Index File Creation
