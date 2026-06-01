@@ -1,7 +1,7 @@
 libpar3 Library Attribution
 ===========================
 
-This folder contains the libpar3 library (Cauchy Reed-Solomon parity creator, verifier, and restorer), which is an integral component of Burn to the Brim v4.2.0.
+This folder contains the libpar3 library (Cauchy Reed-Solomon parity creator, verifier, and restorer), which is an integral component of Burn to the Brim v4.2.1.
 
 [ Main author ]
 https://github.com/Parchive/par3cmdline

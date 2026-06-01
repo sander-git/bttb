@@ -1,9 +1,23 @@
+!ifndef VERSION
+  !define VERSION "4.2.1"
+!endif
+!ifndef SUFFIX
+  !define SUFFIX ""
+!endif
+!ifndef COMPAT
+  !define EXE_FILE "bttb_win32.exe"
+  !define APP_NAME "Burn to the Brim"
+!else
+  !define EXE_FILE "bttb_win32_compat.exe"
+  !define APP_NAME "Burn to the Brim (Compat)"
+!endif
+
 Unicode true
 
 !include "MUI2.nsh"
 
-Name "Burn to the Brim 4.2.0"
-OutFile "../build/bttb-cpp-4.2.0-Win64-Installer.exe"
+Name "${APP_NAME} ${VERSION}"
+OutFile "../build/bttb-cpp-${VERSION}-Win64${SUFFIX}-Installer.exe"
 InstallDir "$LOCALAPPDATA\BurnToTheBrim"
 InstallDirRegKey HKCU "Software\BurnToTheBrim" "InstallDir"
 
@@ -31,7 +45,7 @@ Section "Burn to the Brim (Required)" SecCore
   SectionIn RO
   SetOutPath "$INSTDIR"
   
-  File "../build/bttb_win32.exe"
+  File "../build/${EXE_FILE}"
   File "../LICENSE"
   File "../README.md"
   
@@ -41,10 +55,10 @@ Section "Burn to the Brim (Required)" SecCore
   
   WriteRegStr HKCU "Software\BurnToTheBrim" "InstallDir" "$INSTDIR"
   
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "DisplayName" "Burn to the Brim"
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "DisplayIcon" "$INSTDIR\bttb_win32.exe,0"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "DisplayName" "${APP_NAME}"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "DisplayIcon" "$INSTDIR\${EXE_FILE},0"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "UninstallString" '"$INSTDIR\uninstall.exe"'
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "DisplayVersion" "4.2.0"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "DisplayVersion" "${VERSION}"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "Publisher" "BurnToTheBrim Team"
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "NoModify" 1
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB" "NoRepair" 1
@@ -53,17 +67,17 @@ Section "Burn to the Brim (Required)" SecCore
 SectionEnd
 
 Section "Start Menu Shortcuts" SecShortcuts
-  CreateDirectory "$SMPROGRAMS\Burn to the Brim"
-  CreateShortcut "$SMPROGRAMS\Burn to the Brim\Burn to the Brim.lnk" "$INSTDIR\bttb_win32.exe" "" "$INSTDIR\bttb_win32.exe" 0
-  CreateShortcut "$SMPROGRAMS\Burn to the Brim\Uninstall Burn to the Brim.lnk" "$INSTDIR\uninstall.exe"
+  CreateDirectory "$SMPROGRAMS\${APP_NAME}"
+  CreateShortcut "$SMPROGRAMS\${APP_NAME}\${APP_NAME}.lnk" "$INSTDIR\${EXE_FILE}" "" "$INSTDIR\${EXE_FILE}" 0
+  CreateShortcut "$SMPROGRAMS\${APP_NAME}\Uninstall ${APP_NAME}.lnk" "$INSTDIR\uninstall.exe"
 SectionEnd
 
 Section "Desktop Shortcut" SecDesktop
-  CreateShortcut "$DESKTOP\Burn to the Brim.lnk" "$INSTDIR\bttb_win32.exe" "" "$INSTDIR\bttb_win32.exe" 0
+  CreateShortcut "$DESKTOP\${APP_NAME}.lnk" "$INSTDIR\${EXE_FILE}" "" "$INSTDIR\${EXE_FILE}" 0
 SectionEnd
 
 Section "Uninstall"
-  Delete "$INSTDIR\bttb_win32.exe"
+  Delete "$INSTDIR\${EXE_FILE}"
   Delete "$INSTDIR\LICENSE"
   Delete "$INSTDIR\README.md"
   Delete "$INSTDIR\src\bttb_embed.py"
@@ -72,11 +86,11 @@ Section "Uninstall"
   RMDir "$INSTDIR\src"
   RMDir "$INSTDIR"
   
-  Delete "$SMPROGRAMS\Burn to the Brim\Burn to the Brim.lnk"
-  Delete "$SMPROGRAMS\Burn to the Brim\Uninstall Burn to the Brim.lnk"
-  RMDir "$SMPROGRAMS\Burn to the Brim"
+  Delete "$SMPROGRAMS\${APP_NAME}\${APP_NAME}.lnk"
+  Delete "$SMPROGRAMS\${APP_NAME}\Uninstall ${APP_NAME}.lnk"
+  RMDir "$SMPROGRAMS\${APP_NAME}"
   
-  Delete "$DESKTOP\Burn to the Brim.lnk"
+  Delete "$DESKTOP\${APP_NAME}.lnk"
   
   DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\BTTB"
   DeleteRegKey HKCU "Software\BurnToTheBrim"

@@ -12,6 +12,15 @@ Do not include this file directly. Include "platform.h" instead. */
 #include <sys/stat.h>  /* struct _stat etc. */
 #include <sys/utime.h>  /* _utime(), struct _utimbuf*/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+int win32_stat64(const char *path, struct _stat64 *st);
+#ifdef __cplusplus
+}
+#endif
+#define _stat64(path, st) win32_stat64(path, st)
+
 #ifndef S_ISDIR
 // _S_IFDIR = 0x4000
 #define S_ISDIR(m) (((m) & _S_IFMT) == _S_IFDIR)

@@ -1486,7 +1486,7 @@ bool createVolumePar3(const std::string& volumePath, const std::string& parBaseN
     strncpy(par3_ctx->par_filename, parFile.c_str(), sizeof(par3_ctx->par_filename) - 1);
     
     // Add Creator Text
-    add_creator_text(par3_ctx, (char*)"Burn to the Brim 4.2.0 libpar3 integration\n");
+    add_creator_text(par3_ctx, (char*)"Burn to the Brim 4.2.1 libpar3 integration\n");
     
     // Search input files recursively
     int ret = path_search(par3_ctx, (char*)"*", 'R');

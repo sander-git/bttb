@@ -6,7 +6,7 @@ import glob
 
 base_dir = "/home/sander/src/antigravity/project1/bttb_cpp"
 build_dir = os.path.join(base_dir, "build")
-version = "4.2.0"
+version = "4.2.1"
 
 os.makedirs(build_dir, exist_ok=True)
 
@@ -16,7 +16,11 @@ subprocess.run(["cmake", "-DCMAKE_BUILD_TYPE=Release", ".."], cwd=build_dir, che
 subprocess.run(["make", "-j", "4"], cwd=build_dir, check=True)
 subprocess.run(["make", "package"], cwd=build_dir, check=True)
 
-# 2. Cross-compile Windows GUI binary
+# 2. Compile Windows Resource File
+print("Compiling Windows Resource File with windres...")
+subprocess.run(["x86_64-w64-mingw32-windres", "src/bttb.rc", "-o", "src/bttb_rc.o"], cwd=base_dir, check=True)
+
+# 3. Cross-compile Windows GUI binaries
 print("Cross-compiling Windows Win32 Native binary with exploit mitigations...")
 
 c_compiler = "x86_64-w64-mingw32-gcc"
@@ -38,14 +42,15 @@ c_sources = glob.glob("src/libpar3/*.c") + [
     "src/blake3/blake3_avx512.c"
 ]
 
-cpp_sources = [
+common_cpp_sources = [
     "src/main_win32.cpp",
     "src/bttb_logic.cpp"
-] + glob.glob("src/leopard/*.cpp")
+]
 
-obj_files = []
+leopard_sources = glob.glob("src/leopard/*.cpp")
 
-# Compile C files
+# Compile C files (shared between both builds)
+c_obj_files = []
 for src in c_sources:
     flat_name = src.replace("/", "_").replace("\\", "_").replace(".c", ".o")
     obj_path = os.path.join(build_dir, flat_name)
@@ -61,38 +66,73 @@ for src in c_sources:
         cmd.append("-mavx512vl")
     cmd += ["-c", src, "-o", obj_path]
     subprocess.run(cmd, cwd=base_dir, check=True)
-    obj_files.append(obj_path)
+    c_obj_files.append(obj_path)
 
-# Compile C++ files
-for src in cpp_sources:
+# Compile common C++ files (shared between both builds)
+common_cpp_obj_files = []
+for src in common_cpp_sources:
     flat_name = src.replace("/", "_").replace("\\", "_").replace(".cpp", ".o")
     obj_path = os.path.join(build_dir, flat_name)
     print(f"Compiling C++ file: {src} -> {obj_path}")
     cmd = [cpp_compiler, "-std=c++20"] + common_flags
-    if "src/leopard" in src:
-        if "-mssse3" in cmd:
-            cmd.remove("-mssse3")
-        cmd.append("-mavx2")
     cmd += ["-c", src, "-o", obj_path]
     subprocess.run(cmd, cwd=base_dir, check=True)
-    obj_files.append(obj_path)
+    common_cpp_obj_files.append(obj_path)
 
-# Link everything
-print("Linking objects to build/bttb_win32.exe...")
-link_cmd = [
+# Compile Leopard C++ files with AVX2 (-mavx2) for Native build
+leopard_avx2_obj_files = []
+for src in leopard_sources:
+    flat_name = src.replace("/", "_").replace("\\", "_").replace(".cpp", "_avx2.o")
+    obj_path = os.path.join(build_dir, flat_name)
+    print(f"Compiling C++ file (AVX2): {src} -> {obj_path}")
+    cmd = [cpp_compiler, "-std=c++20"] + [f for f in common_flags if f != "-mssse3"] + ["-mavx2"]
+    cmd += ["-c", src, "-o", obj_path]
+    subprocess.run(cmd, cwd=base_dir, check=True)
+    leopard_avx2_obj_files.append(obj_path)
+
+# Compile Leopard C++ files with SSSE3 (-mssse3) for Compat build
+leopard_compat_obj_files = []
+for src in leopard_sources:
+    flat_name = src.replace("/", "_").replace("\\", "_").replace(".cpp", "_compat.o")
+    obj_path = os.path.join(build_dir, flat_name)
+    print(f"Compiling C++ file (Compat): {src} -> {obj_path}")
+    cmd = [cpp_compiler, "-std=c++20"] + common_flags
+    cmd += ["-c", src, "-o", obj_path]
+    subprocess.run(cmd, cwd=base_dir, check=True)
+    leopard_compat_obj_files.append(obj_path)
+
+# Link Native AVX2 executable
+print("Linking objects to build/bttb_win32.exe (Native AVX2)...")
+link_avx2_cmd = [
     cpp_compiler, "-static", "-mwindows"
-] + obj_files + [
+] + c_obj_files + common_cpp_obj_files + leopard_avx2_obj_files + [
     "src/bttb_rc.o",
     "-lcomctl32", "-lshell32", "-lole32", "-lcomdlg32", "-ldwmapi", "-luxtheme",
     "-Wl,--dynamicbase", "-Wl,--nxcompat", "-Wl,--high-entropy-va",
     "-o", "build/bttb_win32.exe"
 ]
-subprocess.run(link_cmd, cwd=base_dir, check=True)
+subprocess.run(link_avx2_cmd, cwd=base_dir, check=True)
 
-print("Stripping debug symbols from Windows binary to eliminate Defender ML false positives...")
+# Link Compat SSSE3 executable
+print("Linking objects to build/bttb_win32_compat.exe (Compat SSSE3)...")
+link_compat_cmd = [
+    cpp_compiler, "-static", "-mwindows"
+] + c_obj_files + common_cpp_obj_files + leopard_compat_obj_files + [
+    "src/bttb_rc.o",
+    "-lcomctl32", "-lshell32", "-lole32", "-lcomdlg32", "-ldwmapi", "-luxtheme",
+    "-Wl,--dynamicbase", "-Wl,--nxcompat", "-Wl,--high-entropy-va",
+    "-o", "build/bttb_win32_compat.exe"
+]
+subprocess.run(link_compat_cmd, cwd=base_dir, check=True)
+
+# Strip debug symbols
+print("Stripping debug symbols from Windows binaries to eliminate Defender ML false positives...")
 subprocess.run(["x86_64-w64-mingw32-strip", "build/bttb_win32.exe"], cwd=base_dir, check=True)
+subprocess.run(["x86_64-w64-mingw32-strip", "build/bttb_win32_compat.exe"], cwd=base_dir, check=True)
 
-# 3. Create Linux GTK4 release ZIP
+# 4. Create release ZIPs
+
+# 4.1 Linux GTK4 ZIP
 linux_zip_name = f"bttb-cpp-{version}-Linux-GTK4"
 linux_zip_path = os.path.join(build_dir, f"{linux_zip_name}.zip")
 print(f"Creating {linux_zip_path}...")
@@ -102,7 +142,7 @@ with zipfile.ZipFile(linux_zip_path, 'w', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(base_dir, "README.md"), os.path.join(linux_zip_name, "README.md"))
     z.write(os.path.join(base_dir, "src/bttb_embed.py"), os.path.join(linux_zip_name, "src/bttb_embed.py"))
 
-# 4. Create Windows Win32 Native GUI release ZIP
+# 4.2 Windows Win32 Native GUI release ZIP (AVX2)
 win_zip_name = f"bttb-cpp-{version}-Win64-Native-GUI"
 win_zip_path = os.path.join(build_dir, f"{win_zip_name}.zip")
 print(f"Creating {win_zip_path}...")
@@ -112,9 +152,22 @@ with zipfile.ZipFile(win_zip_path, 'w', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(base_dir, "README.md"), os.path.join(win_zip_name, "README.md"))
     z.write(os.path.join(base_dir, "src/bttb_embed.py"), os.path.join(win_zip_name, "src/bttb_embed.py"))
 
-# 5. Compile Windows Installer using makensis
-print("Compiling Windows Setup Installer via NSIS makensis...")
-subprocess.run(["makensis", "scratch/bttb_installer.nsi"], cwd=base_dir, check=True)
+# 4.3 Windows Win32 Compat GUI release ZIP (SSSE3)
+win_compat_zip_name = f"bttb-cpp-{version}-Win64-Compat-GUI"
+win_compat_zip_path = os.path.join(build_dir, f"{win_compat_zip_name}.zip")
+print(f"Creating {win_compat_zip_path}...")
+with zipfile.ZipFile(win_compat_zip_path, 'w', zipfile.ZIP_DEFLATED) as z:
+    z.write(os.path.join(build_dir, "bttb_win32_compat.exe"), os.path.join(win_compat_zip_name, "bttb_win32_compat.exe"))
+    z.write(os.path.join(base_dir, "LICENSE"), os.path.join(win_compat_zip_name, "LICENSE"))
+    z.write(os.path.join(base_dir, "README.md"), os.path.join(win_compat_zip_name, "README.md"))
+    z.write(os.path.join(base_dir, "src/bttb_embed.py"), os.path.join(win_compat_zip_name, "src/bttb_embed.py"))
+
+# 5. Compile Setup Installers via NSIS
+print("Compiling Windows Native Setup Installer via NSIS makensis...")
+subprocess.run(["makensis", "-DVERSION=" + version, "scratch/bttb_installer.nsi"], cwd=base_dir, check=True)
+
+print("Compiling Windows Compat Setup Installer via NSIS makensis...")
+subprocess.run(["makensis", "-DVERSION=" + version, "-DSUFFIX=-Compat", "-DCOMPAT=1", "scratch/bttb_installer.nsi"], cwd=base_dir, check=True)
 
 # 6. Create Unified Source ZIP
 source_zip_name = f"bttb-cpp-{version}-source-unified"
