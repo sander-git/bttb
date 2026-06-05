@@ -124,3 +124,6 @@ To build the native GTK 4 Windows GUI from source:
 ## License
 
 This program is free software; you can redistribute it and/or modify it under the terms of the **GNU General Public License as published by the Free Software Foundation; version 2 of the License** (GPLv2). See the accompanying [LICENSE](LICENSE) file for the full terms.
+
+https://bttb.sourceforge.net
+https://github.com/sander-git/bttb
