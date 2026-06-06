@@ -26,7 +26,7 @@ int rs8_gaussian_elimination(PAR3_CTX *par3_ctx, int lost_count)
 	lost_id = recv_id + lost_count;
 
 	// Allocate matrix on memory
-	matrix = malloc(block_count * lost_count);
+	matrix = malloc((size_t)block_count * lost_count);
 	if (matrix == NULL){
 		printf("Failed to allocate memory for matrix\n");
 		return RET_MEMORY_ERROR;
@@ -131,7 +131,7 @@ int rs8_invert_matrix_cauchy(PAR3_CTX *par3_ctx, int lost_count)
 	lost_id = recv_id + lost_count;
 
 	// Allocate matrix on memory
-	matrix = malloc(block_count * lost_count);
+	matrix = malloc((size_t)block_count * lost_count);
 	if (matrix == NULL){
 		printf("Failed to allocate memory for matrix\n");
 		return RET_MEMORY_ERROR;

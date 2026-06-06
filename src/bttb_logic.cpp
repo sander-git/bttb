@@ -1100,9 +1100,9 @@ double BttbSolver::computeCosineSimilarity(const std::vector<float>& a, const st
     if (a.size() != b.size() || a.empty()) return 0.0;
     double dot = 0.0, norm_a = 0.0, norm_b = 0.0;
     for (size_t i = 0; i < a.size(); ++i) {
-        dot += a[i] * b[i];
-        norm_a += a[i] * a[i];
-        norm_b += b[i] * b[i];
+        dot += static_cast<double>(a[i]) * static_cast<double>(b[i]);
+        norm_a += static_cast<double>(a[i]) * static_cast<double>(a[i]);
+        norm_b += static_cast<double>(b[i]) * static_cast<double>(b[i]);
     }
     if (norm_a > 1e-9 && norm_b > 1e-9) {
         return dot / (std::sqrt(norm_a) * std::sqrt(norm_b));

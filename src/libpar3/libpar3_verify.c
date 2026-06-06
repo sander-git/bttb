@@ -142,7 +142,7 @@ int par3_verify(PAR3_CTX *par3_ctx)
 		if (bad_dir_count > 0){
 			printf("%u directories are different.\n", bad_dir_count);
 		}
-		if (par3_ctx->input_dir_count - missing_dir_count - bad_dir_count > 0){
+		if (par3_ctx->input_dir_count > missing_dir_count + bad_dir_count){
 			printf("%u directories are ok.\n", par3_ctx->input_dir_count - missing_dir_count - bad_dir_count);
 		}
 		if (misnamed_file_count > 0){
@@ -157,7 +157,7 @@ int par3_verify(PAR3_CTX *par3_ctx)
 		if (bad_file_count > 0){
 			printf("%u files are different.\n", bad_file_count);
 		}
-		if (par3_ctx->input_file_count - missing_file_count - damaged_file_count - misnamed_file_count - bad_file_count > 0){
+		if (par3_ctx->input_file_count > missing_file_count + damaged_file_count + misnamed_file_count + bad_file_count){
 			printf("%u files are ok.\n", par3_ctx->input_file_count - missing_file_count - damaged_file_count - misnamed_file_count - bad_file_count);
 		}
 		if (missing_file_count + damaged_file_count > 0){
@@ -313,7 +313,7 @@ int par3_repair(PAR3_CTX *par3_ctx, char *temp_path)
 		if (bad_dir_count > 0){
 			printf("%u directories are different.\n", bad_dir_count);
 		}
-		if (par3_ctx->input_dir_count - missing_dir_count - bad_dir_count > 0){
+		if (par3_ctx->input_dir_count > missing_dir_count + bad_dir_count){
 			printf("%u directories are ok.\n", par3_ctx->input_dir_count - missing_dir_count - bad_dir_count);
 		}
 		if (misnamed_file_count > 0){
@@ -328,7 +328,7 @@ int par3_repair(PAR3_CTX *par3_ctx, char *temp_path)
 		if (bad_file_count > 0){
 			printf("%u files are different.\n", bad_file_count);
 		}
-		if (par3_ctx->input_file_count - missing_file_count - damaged_file_count - misnamed_file_count - bad_file_count > 0){
+		if (par3_ctx->input_file_count > missing_file_count + damaged_file_count + misnamed_file_count + bad_file_count){
 			printf("%u files are ok.\n", par3_ctx->input_file_count - missing_file_count - damaged_file_count - misnamed_file_count - bad_file_count);
 		}
 		if (missing_file_count + damaged_file_count > 0){

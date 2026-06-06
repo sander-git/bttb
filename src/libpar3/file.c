@@ -1,4 +1,10 @@
 #include "libpar3.h"
+#ifndef _WIN32
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <unistd.h>
+#endif
 
 #include <inttypes.h>
 #include <stdio.h>
@@ -429,9 +435,21 @@ static int reset_file_system_info(PAR3_CTX *par3_ctx, uint8_t *checksum, char *f
 
 		if (memcmp(packet_checksum, checksum, 16) == 0){
 			//printf("packet_size = %"PRIu64"\n", packet_size);
+#ifndef _WIN32
+			int fd = open(file_name, O_RDONLY);
+			if (fd < 0) {
+				fd = open(file_name, O_WRONLY);
+			}
+#endif
+
 			if (memcmp(packet_type, "PAR UNX\0", 8) == 0){	// UNIX Permissions Packet
 				// Recover infomation, only when scuucess.
-				if (_stat64(file_name, &stat_buf) == 0){
+#ifndef _WIN32
+				int stat_ok = (fd >= 0) ? (fstat(fd, &stat_buf) == 0) : (_stat64(file_name, &stat_buf) == 0);
+#else
+				int stat_ok = (_stat64(file_name, &stat_buf) == 0);
+#endif
+				if (stat_ok){
 					//printf("i_mode = 0x%04x ", stat_buf.st_mode);
 					//printf("mtime = %s", _ctime64(&(stat_buf.st_mtime)));
 
@@ -445,16 +463,44 @@ static int reset_file_system_info(PAR3_CTX *par3_ctx, uint8_t *checksum, char *f
 
 									// When there is no write permission, set temporary.
 									if ((stat_buf.st_mode & _S_IWRITE) == 0){
+#ifndef _WIN32
+										if (fd >= 0) {
+											if (fchmod(fd, stat_buf.st_mode | _S_IWRITE) == 0) {
+												stat_buf.st_mode |= _S_IWRITE;
+											}
+										} else {
+											if (_chmod(file_name, stat_buf.st_mode | _S_IWRITE) == 0){
+												stat_buf.st_mode |= _S_IWRITE;
+											}
+										}
+#else
 										if (_chmod(file_name, stat_buf.st_mode | _S_IWRITE) == 0){
 											stat_buf.st_mode |= _S_IWRITE;
 										}
+#endif
 									}
 
 									// After get write permission, change timestamp.
 									ut.actime = stat_buf.st_atime;	// Reuse current atime
 									ut.modtime = item_value8;		// Recover to stored mtime
+#ifndef _WIN32
+									int utime_ok;
+									if (fd >= 0) {
+										struct timeval tv[2];
+										tv[0].tv_sec = stat_buf.st_atime;
+										tv[0].tv_usec = 0;
+										tv[1].tv_sec = item_value8;
+										tv[1].tv_usec = 0;
+										utime_ok = (futimes(fd, tv) == 0);
+									} else {
+										utime_ok = (_utime(file_name, &ut) == 0);
+									}
+									if (!utime_ok)
+										ret |= 0x10000;	// Failed to reset timestamp
+#else
 									if (_utime(file_name, &ut) != 0)
 										ret |= 0x10000;	// Failed to reset timestamp
+#endif
 									// Caution ! this cannot modify directory on Windows OS.
 								}
 							}
@@ -465,8 +511,19 @@ static int reset_file_system_info(PAR3_CTX *par3_ctx, uint8_t *checksum, char *f
 							if ((item_value4 & 0xF000) == 0){	// i_mode must be 12-bit value.
 								if (item_value4 != (stat_buf.st_mode & 0x0FFF)){	// Permission is different.
 									//printf("i_mode = 0x%04x, 0x%04x\n", item_value4, stat_buf.st_mode & 0x0FFF);
+#ifndef _WIN32
+									int chmod_ok;
+									if (fd >= 0) {
+										chmod_ok = (fchmod(fd, item_value4) == 0);
+									} else {
+										chmod_ok = (_chmod(file_name, item_value4) == 0);
+									}
+									if (!chmod_ok)
+										ret |= 0x20000;	// Failed to reset permissions
+#else
 									if (_chmod(file_name, item_value4) != 0)
 										ret |= 0x20000;	// Failed to reset permissions
+#endif
 								}
 							}
 						}
@@ -475,7 +532,12 @@ static int reset_file_system_info(PAR3_CTX *par3_ctx, uint8_t *checksum, char *f
 
 			} else if (memcmp(packet_type, "PAR FAT\0", 8) == 0){	// FAT Permissions Packet
 				// Recover infomation, only when scuucess.
-				if (_stat64(file_name, &stat_buf) == 0){
+#ifndef _WIN32
+				int stat_ok = (fd >= 0) ? (fstat(fd, &stat_buf) == 0) : (_stat64(file_name, &stat_buf) == 0);
+#else
+				int stat_ok = (_stat64(file_name, &stat_buf) == 0);
+#endif
+				if (stat_ok){
 					//printf("mtime = %s", _ctime64(&(stat_buf.st_mtime)));
 
 					if (par3_ctx->file_system & 0x10000){	// LastWriteTimestamp
@@ -488,14 +550,36 @@ static int reset_file_system_info(PAR3_CTX *par3_ctx, uint8_t *checksum, char *f
 
 								ut.actime = stat_buf.st_atime;	// Reuse current atime
 								ut.modtime = item_value8;		// Recover to stored mtime
+#ifndef _WIN32
+								int utime_ok;
+								if (fd >= 0) {
+									struct timeval tv[2];
+									tv[0].tv_sec = stat_buf.st_atime;
+									tv[0].tv_usec = 0;
+									tv[1].tv_sec = item_value8;
+									tv[1].tv_usec = 0;
+									utime_ok = (futimes(fd, tv) == 0);
+								} else {
+									utime_ok = (_utime(file_name, &ut) == 0);
+								}
+								if (!utime_ok)
+									ret |= 0x10000;	// Failed to reset timestamp
+#else
 								if (_utime(file_name, &ut) != 0)
 									ret |= 0x10000;	// Failed to reset timestamp
+#endif
 								// Caution ! UNIX time is low resolution than Windows FILETIME.
 							}
 						}
 					}
 				}
 			}
+
+#ifndef _WIN32
+			if (fd >= 0) {
+				close(fd);
+			}
+#endif
 		}
 
 		offset += packet_size;

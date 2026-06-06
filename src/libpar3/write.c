@@ -390,7 +390,7 @@ static int write_data_packet(PAR3_CTX *par3_ctx, char *file_name, uint64_t each_
 		write_size2 = 0;
 		packet_to = packet_count * (num - each_start + 1) / each_count;
 		//printf("write from %zu to %zu\n", packet_from, packet_to);
-		while (packet_to - packet_from > 0){
+		while (packet_to > packet_from){
 			// Read packet size of each packet from packet_offset, and add them.
 			memcpy(&packet_size, common_packet + packet_offset + write_size + 24, 8);
 			write_size += packet_size;
@@ -398,7 +398,7 @@ static int write_data_packet(PAR3_CTX *par3_ctx, char *file_name, uint64_t each_
 			if (packet_offset + write_size >= common_packet_size)
 				break;
 		}
-		while (packet_to - packet_from > 0){
+		while (packet_to > packet_from){
 			// Read packet size of each packet from the first, and add them.
 			memcpy(&packet_size, common_packet + write_size2 + 24, 8);
 			write_size2 += packet_size;
@@ -743,7 +743,7 @@ static int write_recovery_packet(PAR3_CTX *par3_ctx, char *file_name, uint64_t e
 		write_size2 = 0;
 		packet_to = packet_count * (num - each_start + 1) / each_count;
 		//printf("write from %zu to %zu\n", packet_from, packet_to);
-		while (packet_to - packet_from > 0){
+		while (packet_to > packet_from){
 			// Read packet size of each packet from packet_offset, and add them.
 			memcpy(&packet_size, common_packet + packet_offset + write_size + 24, 8);
 			write_size += packet_size;
@@ -751,7 +751,7 @@ static int write_recovery_packet(PAR3_CTX *par3_ctx, char *file_name, uint64_t e
 			if (packet_offset + write_size >= common_packet_size)
 				break;
 		}
-		while (packet_to - packet_from > 0){
+		while (packet_to > packet_from){
 			// Read packet size of each packet from the first, and add them.
 			memcpy(&packet_size, common_packet + write_size2 + 24, 8);
 			write_size2 += packet_size;
