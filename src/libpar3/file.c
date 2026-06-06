@@ -445,7 +445,7 @@ static int reset_file_system_info(PAR3_CTX *par3_ctx, uint8_t *checksum, char *f
 			if (memcmp(packet_type, "PAR UNX\0", 8) == 0){	// UNIX Permissions Packet
 				// Recover infomation, only when scuucess.
 #ifndef _WIN32
-				int stat_ok = (fd >= 0) ? (fstat(fd, &stat_buf) == 0) : (_stat64(file_name, &stat_buf) == 0);
+				int stat_ok = (fd >= 0 && fstat(fd, &stat_buf) == 0);
 #else
 				int stat_ok = (_stat64(file_name, &stat_buf) == 0);
 #endif
@@ -464,14 +464,8 @@ static int reset_file_system_info(PAR3_CTX *par3_ctx, uint8_t *checksum, char *f
 									// When there is no write permission, set temporary.
 									if ((stat_buf.st_mode & _S_IWRITE) == 0){
 #ifndef _WIN32
-										if (fd >= 0) {
-											if (fchmod(fd, stat_buf.st_mode | _S_IWRITE) == 0) {
-												stat_buf.st_mode |= _S_IWRITE;
-											}
-										} else {
-											if (_chmod(file_name, stat_buf.st_mode | _S_IWRITE) == 0){
-												stat_buf.st_mode |= _S_IWRITE;
-											}
+										if (fchmod(fd, stat_buf.st_mode | _S_IWRITE) == 0) {
+											stat_buf.st_mode |= _S_IWRITE;
 										}
 #else
 										if (_chmod(file_name, stat_buf.st_mode | _S_IWRITE) == 0){
@@ -484,18 +478,12 @@ static int reset_file_system_info(PAR3_CTX *par3_ctx, uint8_t *checksum, char *f
 									ut.actime = stat_buf.st_atime;	// Reuse current atime
 									ut.modtime = item_value8;		// Recover to stored mtime
 #ifndef _WIN32
-									int utime_ok;
-									if (fd >= 0) {
-										struct timeval tv[2];
-										tv[0].tv_sec = stat_buf.st_atime;
-										tv[0].tv_usec = 0;
-										tv[1].tv_sec = item_value8;
-										tv[1].tv_usec = 0;
-										utime_ok = (futimes(fd, tv) == 0);
-									} else {
-										utime_ok = (_utime(file_name, &ut) == 0);
-									}
-									if (!utime_ok)
+									struct timeval tv[2];
+									tv[0].tv_sec = stat_buf.st_atime;
+									tv[0].tv_usec = 0;
+									tv[1].tv_sec = item_value8;
+									tv[1].tv_usec = 0;
+									if (futimes(fd, tv) != 0)
 										ret |= 0x10000;	// Failed to reset timestamp
 #else
 									if (_utime(file_name, &ut) != 0)
@@ -512,13 +500,7 @@ static int reset_file_system_info(PAR3_CTX *par3_ctx, uint8_t *checksum, char *f
 								if (item_value4 != (stat_buf.st_mode & 0x0FFF)){	// Permission is different.
 									//printf("i_mode = 0x%04x, 0x%04x\n", item_value4, stat_buf.st_mode & 0x0FFF);
 #ifndef _WIN32
-									int chmod_ok;
-									if (fd >= 0) {
-										chmod_ok = (fchmod(fd, item_value4) == 0);
-									} else {
-										chmod_ok = (_chmod(file_name, item_value4) == 0);
-									}
-									if (!chmod_ok)
+									if (fchmod(fd, item_value4) != 0)
 										ret |= 0x20000;	// Failed to reset permissions
 #else
 									if (_chmod(file_name, item_value4) != 0)
@@ -533,7 +515,7 @@ static int reset_file_system_info(PAR3_CTX *par3_ctx, uint8_t *checksum, char *f
 			} else if (memcmp(packet_type, "PAR FAT\0", 8) == 0){	// FAT Permissions Packet
 				// Recover infomation, only when scuucess.
 #ifndef _WIN32
-				int stat_ok = (fd >= 0) ? (fstat(fd, &stat_buf) == 0) : (_stat64(file_name, &stat_buf) == 0);
+				int stat_ok = (fd >= 0 && fstat(fd, &stat_buf) == 0);
 #else
 				int stat_ok = (_stat64(file_name, &stat_buf) == 0);
 #endif
@@ -551,18 +533,12 @@ static int reset_file_system_info(PAR3_CTX *par3_ctx, uint8_t *checksum, char *f
 								ut.actime = stat_buf.st_atime;	// Reuse current atime
 								ut.modtime = item_value8;		// Recover to stored mtime
 #ifndef _WIN32
-								int utime_ok;
-								if (fd >= 0) {
-									struct timeval tv[2];
-									tv[0].tv_sec = stat_buf.st_atime;
-									tv[0].tv_usec = 0;
-									tv[1].tv_sec = item_value8;
-									tv[1].tv_usec = 0;
-									utime_ok = (futimes(fd, tv) == 0);
-								} else {
-									utime_ok = (_utime(file_name, &ut) == 0);
-								}
-								if (!utime_ok)
+								struct timeval tv[2];
+								tv[0].tv_sec = stat_buf.st_atime;
+								tv[0].tv_usec = 0;
+								tv[1].tv_sec = item_value8;
+								tv[1].tv_usec = 0;
+								if (futimes(fd, tv) != 0)
 									ret |= 0x10000;	// Failed to reset timestamp
 #else
 								if (_utime(file_name, &ut) != 0)
