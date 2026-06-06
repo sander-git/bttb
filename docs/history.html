@@ -324,7 +324,37 @@
         </div>
 
         <div class="timeline">
-            
+
+            <!-- v4.3.0 -->
+            <div class="timeline-card major">
+                <div class="version-title">
+                    <span>v4.3.0 &mdash; Modular Localization, PO Translations &amp; Dynamic GUI Languages</span>
+                    <span class="version-date">June 6, 2026</span>
+                </div>
+                <ul class="changes-list">
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Modular PO Translations:</strong> Introduced a modular locale manager class parsing GNU Gettext <code>.po</code> files natively without runtime external gettext dependencies.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Multi-Language Bundles:</strong> Released default translations for German (de), Dutch (nl), French (fr), and Spanish (es) located in the <code>lang/</code> subdirectory.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type star">*</span>
+                        <div><strong>Default System Locale Detection:</strong> Automatically assumes the locale of the host machine upon first start, falling back gracefully to embedded English strings.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Dynamic Preference Combo Box:</strong> Integrated language selection dropdown comboboxes inside Settings (GTK4) and Preferences (Win32) screens to dynamically load and save configuration parameters.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type star">*</span>
+                        <div><strong>Win32 Newline Conversions:</strong> Formatted multiline tooltips and About text boxes with native CRLF conversion heuristics.</div>
+                    </li>
+                </ul>
+            </div>
+
             <!-- v4.2.0 -->
             <div class="timeline-card major">
                 <div class="version-title">

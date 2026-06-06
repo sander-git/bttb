@@ -6,7 +6,7 @@ import glob
 
 base_dir = "/home/sander/src/antigravity/project1/bttb_cpp"
 build_dir = os.path.join(base_dir, "build")
-version = "4.2.1"
+version = "4.3.0"
 
 os.makedirs(build_dir, exist_ok=True)
 
@@ -44,7 +44,8 @@ c_sources = glob.glob("src/libpar3/*.c") + [
 
 common_cpp_sources = [
     "src/main_win32.cpp",
-    "src/bttb_logic.cpp"
+    "src/bttb_logic.cpp",
+    "src/bttb_locale.cpp"
 ]
 
 leopard_sources = glob.glob("src/leopard/*.cpp")
@@ -141,6 +142,8 @@ with zipfile.ZipFile(linux_zip_path, 'w', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(base_dir, "LICENSE"), os.path.join(linux_zip_name, "LICENSE"))
     z.write(os.path.join(base_dir, "README.md"), os.path.join(linux_zip_name, "README.md"))
     z.write(os.path.join(base_dir, "src/bttb_embed.py"), os.path.join(linux_zip_name, "src/bttb_embed.py"))
+    for f in glob.glob("lang/*.po"):
+        z.write(os.path.join(base_dir, f), os.path.join(linux_zip_name, f))
 
 # 4.2 Windows Win32 Native GUI release ZIP (AVX2)
 win_zip_name = f"bttb-cpp-{version}-Win64-Native-GUI"
@@ -151,6 +154,8 @@ with zipfile.ZipFile(win_zip_path, 'w', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(base_dir, "LICENSE"), os.path.join(win_zip_name, "LICENSE"))
     z.write(os.path.join(base_dir, "README.md"), os.path.join(win_zip_name, "README.md"))
     z.write(os.path.join(base_dir, "src/bttb_embed.py"), os.path.join(win_zip_name, "src/bttb_embed.py"))
+    for f in glob.glob("lang/*.po"):
+        z.write(os.path.join(base_dir, f), os.path.join(win_zip_name, f))
 
 # 4.3 Windows Win32 Compat GUI release ZIP (SSSE3)
 win_compat_zip_name = f"bttb-cpp-{version}-Win64-Compat-GUI"
@@ -161,6 +166,8 @@ with zipfile.ZipFile(win_compat_zip_path, 'w', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(base_dir, "LICENSE"), os.path.join(win_compat_zip_name, "LICENSE"))
     z.write(os.path.join(base_dir, "README.md"), os.path.join(win_compat_zip_name, "README.md"))
     z.write(os.path.join(base_dir, "src/bttb_embed.py"), os.path.join(win_compat_zip_name, "src/bttb_embed.py"))
+    for f in glob.glob("lang/*.po"):
+        z.write(os.path.join(base_dir, f), os.path.join(win_compat_zip_name, f))
 
 # 5. Compile Setup Installers via NSIS
 print("Compiling Windows Native Setup Installer via NSIS makensis...")

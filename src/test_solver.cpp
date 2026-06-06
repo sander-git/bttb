@@ -1,4 +1,5 @@
 #include "bttb_logic.hpp"
+#include "bttb_locale.hpp"
 #include <iostream>
 #include <cassert>
 #include <filesystem>
@@ -547,10 +548,13 @@ void run_test7() {
     
     std::string test_vol = "./mock_par3_volume";
     std::string test_recovery = "./mock_par3_recovery";
+    std::string test_src_dir = "./mock_par3_src_dir";
     std::filesystem::remove_all(test_vol);
     std::filesystem::remove_all(test_recovery);
+    std::filesystem::remove_all(test_src_dir);
     
     std::filesystem::create_directories(test_vol);
+    std::filesystem::create_directories(test_src_dir);
     
     // Create multiple mock files in the volume
     std::string file1 = test_vol + "/file1.txt";
@@ -563,10 +567,16 @@ void run_test7() {
         
         std::ofstream f2(file2);
         f2 << "Another important configuration file here. Keep it safe!";
+        
+        std::ofstream f_src(test_src_dir + "/source_file.txt");
+        f_src << "This is source content inside a directory that will be symlinked. It has some text.";
     }
     
     // Create a symlink in the volume to test symlink protection support
     std::filesystem::create_symlink("file2.txt", test_vol + "/file3_sym.txt");
+    
+    // Create a directory symlink in the volume pointing to the source directory
+    std::filesystem::create_directory_symlink(std::filesystem::absolute(test_src_dir), test_vol + "/sym_dir");
     
     // 1. Create PAR3 parity files
     std::string errorMsg;
@@ -580,6 +590,14 @@ void run_test7() {
     // Check that PAR3 file exists
     assert(std::filesystem::exists(test_vol + "/Volume_1.par3"));
     std::cout << "PAR3 index file correctly created!" << std::endl;
+    
+    // Verify that NO PAR3 files were created in the source folder or CWD root
+    assert(!std::filesystem::exists(test_src_dir + "/Volume_1.par3"));
+    for (const auto& entry : std::filesystem::directory_iterator(test_src_dir)) {
+        assert(entry.path().extension() != ".par3");
+    }
+    assert(!std::filesystem::exists("./Volume_1.par3"));
+    std::cout << "Verified that no PAR3 files were created in the source folder or parent/current working directory!" << std::endl;
     
     // 2. Initial verification (should be clean)
     std::vector<std::string> damaged;
@@ -628,6 +646,7 @@ void run_test7() {
     // Cleanup
     std::filesystem::remove_all(test_vol);
     std::filesystem::remove_all(test_recovery);
+    std::filesystem::remove_all(test_src_dir);
     std::cout << "SUCCESS: PAR3 test suite completed successfully!" << std::endl;
 }
 

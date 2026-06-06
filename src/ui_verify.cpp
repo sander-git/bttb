@@ -1,4 +1,5 @@
 #include "ui_verify.hpp"
+#include "bttb_locale.hpp"
 #include <string>
 #include <vector>
 #include <thread>
@@ -46,48 +47,48 @@ static gboolean append_verify_log_idle(gpointer data) {
 
 static void run_verify_or_restore(VerifyDialogData* data, std::string volume_path, std::string dest_path, std::string par_base, bool is_restore) {
     if (is_restore) {
-        g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), "Starting volume restoration/repair...\n"});
-        g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), "Volume path: " + volume_path + "\n"});
-        g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), "Recovery path: " + dest_path + "\n"});
-        g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), "PAR3 base name: " + par_base + "\n"});
-        g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), "Copying volume contents and running repair. Please wait...\n"});
+        g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), _T("log_start_restore", "Starting volume restoration/repair...\n")});
+        g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), _T("log_volume_path", "Volume path: ") + volume_path + "\n"});
+        g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), _T("log_recovery_path", "Recovery path: ") + dest_path + "\n"});
+        g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), _T("log_par3_base", "PAR3 base name: ") + par_base + "\n"});
+        g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), _T("log_copying_repair", "Copying volume contents and running repair. Please wait...\n")});
         
         std::string logOutput;
         bool res = restoreVolumePar3(volume_path, dest_path, par_base, logOutput);
         
         if (!logOutput.empty()) {
-            g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), "Logs/Errors: " + logOutput + "\n"});
+            g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), _T("log_errors", "Logs/Errors: ") + logOutput + "\n"});
         }
         
         if (res) {
-            g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), "\nSUCCESS: Volume successfully copied and repaired in separate recovery folder!\n"});
+            g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), _T("log_success_restore", "\nSUCCESS: Volume successfully copied and repaired in separate recovery folder!\n")});
         } else {
-            g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), "\nFAILURE: Restoration or repair failed.\n"});
+            g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), _T("log_fail_restore", "\nFAILURE: Restoration or repair failed.\n")});
         }
     } else {
-        g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), "Starting volume verification...\n"});
-        g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), "Volume path: " + volume_path + "\n"});
-        g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), "PAR3 base name: " + par_base + "\n"});
+        g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), _T("log_start_verify", "Starting volume verification...\n")});
+        g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), _T("log_volume_path", "Volume path: ") + volume_path + "\n"});
+        g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), _T("log_par3_base", "PAR3 base name: ") + par_base + "\n"});
         
         std::vector<std::string> damaged;
         std::string logOutput;
         int status = verifyVolumePar3(volume_path, par_base, damaged, logOutput);
         
         if (!logOutput.empty()) {
-            g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), "Logs/Errors: " + logOutput + "\n"});
+            g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), _T("log_errors", "Logs/Errors: ") + logOutput + "\n"});
         }
         
         if (status == 0) {
-            g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), "\nSUCCESS: All files verified and are clean/bit-perfect!\n"});
+            g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), _T("log_success_verify", "\nSUCCESS: All files verified and are clean/bit-perfect!\n")});
         } else {
-            g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), "\nVerification detected issues (status " + std::to_string(status) + ").\n"});
+            g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), _T("log_fail_verify_status", "\nVerification detected issues (status ") + std::to_string(status) + ").\n"});
             if (!damaged.empty()) {
-                g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), "Damaged or missing files found:\n"});
+                g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), _T("log_damaged_files", "Damaged or missing files found:\n")});
                 for (const auto& f : damaged) {
                     g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), " * " + f + "\n"});
                 }
             } else {
-                g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), "No individual damaged files identified, but the index verification failed. The PAR3 archive itself might be damaged.\n"});
+                g_idle_add(append_verify_log_idle, new VerifyLogPayload{GTK_TEXT_VIEW(data->log_view), _T("log_index_fail", "No individual damaged files identified, but the index verification failed. The PAR3 archive itself might be damaged.\n")});
             }
         }
     }
@@ -130,7 +131,7 @@ static void start_verify_worker(VerifyDialogData* data, bool is_restore) {
 
 void VerifyDialog::run(GtkWindow* parent) {
     GtkWidget* dialog = gtk_window_new();
-    gtk_window_set_title(GTK_WINDOW(dialog), "Verify & Restore Volumes");
+    gtk_window_set_title(GTK_WINDOW(dialog), _T("verify_title", "Verify & Restore Volumes").c_str());
     gtk_window_set_default_size(GTK_WINDOW(dialog), 550, 420);
     gtk_window_set_modal(GTK_WINDOW(dialog), TRUE);
     gtk_window_set_transient_for(GTK_WINDOW(dialog), parent);
@@ -152,7 +153,7 @@ void VerifyDialog::run(GtkWindow* parent) {
     gtk_box_append(GTK_BOX(main_box), grid);
     
     // Volume Dir
-    GtkWidget* label_vol = gtk_label_new("Volume Directory:");
+    GtkWidget* label_vol = gtk_label_new(_T("label_vol_directory", "Volume Directory:").c_str());
     gtk_widget_set_halign(label_vol, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(grid), label_vol, 0, 0, 1, 1);
     
@@ -160,13 +161,13 @@ void VerifyDialog::run(GtkWindow* parent) {
     gtk_widget_set_hexpand(data->vol_entry, TRUE);
     gtk_grid_attach(GTK_GRID(grid), data->vol_entry, 1, 0, 1, 1);
     
-    GtkWidget* vol_browse = gtk_button_new_with_label("Browse...");
+    GtkWidget* vol_browse = gtk_button_new_with_label(_T("browse_btn", "Browse...").c_str());
     gtk_grid_attach(GTK_GRID(grid), vol_browse, 2, 0, 1, 1);
     
     g_signal_connect(vol_browse, "clicked", G_CALLBACK(+[](GtkWidget* btn, gpointer user_data) {
         auto* data = static_cast<VerifyDialogData*>(user_data);
         GtkFileDialog* file_dialog = gtk_file_dialog_new();
-        gtk_file_dialog_set_title(file_dialog, "Select Volume Directory");
+        gtk_file_dialog_set_title(file_dialog, _T("select_vol_dir_title", "Select Volume Directory").c_str());
         gtk_file_dialog_select_folder(file_dialog, data->dialog, nullptr, +[](GObject* source, GAsyncResult* res, gpointer d) {
             auto* data = static_cast<VerifyDialogData*>(d);
             GError* error = nullptr;
@@ -192,20 +193,20 @@ void VerifyDialog::run(GtkWindow* parent) {
     }), data);
     
     // Recovery Dir
-    GtkWidget* label_dest = gtk_label_new("Recovery Directory:");
+    GtkWidget* label_dest = gtk_label_new(_T("label_rec_directory", "Recovery Directory:").c_str());
     gtk_widget_set_halign(label_dest, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(grid), label_dest, 0, 1, 1, 1);
     
     data->dest_entry = gtk_entry_new();
     gtk_grid_attach(GTK_GRID(grid), data->dest_entry, 1, 1, 1, 1);
     
-    GtkWidget* dest_browse = gtk_button_new_with_label("Browse...");
+    GtkWidget* dest_browse = gtk_button_new_with_label(_T("browse_btn", "Browse...").c_str());
     gtk_grid_attach(GTK_GRID(grid), dest_browse, 2, 1, 1, 1);
     
     g_signal_connect(dest_browse, "clicked", G_CALLBACK(+[](GtkWidget* btn, gpointer user_data) {
         auto* data = static_cast<VerifyDialogData*>(user_data);
         GtkFileDialog* file_dialog = gtk_file_dialog_new();
-        gtk_file_dialog_set_title(file_dialog, "Select Recovery Directory");
+        gtk_file_dialog_set_title(file_dialog, _T("select_rec_dir_title", "Select Recovery Directory").c_str());
         gtk_file_dialog_select_folder(file_dialog, data->dialog, nullptr, +[](GObject* source, GAsyncResult* res, gpointer d) {
             auto* data = static_cast<VerifyDialogData*>(d);
             GError* error = nullptr;
@@ -223,7 +224,7 @@ void VerifyDialog::run(GtkWindow* parent) {
     }), data);
     
     // PAR3 Base Name
-    GtkWidget* label_par = gtk_label_new("PAR3 Base Name:");
+    GtkWidget* label_par = gtk_label_new(_T("label_par3_base", "PAR3 Base Name:").c_str());
     gtk_widget_set_halign(label_par, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(grid), label_par, 0, 2, 1, 1);
     
@@ -232,7 +233,7 @@ void VerifyDialog::run(GtkWindow* parent) {
     gtk_grid_attach(GTK_GRID(grid), data->par_entry, 1, 2, 1, 1);
     
     // Logs ScrolledWindow
-    GtkWidget* log_frame = gtk_frame_new("Verification & Restoration Log");
+    GtkWidget* log_frame = gtk_frame_new(_T("log_frame_title_verify", "Verification & Restoration Log").c_str());
     gtk_widget_set_vexpand(log_frame, TRUE);
     gtk_box_append(GTK_BOX(main_box), log_frame);
     
@@ -249,14 +250,14 @@ void VerifyDialog::run(GtkWindow* parent) {
     gtk_widget_set_halign(action_box, GTK_ALIGN_END);
     gtk_box_append(GTK_BOX(main_box), action_box);
     
-    GtkWidget* close_btn = gtk_button_new_with_label("Close");
+    GtkWidget* close_btn = gtk_button_new_with_label(_T("close_btn", "Close").c_str());
     g_signal_connect_swapped(close_btn, "clicked", G_CALLBACK(gtk_window_destroy), dialog);
     gtk_box_append(GTK_BOX(action_box), close_btn);
     
-    data->verify_btn = gtk_button_new_with_label("Verify Only");
+    data->verify_btn = gtk_button_new_with_label(_T("verify_only_btn", "Verify Only").c_str());
     gtk_box_append(GTK_BOX(action_box), data->verify_btn);
     
-    data->restore_btn = gtk_button_new_with_label("Restore & Repair");
+    data->restore_btn = gtk_button_new_with_label(_T("restore_repair_btn", "Restore & Repair").c_str());
     gtk_box_append(GTK_BOX(action_box), data->restore_btn);
     
     g_signal_connect(data->verify_btn, "clicked", G_CALLBACK(+[](GtkButton* btn, gpointer user_data) {

@@ -1,4 +1,5 @@
 #include "ui_iso.hpp"
+#include "bttb_locale.hpp"
 #include <string>
 #include <vector>
 #include <thread>
@@ -81,7 +82,7 @@ static void run_genisoimage(IsoDialogData* data, std::string src_dir, std::strin
 
 void IsoDialog::run(GtkWindow* parent, const std::string& defaultSourceDir) {
     GtkWidget* dialog = gtk_window_new();
-    gtk_window_set_title(GTK_WINDOW(dialog), "Create ISO Image");
+    gtk_window_set_title(GTK_WINDOW(dialog), _T("iso_title", "Create ISO Image").c_str());
     gtk_window_set_default_size(GTK_WINDOW(dialog), 550, 400);
     gtk_window_set_modal(GTK_WINDOW(dialog), TRUE);
     gtk_window_set_transient_for(GTK_WINDOW(dialog), parent);
@@ -103,7 +104,7 @@ void IsoDialog::run(GtkWindow* parent, const std::string& defaultSourceDir) {
     gtk_box_append(GTK_BOX(main_box), grid);
     
     // Source Dir
-    GtkWidget* label_src = gtk_label_new("Source Directory:");
+    GtkWidget* label_src = gtk_label_new(_T("source_folder", "Source Directory:").c_str());
     gtk_widget_set_halign(label_src, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(grid), label_src, 0, 0, 1, 1);
     
@@ -113,7 +114,7 @@ void IsoDialog::run(GtkWindow* parent, const std::string& defaultSourceDir) {
     gtk_grid_attach(GTK_GRID(grid), data->src_entry, 1, 0, 1, 1);
     
     // Target ISO Path
-    GtkWidget* label_iso = gtk_label_new("Target ISO File:");
+    GtkWidget* label_iso = gtk_label_new(_T("target_iso_file", "Target ISO File:").c_str());
     gtk_widget_set_halign(label_iso, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(grid), label_iso, 0, 1, 1, 1);
     
@@ -123,7 +124,7 @@ void IsoDialog::run(GtkWindow* parent, const std::string& defaultSourceDir) {
     gtk_grid_attach(GTK_GRID(grid), data->iso_entry, 1, 1, 1, 1);
     
     // Volume Label
-    GtkWidget* label_vol = gtk_label_new("Volume Label:");
+    GtkWidget* label_vol = gtk_label_new(_T("volume_label", "Volume Label:").c_str());
     gtk_widget_set_halign(label_vol, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(grid), label_vol, 0, 2, 1, 1);
     
@@ -132,7 +133,7 @@ void IsoDialog::run(GtkWindow* parent, const std::string& defaultSourceDir) {
     gtk_grid_attach(GTK_GRID(grid), data->vol_entry, 1, 2, 1, 1);
     
     // Logs ScrolledWindow
-    GtkWidget* log_frame = gtk_frame_new("Execution Log");
+    GtkWidget* log_frame = gtk_frame_new(_T("execution_log", "Execution Log").c_str());
     gtk_widget_set_vexpand(log_frame, TRUE);
     gtk_box_append(GTK_BOX(main_box), log_frame);
     
@@ -149,11 +150,11 @@ void IsoDialog::run(GtkWindow* parent, const std::string& defaultSourceDir) {
     gtk_widget_set_halign(action_box, GTK_ALIGN_END);
     gtk_box_append(GTK_BOX(main_box), action_box);
     
-    GtkWidget* close_btn = gtk_button_new_with_label("Close");
+    GtkWidget* close_btn = gtk_button_new_with_label(_T("close_btn", "Close").c_str());
     g_signal_connect_swapped(close_btn, "clicked", G_CALLBACK(gtk_window_destroy), dialog);
     gtk_box_append(GTK_BOX(action_box), close_btn);
     
-    data->gen_button = gtk_button_new_with_label("Generate");
+    data->gen_button = gtk_button_new_with_label(_T("generate_btn", "Generate").c_str());
     gtk_box_append(GTK_BOX(action_box), data->gen_button);
     
     // Handle Generate click

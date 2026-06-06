@@ -1,4 +1,5 @@
 #include "bttb_logic.hpp"
+#include "bttb_locale.hpp"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -319,18 +320,34 @@ std::filesystem::path GetConfigPath() {
 
 void BttbSolver::loadSettings() {
     std::filesystem::path path = GetConfigPath();
-    if (!std::filesystem::exists(path)) return;
+    if (!std::filesystem::exists(path)) {
+        // Still detect and load system default language if config doesn't exist
+        BttbLocale::getInstance().load(BttbLocale::getInstance().detectSystemLanguage());
+        return;
+    }
     
     std::ifstream f(path);
-    if (!f.is_open()) return;
+    if (!f.is_open()) {
+        BttbLocale::getInstance().load(BttbLocale::getInstance().detectSystemLanguage());
+        return;
+    }
     
     customVolumes.clear();
     std::string line;
     while (std::getline(f, line)) {
+        if (!line.empty() && line.back() == '\r') {
+            line.pop_back();
+        }
         size_t eq = line.find('=');
         if (eq == std::string::npos) continue;
         std::string key = line.substr(0, eq);
         std::string val = line.substr(eq + 1);
+        
+        // Trim leading and trailing whitespace
+        key.erase(0, key.find_first_not_of(" \t"));
+        key.erase(key.find_last_not_of(" \t") + 1);
+        val.erase(0, val.find_first_not_of(" \t"));
+        val.erase(val.find_last_not_of(" \t") + 1);
         
         if (key == "ruleBasedWins") {
             ruleBasedWins = (val == "1");
@@ -360,6 +377,8 @@ void BttbSolver::loadSettings() {
             try { par3BlockSize = std::stoll(val); } catch (...) {}
         } else if (key == "par3RedundancyPercent") {
             try { par3RedundancyPercent = std::stoi(val); } catch (...) {}
+        } else if (key == "language") {
+            language = val;
         } else if (key.rfind("customVolume_", 0) == 0) {
             std::stringstream ss(val);
             std::string name, capStr, secStr, slkStr;
@@ -377,6 +396,12 @@ void BttbSolver::loadSettings() {
                 } catch (...) {}
             }
         }
+    }
+
+    if (language == "auto") {
+        BttbLocale::getInstance().load(BttbLocale::getInstance().detectSystemLanguage());
+    } else {
+        BttbLocale::getInstance().load(language);
     }
 }
 
@@ -399,6 +424,7 @@ void BttbSolver::saveSettings() {
     f << "enablePar3=" << (enablePar3 ? "1" : "0") << "\n";
     f << "par3BlockSize=" << par3BlockSize << "\n";
     f << "par3RedundancyPercent=" << par3RedundancyPercent << "\n";
+    f << "language=" << language << "\n";
     
     for (size_t i = 0; i < customVolumes.size(); ++i) {
         f << "customVolume_" << i << "=" 
@@ -430,6 +456,7 @@ BttbSolver::BttbSolver() {
     testOnlyMode = false;
     semanticCoherenceFactor = 0.7;
 
+    language = "auto";
     loadSettings();
 }
 
@@ -516,10 +543,10 @@ int64_t BttbSolver::diveDepth(const std::filesystem::path& baseDir, const std::f
     try {
         if (!std::filesystem::exists(fullPath)) return 0;
     } catch (const std::exception& e) {
-        logNotify("Warning: Directory '" + toUtf8Str(fullPath) + "' is unreadable (" + e.what() + ").", 2);
+        logNotify(_T("log_warn_dir_unreadable_1", "Warning: Directory '") + toUtf8Str(fullPath) + _T("log_warn_dir_unreadable_2", "' is unreadable (") + e.what() + ").", 2);
         if (!skipUnreadable) {
             stopRequested = true;
-            logNotify("Scanning aborted by user due to unreadable directory.", 2);
+            logNotify(_T("log_scan_aborted_unreadable_dir", "Scanning aborted by user due to unreadable directory."), 2);
         }
         return 0;
     }
@@ -547,10 +574,10 @@ int64_t BttbSolver::diveDepth(const std::filesystem::path& baseDir, const std::f
                     }
                 }
             } catch (const std::exception& e) {
-                logNotify("Warning: File or folder in '" + toUtf8Str(fullPath) + "' is unreadable (" + e.what() + ").", 2);
+                logNotify(_T("log_warn_item_unreadable_1", "Warning: File or folder in '") + toUtf8Str(fullPath) + _T("log_warn_item_unreadable_2", "' is unreadable (") + e.what() + ").", 2);
                 if (!skipUnreadable) {
                     stopRequested = true;
-                    logNotify("Scanning aborted by user due to unreadable item.", 2);
+                    logNotify(_T("log_scan_aborted_unreadable_item", "Scanning aborted by user due to unreadable item."), 2);
                     return 0;
                 }
             }
@@ -571,10 +598,10 @@ int64_t BttbSolver::diveDepth(const std::filesystem::path& baseDir, const std::f
             }
         }
     } catch (const std::exception& e) {
-        logNotify("Warning: Failed to iterate directory '" + toUtf8Str(fullPath) + "' (" + e.what() + ").", 2);
+        logNotify(_T("log_warn_failed_iterate_dir_1", "Warning: Failed to iterate directory '") + toUtf8Str(fullPath) + _T("log_warn_failed_iterate_dir_2", "' (") + e.what() + ").", 2);
         if (!skipUnreadable) {
             stopRequested = true;
-            logNotify("Scanning aborted by user due to unreadable directory iteration.", 2);
+            logNotify(_T("log_scan_aborted_failed_iterate", "Scanning aborted by user due to unreadable directory iteration."), 2);
         }
     }
     
@@ -592,10 +619,10 @@ void BttbSolver::scanDirectory() {
     activeDirs = filterNestedDirectories(activeDirs);
     
     for (const auto& baseDir : activeDirs) {
-        logNotify("Scanning folder: " + baseDir, 0);
+        logNotify(_T("log_scanning_folder", "Scanning folder: ") + baseDir, 0);
         diveDepth(utf8Path(baseDir), "", splitDepth);
     }
-    logNotify("Found items to fit: " + std::to_string(itemsToSplit.size()), 0);
+    logNotify(_T("log_found_items", "Found items to fit: ") + std::to_string(itemsToSplit.size()), 0);
 }
 
 // Comparator to sort by selected state, then by size (ascending)
@@ -617,7 +644,7 @@ bool BttbSolver::findAWay(int64_t currentSectors, int poz, int selectedFileCount
         auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - solverStartTime).count();
         if (elapsed >= maxSearchTimeSeconds) {
             searchTimedOut = true;
-            logNotify("Search time limit exceeded (" + std::to_string(maxSearchTimeSeconds) + " seconds).", 2);
+            logNotify(_T("log_search_time_limit_exceeded_1", "Search time limit exceeded (") + std::to_string(maxSearchTimeSeconds) + _T("log_search_time_limit_exceeded_2", " seconds)."), 2);
             return false;
         }
     }
@@ -656,12 +683,12 @@ bool BttbSolver::findAWay(int64_t currentSectors, int poz, int selectedFileCount
                     minNumberOfClusters = INT_MAX;
                     
                     double percentage = (double)currentBestSectors / maxSectors * 100.0;
-                    logNotify("New best space utilization: " + std::to_string(percentage) + "%", 3);
+                    logNotify(_T("log_new_best_space_utilization", "New best space utilization: ") + std::to_string(percentage) + "%", 3);
 
                     // Check for early termination if within slack tolerance
                     if (currentBestSectors >= maxSectors - slackSectors) {
                         searchTimedOut = true;
-                        logNotify("Selection within slack tolerance (" + std::to_string(percentage) + "%) found. Terminating search early.", 1);
+                        logNotify(_T("log_selection_within_slack_1", "Selection within slack tolerance (") + std::to_string(percentage) + _T("log_selection_within_slack_2", "%) found. Terminating search early."), 1);
                     }
                 }
                 
@@ -715,7 +742,7 @@ void BttbSolver::run() {
     while (!stopRequested) {
         scanDirectory();
         if (itemsToSplit.empty()) {
-            logNotify("No items to fit.", 2);
+            logNotify(_T("log_no_items_to_fit", "No items to fit."), 2);
             return;
         }
 
@@ -754,21 +781,21 @@ void BttbSolver::run() {
             int64_t sectors = (maxItemSize + mediumInfo.sectorSize - 1) / mediumInfo.sectorSize;
             if (sectors == 0) sectors = 1;
             mediumInfo.capacityBytes = sectors * mediumInfo.sectorSize;
-            logNotify("Auto Volume capacity set to: " + std::to_string(mediumInfo.capacityBytes) + " bytes (" + std::to_string((double)mediumInfo.capacityBytes / (1024.0 * 1024.0)) + " MB)", 1);
+            logNotify(_T("log_auto_volume_cap_set_1", "Auto Volume capacity set to: ") + std::to_string(mediumInfo.capacityBytes) + _T("log_auto_volume_cap_set_2", " bytes (") + std::to_string((double)mediumInfo.capacityBytes / (1024.0 * 1024.0)) + " MB)", 1);
         } else if (maxItemSize > mediumInfo.capacityBytes) {
-            logNotify("Warning: Item '" + maxItemName + "' (" + std::to_string(maxItemSize) + " bytes) is larger than target volume size (" + std::to_string(mediumInfo.capacityBytes) + " bytes).", 2);
+            logNotify(_T("log_warn_item_exceeds_cap_1", "Warning: Item '") + maxItemName + _T("log_warn_item_exceeds_cap_2", "' (") + std::to_string(maxItemSize) + _T("log_warn_item_exceeds_cap_3", " bytes) is larger than target volume size (") + std::to_string(mediumInfo.capacityBytes) + " bytes).", 2);
             if (recommendCapacityNotify) {
                 int64_t recommendedBytes = ((maxItemSize + mediumInfo.sectorSize - 1) / mediumInfo.sectorSize) * mediumInfo.sectorSize;
                 if (recommendCapacityNotify(recommendedBytes)) {
                     mediumInfo.capacityBytes = recommendedBytes;
-                    logNotify("Capacity adapted to " + std::to_string(recommendedBytes) + " bytes. Retrying solver...", 1);
+                    logNotify(_T("log_capacity_adapted_1", "Capacity adapted to ") + std::to_string(recommendedBytes) + _T("log_capacity_adapted_2", " bytes. Retrying solver..."), 1);
                     continue;
                 } else {
-                    logNotify("Solver aborted: dataset contains files exceeding capacity.", 2);
+                    logNotify(_T("log_solver_aborted_files_exceed_cap", "Solver aborted: dataset contains files exceeding capacity."), 2);
                     return;
                 }
             } else {
-                logNotify("Solver aborted: dataset contains files exceeding capacity. Adapt capacity or enable interactive retrying.", 2);
+                logNotify(_T("log_solver_aborted_files_exceed_cap_adapt", "Solver aborted: dataset contains files exceeding capacity. Adapt capacity or enable interactive retrying."), 2);
                 return;
             }
         }
@@ -793,11 +820,11 @@ void BttbSolver::run() {
     double mediumMB = (double)mediumInfo.capacityBytes / (1024.0 * 1024.0);
     int estimatedVolumes = std::max<int>(1, std::ceil((double)totalBytes / mediumInfo.capacityBytes));
     
-    logNotify("--- Volume Packing Estimation ---", 3);
+    logNotify(_T("log_volume_packing_estimation_header", "--- Volume Packing Estimation ---"), 3);
     logNotify("Total items found: " + std::to_string(itemsToSplit.size()), 0);
-    logNotify("Total dataset size: " + std::to_string(totalBytes) + " bytes (" + std::to_string(totalMB) + " MB)", 0);
-    logNotify("Target volume capacity: " + std::to_string(mediumInfo.capacityBytes) + " bytes (" + std::to_string(mediumMB) + " MB)", 0);
-    logNotify("Theoretical minimum volumes required: " + std::to_string(estimatedVolumes), 1);
+    logNotify(_T("log_total_dataset_size_1", "Total dataset size: ") + std::to_string(totalBytes) + _T("log_total_dataset_size_2", " bytes (") + std::to_string(totalMB) + " MB)", 0);
+    logNotify(_T("log_target_volume_cap_1", "Target volume capacity: ") + std::to_string(mediumInfo.capacityBytes) + _T("log_target_volume_cap_2", " bytes (") + std::to_string(mediumMB) + " MB)", 0);
+    logNotify(_T("log_theoretical_min_vols", "Theoretical minimum volumes required: ") + std::to_string(estimatedVolumes), 1);
     
     if (enableTrace) {
         logNotify("[TRACE] Detailed estimation breakdown:", 0);
@@ -807,7 +834,7 @@ void BttbSolver::run() {
         logNotify("[TRACE]  - Slack tolerance: " + std::to_string(mediumInfo.slackBytes) + " bytes (" + std::to_string(slackSectors) + " sectors)", 0);
     }
     
-    logNotify("Medium Capacity: " + std::to_string(maxSectors) + " sectors (" + std::to_string(mediumInfo.capacityBytes) + " bytes)", 0);
+    logNotify(_T("log_medium_capacity_1", "Medium Capacity: ") + std::to_string(maxSectors) + _T("log_medium_capacity_2", " sectors (") + std::to_string(mediumInfo.capacityBytes) + " bytes)", 0);
     
     int64_t totalBytesToOrganize = 0;
     if (!targetDirectory.empty() && !testOnlyMode) {
@@ -838,7 +865,7 @@ void BttbSolver::run() {
         }
         
         if (spanMultipleVolumes) {
-            logNotify("\r\n--- SOLVING FOR VOLUME " + std::to_string(volumeIndex) + " ---", 3);
+            logNotify(_T("log_solving_for_vol_header_1", "\r\n--- SOLVING FOR VOLUME ") + std::to_string(volumeIndex) + _T("log_solving_for_vol_header_2", " ---"), 3);
         }
         
         // Sort items initially ascending by size
@@ -857,7 +884,7 @@ void BttbSolver::run() {
         auto startTime = std::chrono::steady_clock::now();
         solverStartTime = startTime;
         
-        logNotify("Solving optimal bin selection...", 0);
+        logNotify(_T("log_solving_optimal_bin", "Solving optimal bin selection..."), 0);
         
         // Start recursion in backtracking
         findAWay(0, itemsToSplit.size() - 1, 0);
@@ -865,10 +892,10 @@ void BttbSolver::run() {
         auto endTime = std::chrono::steady_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
         
-        logNotify("Finished solving. Elapsed time: " + std::to_string(elapsed) + " ms", 1);
+        logNotify(_T("log_finished_solving_1", "Finished solving. Elapsed time: ") + std::to_string(elapsed) + _T("log_finished_solving_2", " ms"), 1);
         
         if (!spanMultipleVolumes) {
-            logNotify("Single volume solution: forcing selection of all files to guarantee 100% inclusion...", 1);
+            logNotify(_T("log_single_vol_sol_forcing", "Single volume solution: forcing selection of all files to guarantee 100% inclusion..."), 1);
             bestSelectionIndices.clear();
             currentBestSectors = 0;
             for (size_t i = 0; i < itemsToSplit.size(); ++i) {
@@ -878,7 +905,7 @@ void BttbSolver::run() {
         }
         
         if (bestSelectionIndices.empty()) {
-            logNotify("Backtracking solver did not find a fit (or timed out). Falling back to greedy allocation to ensure all remaining files are included...", 2);
+            logNotify(_T("log_backtracking_failed_fallback_greedy", "Backtracking solver did not find a fit (or timed out). Falling back to greedy allocation to ensure all remaining files are included..."), 2);
             int64_t currentSectors = 0;
             for (size_t i = 0; i < itemsToSplit.size(); ++i) {
                 if (currentSectors + itemsToSplit[i]->sectorCount <= maxSectors) {
@@ -887,24 +914,24 @@ void BttbSolver::run() {
                 }
             }
             if (bestSelectionIndices.empty()) {
-                logNotify("Forcing progress: packing remaining item larger than medium capacity (" + itemsToSplit[0]->relativePath + ")", 2);
+                logNotify(_T("log_forcing_progress_exceeds_cap_1", "Forcing progress: packing remaining item larger than medium capacity (") + itemsToSplit[0]->relativePath + ")", 2);
                 bestSelectionIndices.push_back(0);
             }
         }
         
         double percent = (double)currentBestSectors / maxSectors * 100.0;
-        logNotify("Optimal selection covers: " + std::to_string(percent) + "%", 1);
+        logNotify(_T("log_optimal_selection_covers", "Optimal selection covers: ") + std::to_string(percent) + "%", 1);
         if (spanMultipleVolumes) {
-            logNotify("Selected items for Volume " + std::to_string(volumeIndex) + ":", 1);
+            logNotify(_T("log_selected_items_for_volume_1", "Selected items for Volume ") + std::to_string(volumeIndex) + ":", 1);
         } else {
-            logNotify("Selected items:", 1);
+            logNotify(_T("log_selected_items", "Selected items:"), 1);
         }
         
         PackedVolume vol;
         vol.volumeIndex = volumeIndex;
         vol.totalBytes = 0;
         for (int idx : bestSelectionIndices) {
-            logNotify(" - " + itemsToSplit[idx]->relativePath + " (" + std::to_string(itemsToSplit[idx]->sizeBytes) + " bytes)", 0);
+            logNotify(" - " + itemsToSplit[idx]->relativePath + " (" + std::to_string(itemsToSplit[idx]->sizeBytes) + _T("log_bytes_suffix", " bytes)"), 0);
             if (!itemsToSplit[idx]->groupedPaths.empty()) {
                 for (const auto& subPath : itemsToSplit[idx]->groupedPaths) {
                     logNotify("     -> " + subPath, 0);
@@ -946,7 +973,7 @@ void BttbSolver::run() {
                     absPaths.push_back(itemsToSplit[idx]->absolutePath);
                 }
                 
-                logNotify("Organizing item: " + itemsToSplit[idx]->relativePath, 0);
+                logNotify(_T("log_organizing_item", "Organizing item: ") + itemsToSplit[idx]->relativePath, 0);
                 for (size_t i = 0; i < relPaths.size(); ++i) {
                     const auto& relItem = relPaths[i];
                     const auto& absItem = absPaths[i];
@@ -963,7 +990,7 @@ void BttbSolver::run() {
                                     std::filesystem::remove_all(dest);
                                 }
                                 if (!createPlatformSymlink(toUtf8Str(src), toUtf8Str(dest), isDir)) {
-                                    logNotify("Failed to create symlink for " + relItem + " (retrying with copy)", 2);
+                                    logNotify(_T("log_failed_symlink_retry_copy_1", "Failed to create symlink for ") + relItem + _T("log_failed_symlink_retry_copy_2", " (retrying with copy)"), 2);
                                     if (isDir) {
                                         std::filesystem::copy(src, dest, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
                                     } else {
@@ -987,7 +1014,7 @@ void BttbSolver::run() {
                             }
                         }
                         } catch (const std::exception& e) {
-                            logNotify("Failed to organize " + relItem + ": " + e.what(), 2);
+                            logNotify(_T("log_failed_organize_item_1", "Failed to organize ") + relItem + ": " + e.what(), 2);
                         }
                         
                         bytesOrganizedSoFar += std::max<int64_t>(1, itemsToSplit[idx]->sizeBytes / relPaths.size());
@@ -1006,13 +1033,13 @@ void BttbSolver::run() {
                     }
                 }
             if (enablePar3) {
-                logNotify("Generating PAR3 parity files for Volume " + std::to_string(volumeIndex) + "...", 3);
+                logNotify(_T("log_generating_par3_for_volume_1", "Generating PAR3 parity files for Volume ") + std::to_string(volumeIndex) + "...", 3);
                 std::string parBaseName = spanMultipleVolumes ? ("Volume_" + std::to_string(volumeIndex)) : "Volume";
                 std::string err;
                 if (createVolumePar3(toUtf8Str(volDestDir), parBaseName, par3BlockSize, par3RedundancyPercent, err)) {
-                    logNotify("Successfully created PAR3 parity protection for Volume " + std::to_string(volumeIndex), 1);
+                    logNotify(_T("log_success_par3_for_volume_1", "Successfully created PAR3 parity protection for Volume ") + std::to_string(volumeIndex), 1);
                 } else {
-                    logNotify("PAR3 creation failed: " + err, 2);
+                    logNotify(_T("log_failed_par3_creation", "PAR3 creation failed: ") + err, 2);
                 }
             }
         }
@@ -1041,10 +1068,10 @@ void BttbSolver::run() {
     }
     
     if (testOnlyMode) {
-        logNotify("--- TEST SIMULATION COMPLETE ---", 3);
-        logNotify("No files were copied, symlinked, or moved on disk.", 1);
+        logNotify(_T("log_test_simulation_complete", "--- TEST SIMULATION COMPLETE ---"), 3);
+        logNotify(_T("log_no_files_written_on_disk", "No files were copied, symlinked, or moved on disk."), 1);
     } else if (!targetDirectory.empty()) {
-        logNotify("Completed file organization.", 1);
+        logNotify(_T("log_completed_file_organization", "Completed file organization."), 1);
 
         // JSON Index File Creation
         if (spanMultipleVolumes) {
@@ -1080,9 +1107,9 @@ void BttbSolver::run() {
                 }
                 indexFile << "  ]\n}\n";
                 indexFile.close();
-                logNotify("Created offline JSON index file: " + toUtf8Str(indexJsonPath), 1);
+                logNotify(_T("log_created_offline_json_index", "Created offline JSON index file: ") + toUtf8Str(indexJsonPath), 1);
             } else {
-                logNotify("Failed to create JSON index file: " + toUtf8Str(indexJsonPath), 2);
+                logNotify(_T("log_failed_create_json_index", "Failed to create JSON index file: ") + toUtf8Str(indexJsonPath), 2);
             }
         }
     }
@@ -1113,7 +1140,7 @@ double BttbSolver::computeCosineSimilarity(const std::vector<float>& a, const st
 void BttbSolver::runSemanticClustering() {
     if (itemsToSplit.empty()) return;
 
-    logNotify("Generating semantic embeddings...", 3);
+    logNotify(_T("log_generating_semantic_embeddings", "Generating semantic embeddings..."), 3);
 
     auto escapeJson = [](const std::string& str) -> std::string {
         std::string escaped = "";
@@ -1161,7 +1188,7 @@ void BttbSolver::runSemanticClustering() {
         in << jsonStr;
         in.close();
     } catch (const std::exception& e) {
-        logNotify("Failed to write temporary embedding input file: " + std::string(e.what()), 2);
+        logNotify(_T("log_failed_write_temp_embed_input", "Failed to write temporary embedding input file: ") + std::string(e.what()), 2);
         return;
     }
 
@@ -1185,8 +1212,8 @@ void BttbSolver::runSemanticClustering() {
     }
 
     if (ret != 0) {
-        logNotify("Warning: Subprocess python embedding engine failed or python3 is not installed.", 2);
-        logNotify("-> Semantic grouping will fall back to local string matching metrics.", 3);
+        logNotify(_T("log_warn_python_embed_engine_failed", "Warning: Subprocess python embedding engine failed or python3 is not installed."), 2);
+        logNotify(_T("log_semantic_grouping_fallback", "-> Semantic grouping will fall back to local string matching metrics."), 3);
         // Clean up and return
         try {
             std::filesystem::remove(tempIn);
@@ -1207,7 +1234,7 @@ void BttbSolver::runSemanticClustering() {
         std::filesystem::remove(tempIn);
         std::filesystem::remove(tempOut);
     } catch (const std::exception& e) {
-        logNotify("Failed to read temporary embedding output file: " + std::string(e.what()), 2);
+        logNotify(_T("log_failed_read_temp_embed_output", "Failed to read temporary embedding output file: ") + std::string(e.what()), 2);
         return;
     }
 
@@ -1240,7 +1267,7 @@ void BttbSolver::runSemanticClustering() {
     }
 
     if (parsedEmbeddings.empty()) {
-        logNotify("Warning: Embedded output is empty.", 2);
+        logNotify(_T("log_warn_embedded_output_empty", "Warning: Embedded output is empty."), 2);
         return;
     }
 
@@ -1258,7 +1285,7 @@ void BttbSolver::runSemanticClustering() {
     }
 
     // 8. Agglomerative Hierarchical Clustering based on Cosine Similarity
-    logNotify("Running agglomerative semantic clustering (threshold=0.6)...", 3);
+    logNotify(_T("log_running_semantic_clustering", "Running agglomerative semantic clustering (threshold=0.6)..."), 3);
     
     std::vector<int> clusterMap(itemsToSplit.size());
     for (size_t i = 0; i < itemsToSplit.size(); ++i) {
@@ -1438,7 +1465,7 @@ void BttbSolver::runSemanticClustering() {
     }
 
     itemsToSplit = std::move(clusteredItems);
-    logNotify("Semantic clustering completed. Total consolidated groups: " + std::to_string(itemsToSplit.size()), 1);
+    logNotify(_T("log_semantic_clustering_completed", "Semantic clustering completed. Total consolidated groups: ") + std::to_string(itemsToSplit.size()), 1);
 }
 
 bool createVolumePar3(const std::string& volumePath, const std::string& parBaseName, int64_t blockSize, int redundancyPercent, std::string& errorMsg) {

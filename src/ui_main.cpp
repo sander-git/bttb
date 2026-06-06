@@ -2,6 +2,7 @@
 #include "ui_settings.hpp"
 #include "ui_iso.hpp"
 #include "ui_verify.hpp"
+#include "bttb_locale.hpp"
 #include <iostream>
 #include <filesystem>
 #include <cstring>
@@ -26,7 +27,7 @@ class FolderListDialog {
 public:
     static void run(GtkWindow* parent, GtkWidget* source_entry) {
         GtkWidget* dialog = gtk_window_new();
-        gtk_window_set_title(GTK_WINDOW(dialog), "Manage Source Folders");
+        gtk_window_set_title(GTK_WINDOW(dialog), _T("manage_src_folders_title", "Manage Source Folders").c_str());
         gtk_window_set_default_size(GTK_WINDOW(dialog), 500, 350);
         gtk_window_set_modal(GTK_WINDOW(dialog), TRUE);
         gtk_window_set_transient_for(GTK_WINDOW(dialog), parent);
@@ -38,7 +39,7 @@ public:
         gtk_widget_set_margin_bottom(vbox, 12);
         gtk_window_set_child(GTK_WINDOW(dialog), vbox);
         
-        GtkWidget* label = gtk_label_new("Complete list of source folders:");
+        GtkWidget* label = gtk_label_new(_T("complete_list_src_folders", "Complete list of source folders:").c_str());
         gtk_widget_set_halign(label, GTK_ALIGN_START);
         gtk_box_append(GTK_BOX(vbox), label);
         
@@ -74,13 +75,13 @@ public:
         GtkWidget* btn_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
         gtk_box_append(GTK_BOX(vbox), btn_box);
         
-        GtkWidget* add_btn = gtk_button_new_with_label("Add...");
+        GtkWidget* add_btn = gtk_button_new_with_label(_T("add_btn", "Add...").c_str());
         gtk_box_append(GTK_BOX(btn_box), add_btn);
         
-        GtkWidget* edit_btn = gtk_button_new_with_label("Edit...");
+        GtkWidget* edit_btn = gtk_button_new_with_label(_T("edit_btn", "Edit...").c_str());
         gtk_box_append(GTK_BOX(btn_box), edit_btn);
         
-        GtkWidget* remove_btn = gtk_button_new_with_label("Remove");
+        GtkWidget* remove_btn = gtk_button_new_with_label(_T("remove_btn", "Remove").c_str());
         gtk_box_append(GTK_BOX(btn_box), remove_btn);
         
         // Spacing
@@ -88,10 +89,10 @@ public:
         gtk_widget_set_hexpand(spacer, TRUE);
         gtk_box_append(GTK_BOX(btn_box), spacer);
         
-        GtkWidget* cancel_btn = gtk_button_new_with_label("Cancel");
+        GtkWidget* cancel_btn = gtk_button_new_with_label(_T("cancel_btn", "Cancel").c_str());
         gtk_box_append(GTK_BOX(btn_box), cancel_btn);
         
-        GtkWidget* ok_btn = gtk_button_new_with_label("OK");
+        GtkWidget* ok_btn = gtk_button_new_with_label(_T("ok_btn", "OK").c_str());
         gtk_widget_add_css_class(ok_btn, "suggested-action");
         gtk_box_append(GTK_BOX(btn_box), ok_btn);
         
@@ -110,7 +111,7 @@ public:
         g_signal_connect(add_btn, "clicked", G_CALLBACK(+[](GtkWidget*, gpointer data) {
             auto* s = static_cast<DialogState*>(data);
             GtkFileDialog* file_dialog = gtk_file_dialog_new();
-            gtk_file_dialog_set_title(file_dialog, "Add Source Directory");
+            gtk_file_dialog_set_title(file_dialog, _T("add_src_dir_title", "Add Source Directory").c_str());
             gtk_file_dialog_select_folder(file_dialog, GTK_WINDOW(s->dialog), nullptr, +[](GObject* src, GAsyncResult* res, gpointer d) {
                 auto* s_inner = static_cast<DialogState*>(d);
                 GError* error = nullptr;
@@ -133,7 +134,7 @@ public:
             if (!selected_row) return;
             
             GtkFileDialog* file_dialog = gtk_file_dialog_new();
-            gtk_file_dialog_set_title(file_dialog, "Edit Source Directory");
+            gtk_file_dialog_set_title(file_dialog, _T("edit_src_dir_title", "Edit Source Directory").c_str());
             
             struct EditState {
                 DialogState* ds;
@@ -203,6 +204,8 @@ public:
 };
 
 MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
+    std::cout << "[GUI MainWindow] Solver language: '" << solver.language 
+              << "', BttbLocale active language: '" << BttbLocale::getInstance().getLanguage() << "'" << std::endl;
     // Apply dark theme preference on startup
     GtkSettings *settings = gtk_settings_get_default();
     g_object_set(settings, "gtk-application-prefer-dark-theme", solver.enableDarkTheme ? TRUE : FALSE, NULL);
@@ -321,7 +324,7 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
     
     // Verify & Restore Button
     GtkWidget* verify_btn = gtk_button_new_from_icon_name("system-run");
-    gtk_widget_set_tooltip_text(verify_btn, "Verify & Restore Volumes...");
+    gtk_widget_set_tooltip_text(verify_btn, _T("verify_title", "Verify & Restore Volumes...").c_str());
     gtk_header_bar_pack_start(GTK_HEADER_BAR(header), verify_btn);
     
     g_signal_connect(verify_btn, "clicked", G_CALLBACK(+[](GtkWidget* btn, gpointer user_data) {
@@ -331,7 +334,7 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
     
     // About button
     GtkWidget* about_btn = gtk_button_new_from_icon_name("help-about");
-    gtk_widget_set_tooltip_text(about_btn, "About Burn to the Brim");
+    gtk_widget_set_tooltip_text(about_btn, _T("about_title", "About Burn to the Brim").c_str());
     gtk_header_bar_pack_start(GTK_HEADER_BAR(header), about_btn);
     
     g_signal_connect(about_btn, "clicked", G_CALLBACK(+[](GtkWidget* btn, gpointer user_data) {
@@ -341,13 +344,14 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
         gtk_window_set_transient_for(GTK_WINDOW(about), GTK_WINDOW(self->window));
         
         gtk_about_dialog_set_program_name(GTK_ABOUT_DIALOG(about), "Burn to the Brim");
-        gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(about), "4.2.1");
+        gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(about), "4.3.0");
         gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(about), "Copyright \u00a9 2001-2026 Sander Raaijmakers, Elwin Oost and the Burn to the Brim team");
         gtk_about_dialog_set_license_type(GTK_ABOUT_DIALOG(about), GTK_LICENSE_GPL_2_0);
         gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(about), "https://sourceforge.net/projects/bttb/");
-        gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(about), 
+        
+        const char* default_comments = 
             "Burn to the Brim (BTTB) is a modern C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums (CDs, DVDs, Blu-rays, or USBs).\n\n"
-            "Features in v4.2.1:\n"
+            "Features in v4.3.0:\n"
             "- Offline JSON Index creation and interactive parser\n"
             "- Optional PAR3 parity file generation and verification\n"
             "- Bit-perfect PAR3 copy-based restoration and repair\n"
@@ -364,7 +368,9 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
             "- BLAKE3 (by BLAKE3 team, CC0/Apache-2.0): https://github.com/BLAKE3-team/BLAKE3\n"
             "- Leopard-RS (by Christopher A. Taylor, BSD 3-Clause): https://github.com/catid/leopard\n"
             "- Galois Field library (by James S. Plank): http://web.eecs.utk.edu/~jplank/plank/www/software.html\n\n"
-            "Authors: Sander Raaijmakers, Elwin Oost and the Burn to the Brim team");
+            "Authors: Sander Raaijmakers, Elwin Oost and the Burn to the Brim team";
+            
+        gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(about), _T("about_comments", default_comments).c_str());
             
         // Load and set logo texture
         GFile* file = g_file_new_for_path("src/bttb.png");
@@ -395,32 +401,32 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
     }), this);
     
     // Start / Test / Stop buttons
-    start_button = gtk_button_new_with_label("Start");
+    start_button = gtk_button_new_with_label(_T("start_btn", "Start").c_str());
     gtk_widget_add_css_class(start_button, "suggested-action");
-    gtk_widget_set_tooltip_text(start_button, "Start organizing files into optimal volumes");
+    gtk_widget_set_tooltip_text(start_button, _T("start_tooltip", "Start organizing files into optimal volumes").c_str());
     gtk_header_bar_pack_end(GTK_HEADER_BAR(header), start_button);
 
-    test_button = gtk_button_new_with_label("Test");
+    test_button = gtk_button_new_with_label(_T("test_btn", "Test").c_str());
     gtk_widget_add_css_class(test_button, "suggested-action");
-    gtk_widget_set_tooltip_text(test_button, "Simulate organizing files and calculate metrics without modifying files on disk");
+    gtk_widget_set_tooltip_text(test_button, _T("test_tooltip", "Simulate organizing files and calculate metrics without modifying files on disk").c_str());
     gtk_header_bar_pack_end(GTK_HEADER_BAR(header), test_button);
     
-    stop_button = gtk_button_new_with_label("Stop");
+    stop_button = gtk_button_new_with_label(_T("stop_btn", "Stop").c_str());
     gtk_widget_add_css_class(stop_button, "destructive-action");
-    gtk_widget_set_tooltip_text(stop_button, "Stop the current solver or copy operation");
+    gtk_widget_set_tooltip_text(stop_button, _T("stop_tooltip", "Stop the current solver or copy operation").c_str());
     gtk_widget_set_sensitive(stop_button, FALSE);
     gtk_header_bar_pack_end(GTK_HEADER_BAR(header), stop_button);
     
     // Help button
     GtkWidget* help_btn = gtk_button_new_from_icon_name("help-browser");
-    gtk_widget_set_tooltip_text(help_btn, "Help Documentation");
+    gtk_widget_set_tooltip_text(help_btn, _T("help_title", "Help Documentation").c_str());
     gtk_header_bar_pack_start(GTK_HEADER_BAR(header), help_btn);
     
     g_signal_connect(help_btn, "clicked", G_CALLBACK(+[](GtkWidget* btn, gpointer user_data) {
         auto* self = static_cast<MainWindow*>(user_data);
         
         GtkWidget* help_dlg = gtk_window_new();
-        gtk_window_set_title(GTK_WINDOW(help_dlg), "Help - Burn to the Brim");
+        gtk_window_set_title(GTK_WINDOW(help_dlg), _T("help_title", "Help - Burn to the Brim").c_str());
         gtk_window_set_default_size(GTK_WINDOW(help_dlg), 520, 420);
         gtk_window_set_modal(GTK_WINDOW(help_dlg), TRUE);
         gtk_window_set_transient_for(GTK_WINDOW(help_dlg), GTK_WINDOW(self->window));
@@ -433,7 +439,7 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
         gtk_window_set_child(GTK_WINDOW(help_dlg), vbox);
         
         GtkWidget* label_title = gtk_label_new(nullptr);
-        gtk_label_set_markup(GTK_LABEL(label_title), "<b><span size='large'>Burn to the Brim (BTTB) Help Guide</span></b>");
+        gtk_label_set_markup(GTK_LABEL(label_title), ("<b><span size='large'>" + _T("help_guide_title", "Burn to the Brim (BTTB) Help Guide") + "</span></b>").c_str());
         gtk_widget_set_halign(label_title, GTK_ALIGN_START);
         gtk_box_append(GTK_BOX(vbox), label_title);
         
@@ -477,9 +483,9 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
             "     pip install sentence-transformers\n"
             " - Step 3: Restart Burn to the Brim to automatically load MiniLM! If not found, BTTB falls back gracefully to a localized character TF-IDF projector.";
             
-        gtk_text_buffer_set_text(buffer, help_text, -1);
+        gtk_text_buffer_set_text(buffer, _T("help_guide_text", help_text).c_str(), -1);
         
-        GtkWidget* close_btn = gtk_button_new_with_label("Close");
+        GtkWidget* close_btn = gtk_button_new_with_label(_T("close_btn", "Close").c_str());
         gtk_widget_set_halign(close_btn, GTK_ALIGN_END);
         gtk_box_append(GTK_BOX(vbox), close_btn);
         
@@ -616,11 +622,11 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
     
     GtkCellRenderer* text_renderer = gtk_cell_renderer_text_new();
     gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view),
-                                gtk_tree_view_column_new_with_attributes("Relative Path / Category", text_renderer, "text", 0, NULL));
+                                gtk_tree_view_column_new_with_attributes(_T("rel_path_col", "Relative Path / Category").c_str(), text_renderer, "text", 0, NULL));
     gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view),
-                                gtk_tree_view_column_new_with_attributes("Size", text_renderer, "text", 1, NULL));
+                                gtk_tree_view_column_new_with_attributes(_T("size_col", "Size").c_str(), text_renderer, "text", 1, NULL));
     gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view),
-                                gtk_tree_view_column_new_with_attributes("Fitted Status", text_renderer, "text", 2, NULL));
+                                gtk_tree_view_column_new_with_attributes(_T("fitted_status_col", "Fitted Status").c_str(), text_renderer, "text", 2, NULL));
     
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(sidebar_scroll), tree_view);
     
@@ -639,21 +645,21 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
     gtk_box_append(GTK_BOX(right_box), input_grid);
     
     // Source Browse
-    GtkWidget* src_label = gtk_label_new("Source Folder:");
+    GtkWidget* src_label = gtk_label_new(_T("source_folder", "Source Folder:").c_str());
     gtk_widget_set_halign(src_label, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(input_grid), src_label, 0, 0, 1, 1);
     
     GtkWidget* src_add = gtk_button_new_from_icon_name("list-add");
-    gtk_widget_set_tooltip_text(src_add, "Manage multiple source folders...");
+    gtk_widget_set_tooltip_text(src_add, _T("manage_src_folders_title", "Manage Source Folders").c_str());
     gtk_grid_attach(GTK_GRID(input_grid), src_add, 1, 0, 1, 1);
     
     source_entry = gtk_entry_new();
     gtk_widget_set_hexpand(source_entry, TRUE);
-    gtk_widget_set_tooltip_text(source_entry, "Source directory containing the files to organize");
+    gtk_widget_set_tooltip_text(source_entry, _T("source_tooltip", "Source directory containing the files to organize").c_str());
     gtk_grid_attach(GTK_GRID(input_grid), source_entry, 2, 0, 1, 1);
     
-    GtkWidget* src_browse = gtk_button_new_with_label("Browse...");
-    gtk_widget_set_tooltip_text(src_browse, "Browse for source directory");
+    GtkWidget* src_browse = gtk_button_new_with_label(_T("browse_btn", "Browse...").c_str());
+    gtk_widget_set_tooltip_text(src_browse, _T("browse_src_tooltip", "Browse for source directory").c_str());
     gtk_grid_attach(GTK_GRID(input_grid), src_browse, 3, 0, 1, 1);
     
     g_signal_connect(src_add, "clicked", G_CALLBACK(+[](GtkWidget* btn, gpointer user_data) {
@@ -684,23 +690,23 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
     }), this);
     
     // Target Browse
-    GtkWidget* dest_label = gtk_label_new("Target Folder:");
+    GtkWidget* dest_label = gtk_label_new(_T("target_folder", "Target Folder:").c_str());
     gtk_widget_set_halign(dest_label, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(input_grid), dest_label, 0, 1, 2, 1);
     
     target_entry = gtk_entry_new();
-    gtk_widget_set_tooltip_text(target_entry, "Destination directory where organized volumes will be created");
+    gtk_widget_set_tooltip_text(target_entry, _T("target_tooltip", "Destination directory where organized volumes will be created").c_str());
     gtk_grid_attach(GTK_GRID(input_grid), target_entry, 2, 1, 1, 1);
     
-    GtkWidget* dest_browse = gtk_button_new_with_label("Browse...");
-    gtk_widget_set_tooltip_text(dest_browse, "Browse for destination directory");
+    GtkWidget* dest_browse = gtk_button_new_with_label(_T("browse_btn", "Browse...").c_str());
+    gtk_widget_set_tooltip_text(dest_browse, _T("browse_dest_tooltip", "Browse for destination directory").c_str());
     gtk_grid_attach(GTK_GRID(input_grid), dest_browse, 3, 1, 1, 1);
     
     g_signal_connect(dest_browse, "clicked", G_CALLBACK(+[](GtkWidget* btn, gpointer user_data) {
         auto* self = static_cast<MainWindow*>(user_data);
         
         GtkFileDialog* dialog = gtk_file_dialog_new();
-        gtk_file_dialog_set_title(dialog, "Select Target Directory");
+        gtk_file_dialog_set_title(dialog, _T("select_dest_dir_title", "Select Target Directory").c_str());
         
         gtk_file_dialog_select_folder(dialog, GTK_WINDOW(self->window), nullptr, +[](GObject* source, GAsyncResult* res, gpointer data) {
             auto* self = static_cast<MainWindow*>(data);
@@ -719,34 +725,34 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
     }), this);
     
     // Semantic Prompt (v4.0.0)
-    GtkWidget* semantic_label = gtk_label_new("Semantic Prompt:");
+    GtkWidget* semantic_label = gtk_label_new(_T("semantic_prompt", "Semantic Prompt:").c_str());
     gtk_widget_set_halign(semantic_label, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(input_grid), semantic_label, 0, 2, 2, 1);
     
     semantic_entry = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(semantic_entry), "e.g. keep similar content together");
-    gtk_widget_set_tooltip_text(semantic_entry, "Specify a semantic description to cluster similar files using MiniLM AI");
+    gtk_entry_set_placeholder_text(GTK_ENTRY(semantic_entry), _T("semantic_placeholder", "e.g. keep similar content together").c_str());
+    gtk_widget_set_tooltip_text(semantic_entry, _T("semantic_tooltip", "Specify a semantic description to cluster similar files using MiniLM AI").c_str());
     gtk_grid_attach(GTK_GRID(input_grid), semantic_entry, 2, 2, 2, 1);
 
     // Checkbox for move
-    move_check = gtk_check_button_new_with_label("Move fitted folders/files to target folder");
-    gtk_widget_set_tooltip_text(move_check, "Move files to their destination volumes instead of copying or symlinking them");
+    move_check = gtk_check_button_new_with_label(_T("move_files_chk", "Move fitted folders/files to target folder").c_str());
+    gtk_widget_set_tooltip_text(move_check, _T("move_tooltip", "Move files to their destination volumes instead of copying or symlinking them").c_str());
     gtk_grid_attach(GTK_GRID(input_grid), move_check, 2, 3, 2, 1);
     
     // Checkbox for symlinks
-    symlink_check = gtk_check_button_new_with_label("Create symbolic links in target folder (Default)");
-    gtk_widget_set_tooltip_text(symlink_check, "Create symbolic links of the files at their destination instead of copying them");
+    symlink_check = gtk_check_button_new_with_label(_T("create_symlinks_chk", "Create symbolic links in target folder (Default)").c_str());
+    gtk_widget_set_tooltip_text(symlink_check, _T("symlink_tooltip", "Create symbolic links of the files at their destination instead of copying them").c_str());
     gtk_grid_attach(GTK_GRID(input_grid), symlink_check, 2, 4, 2, 1);
     gtk_check_button_set_active(GTK_CHECK_BUTTON(symlink_check), TRUE);
     
     // Checkbox for span
-    span_check = gtk_check_button_new_with_label("Span across multiple volumes (Volume_1, Volume_2, etc.)");
-    gtk_widget_set_tooltip_text(span_check, "Fit remaining files into multiple volumes sequentially instead of just the first volume");
+    span_check = gtk_check_button_new_with_label(_T("span_chk", "Span across multiple volumes (Volume_1, Volume_2, etc.)").c_str());
+    gtk_widget_set_tooltip_text(span_check, _T("span_tooltip", "Fit remaining files into multiple volumes sequentially instead of just the first volume").c_str());
     gtk_grid_attach(GTK_GRID(input_grid), span_check, 2, 5, 2, 1);
     
     // Checkbox for trace
-    trace_check = gtk_check_button_new_with_label("Enable detailed solver diagnostic tracing (Trace)");
-    gtk_widget_set_tooltip_text(trace_check, "Show extra verbose tracing and performance metrics in the logs");
+    trace_check = gtk_check_button_new_with_label(_T("trace_chk", "Enable detailed solver diagnostic tracing (Trace)").c_str());
+    gtk_widget_set_tooltip_text(trace_check, _T("trace_tooltip", "Show extra verbose tracing and performance metrics in the logs").c_str());
     gtk_grid_attach(GTK_GRID(input_grid), trace_check, 2, 6, 2, 1);
     
     // Exclusivity between move_check and symlink_check
@@ -765,7 +771,7 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
     }), this);
     
     // Progress Section
-    GtkWidget* progress_frame = gtk_frame_new("Fitted Medium capacity");
+    GtkWidget* progress_frame = gtk_frame_new(_T("progress_frame_title", "Fitted Medium capacity").c_str());
     gtk_box_append(GTK_BOX(right_box), progress_frame);
     
     GtkWidget* progress_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
@@ -778,12 +784,12 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
     progress_bar_disc = gtk_progress_bar_new();
     gtk_box_append(GTK_BOX(progress_box), progress_bar_disc);
     
-    progress_label_disc = gtk_label_new("Filled: 0.00%");
+    progress_label_disc = gtk_label_new(_T("filled_label", "Filled: 0.00%").c_str());
     gtk_widget_set_halign(progress_label_disc, GTK_ALIGN_START);
     gtk_box_append(GTK_BOX(progress_box), progress_label_disc);
     
     // Rich Text Logs
-    GtkWidget* log_frame = gtk_frame_new("Status and Solver Logs");
+    GtkWidget* log_frame = gtk_frame_new(_T("log_frame_title", "Status and Solver Logs").c_str());
     gtk_widget_set_vexpand(log_frame, TRUE);
     gtk_box_append(GTK_BOX(right_box), log_frame);
     
@@ -801,7 +807,7 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
     gtk_text_buffer_create_tag(log_buffer, "success", "foreground", "green", "weight", PANGO_WEIGHT_BOLD, NULL);
     gtk_text_buffer_create_tag(log_buffer, "error", "foreground", "darkred", "weight", PANGO_WEIGHT_BOLD, NULL);
     gtk_text_buffer_create_tag(log_buffer, "important", "foreground", "blue", "weight", PANGO_WEIGHT_BOLD, NULL);
-
+ 
     // Status bar with Spinner and Time Left
     GtkWidget* status_bar_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     gtk_widget_set_margin_start(status_bar_box, 8);
@@ -809,11 +815,11 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
     gtk_widget_set_margin_top(status_bar_box, 4);
     gtk_widget_set_margin_bottom(status_bar_box, 4);
     gtk_box_append(GTK_BOX(right_box), status_bar_box);
-
+ 
     activity_spinner = gtk_spinner_new();
     gtk_box_append(GTK_BOX(status_bar_box), activity_spinner);
-
-    time_left_label = gtk_label_new("Time Left: --:--");
+ 
+    time_left_label = gtk_label_new(_T("time_left_label", "Time Left: --:--").c_str());
     gtk_widget_set_halign(time_left_label, GTK_ALIGN_START);
     gtk_box_append(GTK_BOX(status_bar_box), time_left_label);
     

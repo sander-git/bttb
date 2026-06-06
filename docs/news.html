@@ -321,7 +321,25 @@
         </div>
 
         <div class="news-container">
-            
+
+            <!-- News Item 4.3.0 -->
+            <div class="news-card">
+                <div class="news-date">June 6, 2026</div>
+                <h2>Version 4.3.0 Released: Modular Localization, PO Translations &amp; Dynamic GUI Languages</h2>
+                <p>
+                    Today we are pleased to announce **Burn to the Brim 4.3.0**, a major usability release bringing modular localization support with separate, extensible Gettext <code>.po</code> files in German, Dutch, French, and Spanish, alongside dynamic language reloading and automatic default system locale detection.
+                </p>
+                <p>
+                    <strong>Modular PO Translations:</strong> Localization is now completely modular and separated from the default English language of the application. If translation files are deleted or absent, the code compiles and falls back gracefully to English without warning messages or crashes. Standard PO format is used, conforming to GNU Gettext specifications.
+                </p>
+                <p>
+                    <strong>System Default &amp; Preferences Integration:</strong> On start, BTTB automatically detects and assumes the language of the system on which it is running (Linux or Windows). Users can configure and override their language choice dynamically via a dropdown combobox in Settings/Preferences. Dynamic changes reload translation dictionaries on-the-fly and prompt the user to restart the application to apply modifications.
+                </p>
+                <p>
+                    <strong>Win32 Edit &amp; Dialog Newline Adaptation:</strong> Added support for Windows-native message boxes and multi-line edit fields by converting line endings from standard unix <code>\n</code> to <code>\r\n</code> dynamically.
+                </p>
+            </div>
+
             <!-- News Item 4.2.0 -->
             <div class="news-card">
                 <div class="news-date">June 1, 2026</div>

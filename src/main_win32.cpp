@@ -8,7 +8,9 @@
 #include <chrono>
 #include <filesystem>
 #include <iostream>
+#include <clocale>
 #include "bttb_logic.hpp"
+#include "bttb_locale.hpp"
 #include "cli_engine.hpp"
 #include <dwmapi.h>
 #include <uxtheme.h>
@@ -118,6 +120,7 @@ void ApplyThemeToListView(HWND hwndLV) {
 #define ID_PREF_CHK_PAR3 3024
 #define ID_PREF_EDIT_PAR3_BLOCK 3025
 #define ID_PREF_EDIT_PAR3_REDUNDANCY 3026
+#define ID_PREF_COMBO_LANG           3027
 
 #define ID_BTN_IMPORT_JSON 1020
 #define ID_BTN_VERIFY_RESTORE 1021
@@ -195,6 +198,7 @@ HWND g_chkPrefDarkTheme = NULL;
 HWND g_chkPrefPar3 = NULL;
 HWND g_editPrefPar3Block = NULL;
 HWND g_editPrefPar3Redundancy = NULL;
+HWND g_comboPrefLang = NULL;
 
 HWND g_btnImportJson = NULL;
 HWND g_btnVerifyRestore = NULL;
@@ -240,6 +244,23 @@ inline std::wstring utf8ToWstring(const std::string& str) {
     return wstrTo;
 }
 #endif
+
+inline std::string toWinNewlines(const std::string& str) {
+    std::string res;
+    res.reserve(str.length() * 11 / 10);
+    for (size_t i = 0; i < str.length(); ++i) {
+        if (str[i] == '\n') {
+            if (i == 0 || str[i-1] != '\r') {
+                res += "\r\n";
+            } else {
+                res += '\n';
+            }
+        } else {
+            res += str[i];
+        }
+    }
+    return res;
+}
 
 // Registry management helper functions
 void RegisterExplorerContextMenu(bool registerIt) {
@@ -374,41 +395,42 @@ std::string OpenJsonFileDialog(HWND hwnd, const std::string& title) {
 
 // Background thread runner for volume verification and restoration (PAR3)
 void RunVerifyProcess(HWND hwnd, std::string volumePath, std::string destPath, std::string parBaseName, bool isRestore) {
+    std::string* pLog = nullptr;
     if (isRestore) {
-        auto* pLog = new std::string("Starting volume restoration/repair...\r\n");
+        pLog = new std::string(toWinNewlines(_T("log_start_restore", "Starting volume restoration/repair...\n")));
         PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
         
-        pLog = new std::string("Volume path: " + volumePath + "\r\n");
+        pLog = new std::string(toWinNewlines(_T("log_volume_path", "Volume path: ") + volumePath + "\n"));
         PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
-        pLog = new std::string("Recovery path: " + destPath + "\r\n");
+        pLog = new std::string(toWinNewlines(_T("log_recovery_path", "Recovery path: ") + destPath + "\n"));
         PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
-        pLog = new std::string("PAR3 base name: " + parBaseName + "\r\n");
+        pLog = new std::string(toWinNewlines(_T("log_par3_base", "PAR3 base name: ") + parBaseName + "\n"));
         PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
-        pLog = new std::string("Copying volume contents and running repair. Please wait...\r\n");
+        pLog = new std::string(toWinNewlines(_T("log_copying_repair", "Copying volume contents and running repair. Please wait...\n")));
         PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
         
         std::string logOutput;
         bool res = bttb::restoreVolumePar3(volumePath, destPath, parBaseName, logOutput);
         
         if (!logOutput.empty()) {
-            pLog = new std::string("Logs/Errors: " + logOutput + "\r\n");
+            pLog = new std::string(toWinNewlines(_T("log_errors", "Logs/Errors: ") + logOutput + "\n"));
             PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
         }
         
         if (res) {
-            pLog = new std::string("\r\nSUCCESS: Volume successfully copied and repaired in separate recovery folder!\r\n");
+            pLog = new std::string(toWinNewlines(_T("log_success_restore", "\nSUCCESS: Volume successfully copied and repaired in separate recovery folder!\n")));
             PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
         } else {
-            pLog = new std::string("\r\nFAILURE: Restoration or repair failed.\r\n");
+            pLog = new std::string(toWinNewlines(_T("log_fail_restore", "\nFAILURE: Restoration or repair failed.\n")));
             PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
         }
     } else {
-        auto* pLog = new std::string("Starting volume verification...\r\n");
+        pLog = new std::string(toWinNewlines(_T("log_start_verify", "Starting volume verification...\n")));
         PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
         
-        pLog = new std::string("Volume path: " + volumePath + "\r\n");
+        pLog = new std::string(toWinNewlines(_T("log_volume_path", "Volume path: ") + volumePath + "\n"));
         PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
-        pLog = new std::string("PAR3 base name: " + parBaseName + "\r\n");
+        pLog = new std::string(toWinNewlines(_T("log_par3_base", "PAR3 base name: ") + parBaseName + "\n"));
         PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
         
         std::vector<std::string> damaged;
@@ -416,25 +438,25 @@ void RunVerifyProcess(HWND hwnd, std::string volumePath, std::string destPath, s
         int status = bttb::verifyVolumePar3(volumePath, parBaseName, damaged, logOutput);
         
         if (!logOutput.empty()) {
-            pLog = new std::string("Logs/Errors: " + logOutput + "\r\n");
+            pLog = new std::string(toWinNewlines(_T("log_errors", "Logs/Errors: ") + logOutput + "\n"));
             PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
         }
         
         if (status == 0) {
-            pLog = new std::string("\r\nSUCCESS: All files verified and are clean/bit-perfect!\r\n");
+            pLog = new std::string(toWinNewlines(_T("log_success_verify", "\nSUCCESS: All files verified and are clean/bit-perfect!\n")));
             PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
         } else {
-            pLog = new std::string("\r\nVerification detected issues (status " + std::to_string(status) + ").\r\n");
+            pLog = new std::string(toWinNewlines(_T("log_fail_verify_status", "\nVerification detected issues (status ") + std::to_string(status) + ").\n"));
             PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
             if (!damaged.empty()) {
-                pLog = new std::string("Damaged or missing files found:\r\n");
+                pLog = new std::string(toWinNewlines(_T("log_damaged_files", "Damaged or missing files found:\n")));
                 PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
                 for (const auto& f : damaged) {
                     pLog = new std::string(" * " + f + "\r\n");
                     PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
                 }
             } else {
-                pLog = new std::string("No individual damaged files identified, but the index verification failed. The PAR3 archive itself might be damaged.\r\n");
+                pLog = new std::string(toWinNewlines(_T("log_index_fail", "No individual damaged files identified, but the index verification failed. The PAR3 archive itself might be damaged.\n")));
                 PostMessage(hwnd, WM_VERIFY_LOG, 0, reinterpret_cast<LPARAM>(pLog));
             }
         }
@@ -448,27 +470,27 @@ LRESULT CALLBACK VerifyWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
         case WM_CREATE: {
             int y = 20;
             
-            CreateWindow("STATIC", "Volume Directory:", WS_CHILD | WS_VISIBLE, 20, y + 2, 120, 20, hwnd, NULL, NULL, NULL);
-            g_editVerifyVol = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 150, y, 250, 22, hwnd, NULL, NULL, NULL);
-            CreateWindow("BUTTON", "Browse...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 410, y - 2, 90, 25, hwnd, (HMENU)ID_BTN_VERIFY_VOL_BROWSE, NULL, NULL);
+            CreateWindow("STATIC", _T("label_vol_directory", "Volume Directory:").c_str(), WS_CHILD | WS_VISIBLE, 20, y + 2, 160, 20, hwnd, NULL, NULL, NULL);
+            g_editVerifyVol = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 190, y, 210, 22, hwnd, NULL, NULL, NULL);
+            CreateWindow("BUTTON", _T("browse_btn", "Browse...").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 410, y - 2, 100, 25, hwnd, (HMENU)ID_BTN_VERIFY_VOL_BROWSE, NULL, NULL);
             
             y += 30;
-            CreateWindow("STATIC", "Recovery Directory:", WS_CHILD | WS_VISIBLE, 20, y + 2, 120, 20, hwnd, NULL, NULL, NULL);
-            g_editVerifyDest = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 150, y, 250, 22, hwnd, NULL, NULL, NULL);
-            CreateWindow("BUTTON", "Browse...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 410, y - 2, 90, 25, hwnd, (HMENU)ID_BTN_VERIFY_DEST_BROWSE, NULL, NULL);
+            CreateWindow("STATIC", _T("label_rec_directory", "Recovery Directory:").c_str(), WS_CHILD | WS_VISIBLE, 20, y + 2, 160, 20, hwnd, NULL, NULL, NULL);
+            g_editVerifyDest = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 190, y, 210, 22, hwnd, NULL, NULL, NULL);
+            CreateWindow("BUTTON", _T("browse_btn", "Browse...").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 410, y - 2, 100, 25, hwnd, (HMENU)ID_BTN_VERIFY_DEST_BROWSE, NULL, NULL);
             
             y += 30;
-            CreateWindow("STATIC", "PAR3 Base Name:", WS_CHILD | WS_VISIBLE, 20, y + 2, 120, 20, hwnd, NULL, NULL, NULL);
-            g_editVerifyParName = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "Volume_1", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 150, y, 150, 22, hwnd, NULL, NULL, NULL);
+            CreateWindow("STATIC", _T("label_par3_base", "PAR3 Base Name:").c_str(), WS_CHILD | WS_VISIBLE, 20, y + 2, 160, 20, hwnd, NULL, NULL, NULL);
+            g_editVerifyParName = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "Volume_1", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 190, y, 210, 22, hwnd, NULL, NULL, NULL);
             
             y += 35;
-            CreateWindow("BUTTON", "Verification & Restoration Log", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 12, y, 510, 200, hwnd, NULL, NULL, NULL);
+            CreateWindow("BUTTON", _T("log_frame_title_verify", "Verification & Restoration Log").c_str(), WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 12, y, 510, 200, hwnd, NULL, NULL, NULL);
             g_editVerifyLog = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL | ES_READONLY, 24, y + 20, 480, 165, hwnd, NULL, NULL, NULL);
             
             y += 215;
-            g_btnVerifyRun = CreateWindow("BUTTON", "Verify Only", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 110, y, 120, 30, hwnd, (HMENU)ID_BTN_VERIFY_RUN, NULL, NULL);
-            g_btnVerifyRestoreAction = CreateWindow("BUTTON", "Restore & Repair", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 240, y, 120, 30, hwnd, (HMENU)ID_BTN_VERIFY_RESTORE_ACTION, NULL, NULL);
-            CreateWindow("BUTTON", "Close", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 370, y, 120, 30, hwnd, (HMENU)ID_BTN_VERIFY_CLOSE, NULL, NULL);
+            g_btnVerifyRun = CreateWindow("BUTTON", _T("verify_only_btn", "Verify Only").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 40, y, 120, 30, hwnd, (HMENU)ID_BTN_VERIFY_RUN, NULL, NULL);
+            g_btnVerifyRestoreAction = CreateWindow("BUTTON", _T("restore_repair_btn", "Restore & Repair").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 180, y, 180, 30, hwnd, (HMENU)ID_BTN_VERIFY_RESTORE_ACTION, NULL, NULL);
+            CreateWindow("BUTTON", _T("close_btn", "Close").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 380, y, 120, 30, hwnd, (HMENU)ID_BTN_VERIFY_CLOSE, NULL, NULL);
             
             // Set font
             HFONT hFont = CreateFont(15, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "MS Shell Dlg");
@@ -668,26 +690,26 @@ LRESULT CALLBACK IsoWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case WM_CREATE: {
             int y = 20;
             
-            CreateWindow("STATIC", "Source Directory:", WS_CHILD | WS_VISIBLE, 20, y + 2, 120, 20, hwnd, NULL, NULL, NULL);
-            g_editIsoSrc = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 150, y, 250, 22, hwnd, NULL, NULL, NULL);
-            CreateWindow("BUTTON", "Browse...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 410, y - 2, 90, 25, hwnd, (HMENU)ID_BTN_ISO_SRC_BROWSE, NULL, NULL);
+            CreateWindow("STATIC", _T("source_folder", "Source Directory:").c_str(), WS_CHILD | WS_VISIBLE, 20, y + 2, 160, 20, hwnd, NULL, NULL, NULL);
+            g_editIsoSrc = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 190, y, 210, 22, hwnd, NULL, NULL, NULL);
+            CreateWindow("BUTTON", _T("browse_btn", "Browse...").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 410, y - 2, 100, 25, hwnd, (HMENU)ID_BTN_ISO_SRC_BROWSE, NULL, NULL);
             
             y += 30;
-            CreateWindow("STATIC", "Target ISO File:", WS_CHILD | WS_VISIBLE, 20, y + 2, 120, 20, hwnd, NULL, NULL, NULL);
-            g_editIsoPath = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 150, y, 250, 22, hwnd, NULL, NULL, NULL);
-            CreateWindow("BUTTON", "Browse...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 410, y - 2, 90, 25, hwnd, (HMENU)ID_BTN_ISO_PATH_BROWSE, NULL, NULL);
+            CreateWindow("STATIC", _T("target_iso_file", "Target ISO File:").c_str(), WS_CHILD | WS_VISIBLE, 20, y + 2, 160, 20, hwnd, NULL, NULL, NULL);
+            g_editIsoPath = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 190, y, 210, 22, hwnd, NULL, NULL, NULL);
+            CreateWindow("BUTTON", _T("browse_btn", "Browse...").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 410, y - 2, 100, 25, hwnd, (HMENU)ID_BTN_ISO_PATH_BROWSE, NULL, NULL);
             
             y += 30;
-            CreateWindow("STATIC", "Volume Label:", WS_CHILD | WS_VISIBLE, 20, y + 2, 120, 20, hwnd, NULL, NULL, NULL);
-            g_editIsoVol = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "BTTB_BACKUP", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 150, y, 150, 22, hwnd, NULL, NULL, NULL);
+            CreateWindow("STATIC", _T("volume_label", "Volume Label:").c_str(), WS_CHILD | WS_VISIBLE, 20, y + 2, 160, 20, hwnd, NULL, NULL, NULL);
+            g_editIsoVol = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "BTTB_BACKUP", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 190, y, 210, 22, hwnd, NULL, NULL, NULL);
             
             y += 35;
-            CreateWindow("BUTTON", "Execution Log", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 12, y, 510, 200, hwnd, NULL, NULL, NULL);
+            CreateWindow("BUTTON", _T("execution_log", "Execution Log").c_str(), WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 12, y, 510, 200, hwnd, NULL, NULL, NULL);
             g_editIsoLog = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL | ES_READONLY, 24, y + 20, 480, 165, hwnd, NULL, NULL, NULL);
             
             y += 215;
-            g_btnIsoGenerate = CreateWindow("BUTTON", "Generate", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 240, y, 120, 30, hwnd, (HMENU)ID_BTN_ISO_GENERATE, NULL, NULL);
-            CreateWindow("BUTTON", "Close", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 370, y, 120, 30, hwnd, (HMENU)ID_BTN_ISO_CLOSE, NULL, NULL);
+            g_btnIsoGenerate = CreateWindow("BUTTON", _T("generate_btn", "Generate").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 240, y, 120, 30, hwnd, (HMENU)ID_BTN_ISO_GENERATE, NULL, NULL);
+            CreateWindow("BUTTON", _T("close_btn", "Close").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 370, y, 120, 30, hwnd, (HMENU)ID_BTN_ISO_CLOSE, NULL, NULL);
             
             // Set font
             HFONT hFont = CreateFont(15, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "MS Shell Dlg");
@@ -785,16 +807,16 @@ LRESULT CALLBACK FolderListWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
     switch (msg) {
 
         case WM_CREATE: {
-            CreateWindow("STATIC", "Complete list of source folders:", WS_CHILD | WS_VISIBLE, 12, 12, 300, 20, hwnd, NULL, NULL, NULL);
+            CreateWindow("STATIC", _T("complete_list_src_folders", "Complete list of source folders:").c_str(), WS_CHILD | WS_VISIBLE, 12, 12, 300, 20, hwnd, NULL, NULL, NULL);
             
             g_listFolders = CreateWindowEx(WS_EX_CLIENTEDGE, "LISTBOX", "", WS_CHILD | WS_VISIBLE | LBS_STANDARD | LBS_NOTIFY | WS_VSCROLL, 12, 36, 460, 200, hwnd, (HMENU)ID_FOLDER_LISTBOX, NULL, NULL);
             
-            CreateWindow("BUTTON", "Add...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 12, 250, 80, 28, hwnd, (HMENU)ID_FOLDER_BTN_ADD, NULL, NULL);
-            CreateWindow("BUTTON", "Edit...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 100, 250, 80, 28, hwnd, (HMENU)ID_FOLDER_BTN_EDIT, NULL, NULL);
-            CreateWindow("BUTTON", "Remove", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 188, 250, 80, 28, hwnd, (HMENU)ID_FOLDER_BTN_REMOVE, NULL, NULL);
+            CreateWindow("BUTTON", _T("add_btn", "Add...").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 12, 250, 80, 28, hwnd, (HMENU)ID_FOLDER_BTN_ADD, NULL, NULL);
+            CreateWindow("BUTTON", _T("edit_btn", "Edit...").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 100, 250, 80, 28, hwnd, (HMENU)ID_FOLDER_BTN_EDIT, NULL, NULL);
+            CreateWindow("BUTTON", _T("remove_btn", "Remove").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 188, 250, 90, 28, hwnd, (HMENU)ID_FOLDER_BTN_REMOVE, NULL, NULL);
             
-            CreateWindow("BUTTON", "Cancel", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 300, 250, 80, 28, hwnd, (HMENU)ID_FOLDER_BTN_CANCEL, NULL, NULL);
-            CreateWindow("BUTTON", "OK", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 390, 250, 80, 28, hwnd, (HMENU)ID_FOLDER_BTN_OK, NULL, NULL);
+            CreateWindow("BUTTON", _T("cancel_btn", "Cancel").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 285, 250, 90, 28, hwnd, (HMENU)ID_FOLDER_BTN_CANCEL, NULL, NULL);
+            CreateWindow("BUTTON", _T("ok_btn", "OK").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 385, 250, 85, 28, hwnd, (HMENU)ID_FOLDER_BTN_OK, NULL, NULL);
             
             HFONT hFont = CreateFont(15, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "MS Shell Dlg");
             EnumChildWindows(hwnd, [](HWND hwndChild, LPARAM lParam) -> BOOL {
@@ -899,33 +921,35 @@ LRESULT CALLBACK AboutWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             HICON hIco = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(1));
             SendMessage(hIcon, STM_SETICON, (WPARAM)hIco, 0);
             
-            CreateWindow("STATIC", "Burn to the Brim", WS_CHILD | WS_VISIBLE, 70, 20, 300, 20, hwnd, NULL, NULL, NULL);
-            CreateWindow("STATIC", "Version 4.2.1", WS_CHILD | WS_VISIBLE, 70, 40, 300, 20, hwnd, NULL, NULL, NULL);
-            CreateWindow("STATIC", "Copyright \u00a9 2001-2026 Sander Raaijmakers, Elwin Oost and the Burn to the Brim team", WS_CHILD | WS_VISIBLE, 70, 60, 350, 40, hwnd, NULL, NULL, NULL);
+            CreateWindow("STATIC", _T("app_title", "Burn to the Brim").c_str(), WS_CHILD | WS_VISIBLE, 70, 20, 300, 20, hwnd, NULL, NULL, NULL);
+            CreateWindow("STATIC", _T("app_version", "Version 4.3.0").c_str(), WS_CHILD | WS_VISIBLE, 70, 40, 300, 20, hwnd, NULL, NULL, NULL);
+            CreateWindow("STATIC", _T("app_copyright", "Copyright \u00a9 2001-2026 Sander Raaijmakers, Elwin Oost and the Burn to the Brim team").c_str(), WS_CHILD | WS_VISIBLE, 70, 60, 350, 40, hwnd, NULL, NULL, NULL);
             
-            std::string comments = 
-                "Burn to the Brim (BTTB) is a modern C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums.\r\n\r\n"
-                "Features in v4.2.1:\r\n"
-                "- Offline JSON Index creation and interactive parser\r\n"
-                "- Optional PAR3 parity file generation and verification\r\n"
-                "- Bit-perfect PAR3 copy-based restoration and repair\r\n"
-                "- Modern dark theme styling on Linux GTK4 and native light theming on Windows\r\n"
-                "- Improved Estimated Time Left calculation immediately at startup\r\n"
-                "- Named Custom Volume profiles & dynamic Auto Volume sizing\r\n"
-                "- Settings memory restoring the last selected volume configuration\r\n"
-                "- Rule conflict overrides allowing rule-based or semantic grouping to win\r\n"
-                "- Transfer-rate estimated Time Left & status activity spinner\r\n"
-                "- Entropy-Aware Semantic Packing based on MiniLM embeddings\r\n"
-                "- Explorer Context Menu integration & long path support\r\n\r\n"
-                "Libraries and Attributions Used:\r\n"
-                "- libpar3 (by Yutaka Sawada, LGPL v2.1+): https://github.com/Parchive/par3cmdline\r\n"
-                "- BLAKE3 (by BLAKE3 team, CC0/Apache-2.0): https://github.com/BLAKE3-team/BLAKE3\r\n"
-                "- Leopard-RS (by Christopher A. Taylor, BSD 3-Clause): https://github.com/catid/leopard\r\n"
-                "- Galois Field library (by James S. Plank): http://web.eecs.utk.edu/~jplank/plank/www/software.html\r\n\r\n"
+            const char* default_comments = 
+                "Burn to the Brim (BTTB) is a modern C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums (CDs, DVDs, Blu-rays, or USBs).\n\n"
+                "Features in v4.3.0:\n"
+                "- Offline JSON Index creation and interactive parser\n"
+                "- Optional PAR3 parity file generation and verification\n"
+                "- Bit-perfect PAR3 copy-based restoration and repair\n"
+                "- Theme support including standard dark theme options on Linux GTK4\n"
+                "- Improved Estimated Time Left calculation immediately at startup\n"
+                "- Named Custom Volume profiles & dynamic Auto Volume sizing\n"
+                "- Settings memory restoring the last selected volume configuration\n"
+                "- Rule conflict overrides allowing rule-based or semantic grouping to win\n"
+                "- Transfer-rate estimated Time Left & status activity spinner\n"
+                "- Entropy-Aware Semantic Packing based on MiniLM embeddings\n"
+                "- Explorer Context Menu integration & long path support\n\n"
+                "Libraries and Attributions Used:\n"
+                "- libpar3 (by Yutaka Sawada, LGPL v2.1+): https://github.com/Parchive/par3cmdline\n"
+                "- BLAKE3 (by BLAKE3 team, CC0/Apache-2.0): https://github.com/BLAKE3-team/BLAKE3\n"
+                "- Leopard-RS (by Christopher A. Taylor, BSD 3-Clause): https://github.com/catid/leopard\n"
+                "- Galois Field library (by James S. Plank): http://web.eecs.utk.edu/~jplank/plank/www/software.html\n\n"
                 "Authors: Sander Raaijmakers, Elwin Oost and the Burn to the Brim team";
+                
+            std::string comments = toWinNewlines(_T("about_comments", default_comments));
             CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", comments.c_str(), WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_READONLY | WS_VSCROLL, 20, 110, 440, 180, hwnd, NULL, NULL, NULL);
             
-            CreateWindow("BUTTON", "OK", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 190, 305, 100, 30, hwnd, (HMENU)IDOK, NULL, NULL);
+            CreateWindow("BUTTON", _T("ok_btn", "OK").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 190, 305, 100, 30, hwnd, (HMENU)IDOK, NULL, NULL);
             
             HFONT hFont = CreateFont(15, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "MS Shell Dlg");
             EnumChildWindows(hwnd, [](HWND hwndChild, LPARAM lParam) -> BOOL {
@@ -968,8 +992,9 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             int y = 15;
             
             // Row 1: Media Selection & Capacity
-            CreateWindow("STATIC", "Select Medium:", WS_CHILD | WS_VISIBLE, 20, y + 2, 120, 20, hwnd, NULL, NULL, NULL);
-            g_comboPrefMedia = CreateWindow("COMBOBOX", "", WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST, 150, y, 120, 250, hwnd, (HMENU)ID_PREF_COMBO_MEDIA, NULL, NULL);
+            // Row 1: Media Selection & Capacity
+            CreateWindow("STATIC", _T("select_medium_label", "Select Medium:").c_str(), WS_CHILD | WS_VISIBLE, 20, y + 2, 160, 20, hwnd, NULL, NULL, NULL);
+            g_comboPrefMedia = CreateWindow("COMBOBOX", "", WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST, 190, y, 120, 250, hwnd, (HMENU)ID_PREF_COMBO_MEDIA, NULL, NULL);
             SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"CD (650 MB)");
             SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"CD (700 MB)");
             SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"DVD (4.7 GB)");
@@ -982,50 +1007,50 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"USB (64 GB)");
             SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"USB (256 GB)");
             SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"USB (512 GB)");
-            SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"Auto Size");
-            SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"Custom Size");
+            SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)_T("auto_size", "Auto Size").c_str());
+            SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)_T("custom_size", "Custom Size").c_str());
             for (const auto& cv : g_solver.customVolumes) {
                 SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)cv.name.c_str());
             }
             
-            CreateWindow("STATIC", "Capacity:", WS_CHILD | WS_VISIBLE, 280, y + 2, 80, 20, hwnd, NULL, NULL, NULL);
-            g_editPrefCap = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 370, y, 100, 22, hwnd, (HMENU)ID_PREF_EDIT_CAP, NULL, NULL);
-            g_labelPrefCapMB = CreateWindow("STATIC", "(0.00 MB)", WS_CHILD | WS_VISIBLE, 370, y + 23, 100, 15, hwnd, (HMENU)ID_PREF_LABEL_CAP_MB, NULL, NULL);
+            CreateWindow("STATIC", _T("capacity_label", "Capacity:").c_str(), WS_CHILD | WS_VISIBLE, 330, y + 2, 140, 20, hwnd, NULL, NULL, NULL);
+            g_editPrefCap = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 480, y, 100, 22, hwnd, (HMENU)ID_PREF_EDIT_CAP, NULL, NULL);
+            g_labelPrefCapMB = CreateWindow("STATIC", "(0.00 MB)", WS_CHILD | WS_VISIBLE, 480, y + 23, 100, 15, hwnd, (HMENU)ID_PREF_LABEL_CAP_MB, NULL, NULL);
 
             // Custom volume naming fields
-            CreateWindow("STATIC", "Save Custom Vol:", WS_CHILD | WS_VISIBLE, 20, y + 23, 105, 20, hwnd, NULL, NULL, NULL);
-            g_editPrefCvName = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 130, y + 21, 140, 22, hwnd, (HMENU)ID_PREF_EDIT_CV_NAME, NULL, NULL);
-            SendMessage(g_editPrefCvName, EM_SETCUEBANNER, FALSE, (LPARAM)L"Enter name");
-            g_btnPrefCvSave = CreateWindow("BUTTON", "Save", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 280, y + 21, 50, 22, hwnd, (HMENU)ID_PREF_BTN_CV_SAVE, NULL, NULL);
+            CreateWindow("STATIC", _T("save_cv_label", "Save Custom Vol:").c_str(), WS_CHILD | WS_VISIBLE, 20, y + 23, 160, 20, hwnd, NULL, NULL, NULL);
+            g_editPrefCvName = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 190, y + 21, 100, 22, hwnd, (HMENU)ID_PREF_EDIT_CV_NAME, NULL, NULL);
+            SendMessage(g_editPrefCvName, EM_SETCUEBANNER, FALSE, (LPARAM)utf8ToWstring(_T("custom_vol_name_placeholder", "Enter name")).c_str());
+            g_btnPrefCvSave = CreateWindow("BUTTON", _T("save_btn", "Save").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 300, y + 21, 60, 22, hwnd, (HMENU)ID_PREF_BTN_CV_SAVE, NULL, NULL);
             
             y += 45;
             // Row 2: Cluster & Slack
-            CreateWindow("STATIC", "Cluster (Bytes):", WS_CHILD | WS_VISIBLE, 20, y + 2, 120, 20, hwnd, NULL, NULL, NULL);
-            g_editPrefClus = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_NUMBER, 150, y, 120, 22, hwnd, (HMENU)ID_PREF_EDIT_CLUS, NULL, NULL);
+            CreateWindow("STATIC", _T("cluster_label", "Cluster Size (Bytes):").c_str(), WS_CHILD | WS_VISIBLE, 20, y + 2, 160, 20, hwnd, NULL, NULL, NULL);
+            g_editPrefClus = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_NUMBER, 190, y, 120, 22, hwnd, (HMENU)ID_PREF_EDIT_CLUS, NULL, NULL);
             
-            CreateWindow("STATIC", "Slack (Bytes):", WS_CHILD | WS_VISIBLE, 280, y + 2, 80, 20, hwnd, NULL, NULL, NULL);
-            g_editPrefSlack = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_NUMBER, 370, y, 100, 22, hwnd, (HMENU)ID_PREF_EDIT_SLACK, NULL, NULL);
+            CreateWindow("STATIC", _T("slack_label", "Slack Bytes:").c_str(), WS_CHILD | WS_VISIBLE, 330, y + 2, 140, 20, hwnd, NULL, NULL, NULL);
+            g_editPrefSlack = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_NUMBER, 480, y, 100, 22, hwnd, (HMENU)ID_PREF_EDIT_SLACK, NULL, NULL);
             
             y += 30;
             // Row 3: Max Search Time & Split Depth
-            CreateWindow("STATIC", "Max Search Time (s):", WS_CHILD | WS_VISIBLE, 20, y + 2, 120, 20, hwnd, NULL, NULL, NULL);
-            g_editPrefTime = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_NUMBER, 150, y, 120, 22, hwnd, (HMENU)ID_PREF_EDIT_TIME, NULL, NULL);
+            CreateWindow("STATIC", _T("search_time_label", "Max Search Time (sec):").c_str(), WS_CHILD | WS_VISIBLE, 20, y + 2, 160, 20, hwnd, NULL, NULL, NULL);
+            g_editPrefTime = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_NUMBER, 190, y, 120, 22, hwnd, (HMENU)ID_PREF_EDIT_TIME, NULL, NULL);
             
-            CreateWindow("STATIC", "Split Depth:", WS_CHILD | WS_VISIBLE, 280, y + 2, 80, 20, hwnd, NULL, NULL, NULL);
-            g_editPrefDepth = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_NUMBER, 370, y, 100, 22, hwnd, (HMENU)ID_PREF_EDIT_DEPTH, NULL, NULL);
+            CreateWindow("STATIC", _T("split_depth_label", "Directory Split Depth:").c_str(), WS_CHILD | WS_VISIBLE, 330, y + 2, 140, 20, hwnd, NULL, NULL, NULL);
+            g_editPrefDepth = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_NUMBER, 480, y, 100, 22, hwnd, (HMENU)ID_PREF_EDIT_DEPTH, NULL, NULL);
             
             y += 30;
             // Row 4: Skip Empty & Skip Unreadable
-            g_chkPrefEmpty = CreateWindow("BUTTON", "Skip Empty Folders / Files", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 20, y, 220, 20, hwnd, (HMENU)ID_PREF_CHK_EMPTY, NULL, NULL);
-            g_chkPrefUnreadable = CreateWindow("BUTTON", "Skip Unreadable Files (Graceful)", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 250, y, 230, 20, hwnd, (HMENU)ID_PREF_CHK_UNREADABLE, NULL, NULL);
+            g_chkPrefEmpty = CreateWindow("BUTTON", _T("skip_empty_chk", "Skip Empty Folders / Files").c_str(), WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 20, y, 280, 20, hwnd, (HMENU)ID_PREF_CHK_EMPTY, NULL, NULL);
+            g_chkPrefUnreadable = CreateWindow("BUTTON", _T("skip_unreadable_chk", "Skip Unreadable Files (Graceful)").c_str(), WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 310, y, 300, 20, hwnd, (HMENU)ID_PREF_CHK_UNREADABLE, NULL, NULL);
             
             y += 30;
             // Row 4.5: Context Menu Integration
-            g_chkPrefContextMenu = CreateWindow("BUTTON", "Integrate with Windows Explorer Context Menu", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 20, y, 400, 20, hwnd, (HMENU)ID_PREF_CHK_CONTEXT_MENU, NULL, NULL);
-
+            g_chkPrefContextMenu = CreateWindow("BUTTON", _T("integrate_ctx_chk", "Integrate with Windows Explorer Context Menu").c_str(), WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 20, y, 500, 20, hwnd, (HMENU)ID_PREF_CHK_CONTEXT_MENU, NULL, NULL);
+ 
             y += 30;
             // Conflict Override
-            g_chkPrefRuleWins = CreateWindow("BUTTON", "Rule-based grouping wins over semantic prompt", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 20, y, 400, 20, hwnd, (HMENU)ID_PREF_CHK_RULE_WINS, NULL, NULL);
+            g_chkPrefRuleWins = CreateWindow("BUTTON", _T("rule_wins_chk", "Rule-based grouping wins over semantic prompt").c_str(), WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 20, y, 500, 20, hwnd, (HMENU)ID_PREF_CHK_RULE_WINS, NULL, NULL);
             
             y += 24;
             // Dark Theme Toggle (Disabled completely on Windows)
@@ -1033,59 +1058,83 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             
             y += 30;
             // PAR3 Settings
-            g_chkPrefPar3 = CreateWindow("BUTTON", "Enable PAR3 Parity Protection", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 20, y, 400, 20, hwnd, (HMENU)ID_PREF_CHK_PAR3, NULL, NULL);
+            g_chkPrefPar3 = CreateWindow("BUTTON", _T("enable_par3_chk", "Enable PAR3 Parity Protection").c_str(), WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 20, y, 500, 20, hwnd, (HMENU)ID_PREF_CHK_PAR3, NULL, NULL);
             
             y += 30;
-            CreateWindow("STATIC", "PAR3 Block Size (Bytes):", WS_CHILD | WS_VISIBLE, 20, y + 2, 160, 20, hwnd, NULL, NULL, NULL);
-            g_editPrefPar3Block = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_NUMBER, 185, y, 80, 22, hwnd, (HMENU)ID_PREF_EDIT_PAR3_BLOCK, NULL, NULL);
+            CreateWindow("STATIC", _T("par3_block_size", "PAR3 Block Size (Bytes):").c_str(), WS_CHILD | WS_VISIBLE, 20, y + 2, 160, 20, hwnd, NULL, NULL, NULL);
+            g_editPrefPar3Block = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_NUMBER, 190, y, 120, 22, hwnd, (HMENU)ID_PREF_EDIT_PAR3_BLOCK, NULL, NULL);
             
-            CreateWindow("STATIC", "Redundancy (%):", WS_CHILD | WS_VISIBLE, 280, y + 2, 110, 20, hwnd, NULL, NULL, NULL);
-            g_editPrefPar3Redundancy = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_NUMBER, 390, y, 80, 22, hwnd, (HMENU)ID_PREF_EDIT_PAR3_REDUNDANCY, NULL, NULL);
+            CreateWindow("STATIC", _T("par3_redundancy", "PAR3 Redundancy Percent (%):").c_str(), WS_CHILD | WS_VISIBLE, 330, y + 2, 140, 20, hwnd, NULL, NULL, NULL);
+            g_editPrefPar3Redundancy = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_NUMBER, 480, y, 100, 22, hwnd, (HMENU)ID_PREF_EDIT_PAR3_REDUNDANCY, NULL, NULL);
             
-            y += 28;
+            y += 30;
+            // Language selection row
+            CreateWindow("STATIC", _T("language_label", "Language:").c_str(), WS_CHILD | WS_VISIBLE, 20, y + 2, 160, 20, hwnd, NULL, NULL, NULL);
+            g_comboPrefLang = CreateWindow("COMBOBOX", "", WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST, 190, y, 200, 250, hwnd, (HMENU)ID_PREF_COMBO_LANG, NULL, NULL);
+            SendMessage(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)BttbLocale::utf8ToAnsi("System Default (Auto)").c_str());
+            SendMessage(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)BttbLocale::utf8ToAnsi("English").c_str());
+            SendMessage(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)BttbLocale::utf8ToAnsi("Deutsch").c_str());
+            SendMessage(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)BttbLocale::utf8ToAnsi("Nederlands").c_str());
+            SendMessage(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)BttbLocale::utf8ToAnsi("Français").c_str());
+            SendMessage(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)BttbLocale::utf8ToAnsi("Español").c_str());
+            
+            int langSel = 0;
+            if (g_solver.language == "auto") langSel = 0;
+            else if (g_solver.language == "en") langSel = 1;
+            else if (g_solver.language == "de") langSel = 2;
+            else if (g_solver.language == "nl") langSel = 3;
+            else if (g_solver.language == "fr") langSel = 4;
+            else if (g_solver.language == "es") langSel = 5;
+            SendMessage(g_comboPrefLang, CB_SETCURSEL, langSel, 0);
+
+            y += 35;
             // Group 5: Grouping Rules
-            CreateWindow("BUTTON", "File / Folder Grouping Rules", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 10, y, 480, 240, hwnd, NULL, NULL, NULL);
+            CreateWindow("BUTTON", _T("grouping_rules_frame", "File / Folder Grouping Rules").c_str(), WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 10, y, 580, 240, hwnd, NULL, NULL, NULL);
             
-            g_listPrefRules = CreateWindowEx(WS_EX_CLIENTEDGE, WC_LISTVIEW, "", WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SINGLESEL, 20, y + 20, 460, 110, hwnd, (HMENU)ID_PREF_LIST_RULES, NULL, NULL);
+            g_listPrefRules = CreateWindowEx(WS_EX_CLIENTEDGE, WC_LISTVIEW, "", WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SINGLESEL, 20, y + 20, 560, 110, hwnd, (HMENU)ID_PREF_LIST_RULES, NULL, NULL);
             ListView_SetExtendedListViewStyle(g_listPrefRules, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
             ApplyThemeToListView(g_listPrefRules);
             
             LVCOLUMN lvc = {0};
             lvc.mask = LVCF_TEXT | LVCF_WIDTH;
-            lvc.cx = 180;
-            lvc.pszText = const_cast<LPSTR>("Pattern");
+            lvc.cx = 220;
+            std::string colPattern = _T("pattern_col", "Pattern");
+            lvc.pszText = const_cast<LPSTR>(colPattern.c_str());
             ListView_InsertColumn(g_listPrefRules, 0, &lvc);
             
-            lvc.cx = 70;
-            lvc.pszText = const_cast<LPSTR>("Files");
+            lvc.cx = 100;
+            std::string colFiles = _T("files_col", "Files");
+            lvc.pszText = const_cast<LPSTR>(colFiles.c_str());
             ListView_InsertColumn(g_listPrefRules, 1, &lvc);
             
-            lvc.cx = 70;
-            lvc.pszText = const_cast<LPSTR>("Folders");
+            lvc.cx = 100;
+            std::string colFolders = _T("folders_col", "Folders");
+            lvc.pszText = const_cast<LPSTR>(colFolders.c_str());
             ListView_InsertColumn(g_listPrefRules, 2, &lvc);
             
-            lvc.cx = 100;
-            lvc.pszText = const_cast<LPSTR>("Type");
+            lvc.cx = 120;
+            std::string colType = _T("type_col", "Type");
+            lvc.pszText = const_cast<LPSTR>(colType.c_str());
             ListView_InsertColumn(g_listPrefRules, 3, &lvc);
             
-            g_editPrefPattern = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 20, y + 140, 200, 22, hwnd, (HMENU)ID_PREF_EDIT_PATTERN, NULL, NULL);
-            SendMessage(g_editPrefPattern, EM_SETCUEBANNER, FALSE, (LPARAM)L"Pattern (*.mp3 or regex)");
+            g_editPrefPattern = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 20, y + 140, 240, 22, hwnd, (HMENU)ID_PREF_EDIT_PATTERN, NULL, NULL);
+            SendMessage(g_editPrefPattern, EM_SETCUEBANNER, FALSE, (LPARAM)utf8ToWstring(_T("rule_pattern_placeholder", "Rule Pattern (*.mp3 or ^[0-9].*\\..*$)")).c_str());
             
-            g_chkPrefFiles = CreateWindow("BUTTON", "Match Files", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 230, y + 140, 100, 20, hwnd, (HMENU)ID_PREF_CHK_FILES, NULL, NULL);
+            g_chkPrefFiles = CreateWindow("BUTTON", _T("match_files_chk", "Match Files").c_str(), WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 270, y + 140, 100, 20, hwnd, (HMENU)ID_PREF_CHK_FILES, NULL, NULL);
             SendMessage(g_chkPrefFiles, BM_SETCHECK, BST_CHECKED, 0);
             
-            g_chkPrefFolders = CreateWindow("BUTTON", "Match Folders", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 230, y + 170, 110, 20, hwnd, (HMENU)ID_PREF_CHK_FOLDERS, NULL, NULL);
+            g_chkPrefFolders = CreateWindow("BUTTON", _T("match_folders_chk", "Match Folders").c_str(), WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 380, y + 140, 110, 20, hwnd, (HMENU)ID_PREF_CHK_FOLDERS, NULL, NULL);
             SendMessage(g_chkPrefFolders, BM_SETCHECK, BST_CHECKED, 0);
             
-            g_chkPrefRegex = CreateWindow("BUTTON", "Regex Pattern", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 320, y + 170, 110, 20, hwnd, (HMENU)ID_PREF_CHK_REGEX, NULL, NULL);
+            g_chkPrefRegex = CreateWindow("BUTTON", _T("regex_pattern_chk", "Regex Pattern").c_str(), WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 500, y + 140, 110, 20, hwnd, (HMENU)ID_PREF_CHK_REGEX, NULL, NULL);
             
-            g_btnPrefAddRule = CreateWindow("BUTTON", "Add Rule", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 90, y + 200, 100, 25, hwnd, (HMENU)ID_PREF_BTN_ADD_RULE, NULL, NULL);
-            g_btnPrefDelRule = CreateWindow("BUTTON", "Remove Selected", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 200, y + 200, 150, 25, hwnd, (HMENU)ID_PREF_BTN_DEL_RULE, NULL, NULL);
+            g_btnPrefAddRule = CreateWindow("BUTTON", _T("add_rule_btn", "Add Rule").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 340, y + 200, 100, 25, hwnd, (HMENU)ID_PREF_BTN_ADD_RULE, NULL, NULL);
+            g_btnPrefDelRule = CreateWindow("BUTTON", _T("remove_selected_btn", "Remove Selected").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 450, y + 200, 130, 25, hwnd, (HMENU)ID_PREF_BTN_DEL_RULE, NULL, NULL);
             
             y += 245;
             // OK / Cancel Action Buttons
-            CreateWindow("BUTTON", "OK", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 280, y, 100, 30, hwnd, (HMENU)ID_PREF_BTN_OK, NULL, NULL);
-            CreateWindow("BUTTON", "Cancel", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 390, y, 100, 30, hwnd, (HMENU)ID_PREF_BTN_CANCEL, NULL, NULL);
+            CreateWindow("BUTTON", _T("ok_btn", "OK").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 400, y, 100, 30, hwnd, (HMENU)ID_PREF_BTN_OK, NULL, NULL);
+            CreateWindow("BUTTON", _T("cancel_btn", "Cancel").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 510, y, 100, 30, hwnd, (HMENU)ID_PREF_BTN_CANCEL, NULL, NULL);
             
             // Set Font
             HFONT hFont = CreateFont(15, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "MS Shell Dlg");
@@ -1343,6 +1392,25 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
                 } else {
                     g_solver.enableDarkTheme = false;
                 }
+                
+                int langIdx = SendMessage(g_comboPrefLang, CB_GETCURSEL, 0, 0);
+                std::string new_lang = "auto";
+                if (langIdx == 1) new_lang = "en";
+                else if (langIdx == 2) new_lang = "de";
+                else if (langIdx == 3) new_lang = "nl";
+                else if (langIdx == 4) new_lang = "fr";
+                else if (langIdx == 5) new_lang = "es";
+                
+                bool lang_changed = (new_lang != g_solver.language);
+                if (lang_changed) {
+                    g_solver.language = new_lang;
+                    if (new_lang == "auto") {
+                        BttbLocale::getInstance().load(BttbLocale::getInstance().detectSystemLanguage());
+                    } else {
+                        BttbLocale::getInstance().load(new_lang);
+                    }
+                }
+
                 ApplyWindowTheme(g_hwndMain);
                 ApplyThemeToTreeView(g_hwndTreeView);
                 ApplyWindowTheme(hwnd);
@@ -1352,6 +1420,11 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
                 RegisterExplorerContextMenu(enableMenu);
                 
                 SaveRegistrySettings();
+
+                if (lang_changed) {
+                    MessageBox(hwnd, _T("restart_notice", "Language preferences saved. Please restart Burn to the Brim to apply the changes.").c_str(),
+                               _T("restart_title", "Language Changed").c_str(), MB_OK | MB_ICONINFORMATION);
+                }
                 
                 // Save grouping rules
                 g_solver.groupingRules.clear();
@@ -1544,6 +1617,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         }
         
         case WM_CREATE: {
+            LoadRegistrySettings();
+
             // Initialize Common Controls for Progress Bar and TreeView
             INITCOMMONCONTROLSEX icex;
             icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
@@ -1567,60 +1642,57 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             int y = 16;
             
             // Group 1: Folders Selection (height expanded to 205 to fit semantic packing text box)
-            CreateWindow("BUTTON", "Directories setup", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 284, y, 510, 205, hwnd, NULL, NULL, NULL);
+            CreateWindow("BUTTON", _T("dir_setup_group", "Directories Setup").c_str(), WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 284, y, 630, 205, hwnd, NULL, NULL, NULL);
             
             CreateWindow("BUTTON", "+", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 296, y + 22, 30, 25, hwnd, (HMENU)ID_BTN_ADD_FOLDERS, NULL, NULL);
-            CreateWindow("STATIC", "Source folder:", WS_CHILD | WS_VISIBLE, 332, y + 26, 80, 20, hwnd, NULL, NULL, NULL);
-            g_editSrc = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 418, y + 24, 260, 22, hwnd, NULL, NULL, NULL);
-            LoadRegistrySettings();
+            CreateWindow("STATIC", _T("source_folder", "Source Folder:").c_str(), WS_CHILD | WS_VISIBLE, 332, y + 26, 80, 20, hwnd, NULL, NULL, NULL);
+            g_editSrc = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 418, y + 24, 380, 22, hwnd, NULL, NULL, NULL);
             if (!g_folderToAdd.empty()) {
                 std::string utf8Folder = wstringToUtf8(g_folderToAdd);
                 SetWindowText(g_editSrc, utf8Folder.c_str());
             }
-            CreateWindow("BUTTON", "Browse...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 688, y + 22, 90, 25, hwnd, (HMENU)ID_BTN_SRC_BROWSE, NULL, NULL);
+            CreateWindow("BUTTON", _T("browse_btn", "Browse...").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 808, y + 22, 90, 25, hwnd, (HMENU)ID_BTN_SRC_BROWSE, NULL, NULL);
             
-            CreateWindow("STATIC", "Target folder:", WS_CHILD | WS_VISIBLE, 296, y + 58, 110, 20, hwnd, NULL, NULL, NULL);
-            g_editDest = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 418, y + 56, 260, 22, hwnd, NULL, NULL, NULL);
-            CreateWindow("BUTTON", "Browse...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 688, y + 54, 90, 25, hwnd, (HMENU)ID_BTN_DEST_BROWSE, NULL, NULL);
+            CreateWindow("STATIC", _T("target_folder", "Target Folder:").c_str(), WS_CHILD | WS_VISIBLE, 296, y + 58, 110, 20, hwnd, NULL, NULL, NULL);
+            g_editDest = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 418, y + 56, 380, 22, hwnd, NULL, NULL, NULL);
+            CreateWindow("BUTTON", _T("browse_btn", "Browse...").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 808, y + 54, 90, 25, hwnd, (HMENU)ID_BTN_DEST_BROWSE, NULL, NULL);
             
             // v4.0.0 Semantic Prompt Control at y + 82
-            CreateWindow("STATIC", "Semantic prompt:", WS_CHILD | WS_VISIBLE, 296, y + 84, 120, 20, hwnd, NULL, NULL, NULL);
-            g_editSemantic = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 418, y + 82, 360, 22, hwnd, (HMENU)ID_EDIT_SEMANTIC, NULL, NULL);
+            CreateWindow("STATIC", _T("semantic_prompt", "Semantic Prompt:").c_str(), WS_CHILD | WS_VISIBLE, 296, y + 84, 120, 20, hwnd, NULL, NULL, NULL);
+            g_editSemantic = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 418, y + 82, 480, 22, hwnd, (HMENU)ID_EDIT_SEMANTIC, NULL, NULL);
             
             // Checkboxes shifted down to accommodate semantic prompt control
-            g_chkMove = CreateWindow("BUTTON", "Move/organize fitted folders/files to target folder", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 418, y + 108, 360, 20, hwnd, (HMENU)ID_CHK_MOVE, NULL, NULL);
-            g_chkSymlink = CreateWindow("BUTTON", "Create symbolic links in target folder (Default)", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 418, y + 130, 360, 20, hwnd, (HMENU)ID_CHK_SYMLINK, NULL, NULL);
+            g_chkMove = CreateWindow("BUTTON", _T("move_files_chk", "Move/organize fitted folders/files to target folder").c_str(), WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 418, y + 108, 480, 20, hwnd, (HMENU)ID_CHK_MOVE, NULL, NULL);
+            g_chkSymlink = CreateWindow("BUTTON", _T("create_symlinks_chk", "Create symbolic links in target folder (Default)").c_str(), WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 418, y + 130, 480, 20, hwnd, (HMENU)ID_CHK_SYMLINK, NULL, NULL);
             SendMessage(g_chkSymlink, BM_SETCHECK, BST_CHECKED, 0); // Checked by default
             
-            g_chkSpan = CreateWindow("BUTTON", "Span across multiple volumes (Volume_1, Volume_2, etc.)", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 418, y + 152, 360, 20, hwnd, (HMENU)ID_CHK_SPAN, NULL, NULL);
-            g_chkTrace = CreateWindow("BUTTON", "Enable detailed solver diagnostic tracing (Trace)", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 418, y + 174, 360, 20, hwnd, (HMENU)ID_CHK_TRACE, NULL, NULL);
+            g_chkSpan = CreateWindow("BUTTON", _T("span_chk", "Span across multiple volumes (Volume_1, Volume_2, etc.)").c_str(), WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 418, y + 152, 480, 20, hwnd, (HMENU)ID_CHK_SPAN, NULL, NULL);
+            g_chkTrace = CreateWindow("BUTTON", _T("trace_chk", "Enable detailed solver diagnostic tracing (Trace)").c_str(), WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 418, y + 174, 480, 20, hwnd, (HMENU)ID_CHK_TRACE, NULL, NULL);
             
             // Group 2: Progress (Shifted to y=230)
-            CreateWindow("BUTTON", "Fitted Capacity Status", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 284, 230, 510, 60, hwnd, NULL, NULL, NULL);
-            g_progress = CreateWindow(PROGRESS_CLASS, "", WS_CHILD | WS_VISIBLE, 296, 254, 350, 20, hwnd, NULL, NULL, NULL);
-            g_labelProgress = CreateWindow("STATIC", "Filled: 0.00%", WS_CHILD | WS_VISIBLE, 657, 256, 120, 20, hwnd, NULL, NULL, NULL);
+            CreateWindow("BUTTON", _T("progress_frame_title", "Fitted Capacity Status").c_str(), WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 284, 230, 630, 60, hwnd, NULL, NULL, NULL);
+            g_progress = CreateWindow(PROGRESS_CLASS, "", WS_CHILD | WS_VISIBLE, 296, 254, 470, 20, hwnd, NULL, NULL, NULL);
+            g_labelProgress = CreateWindow("STATIC", _T("filled_label", "Filled: 0.00%").c_str(), WS_CHILD | WS_VISIBLE, 776, 256, 120, 20, hwnd, NULL, NULL, NULL);
             
             // Group 3: Log Output (Shifted to y=300)
-            CreateWindow("BUTTON", "Solver Output Log", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 284, 300, 510, 160, hwnd, NULL, NULL, NULL);
-            g_editLog = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL | ES_READONLY, 296, 324, 480, 120, hwnd, NULL, NULL, NULL);
+            CreateWindow("BUTTON", _T("log_frame_title", "Solver Output Log").c_str(), WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 284, 300, 630, 160, hwnd, NULL, NULL, NULL);
+            g_editLog = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL | ES_READONLY, 296, 324, 600, 120, hwnd, NULL, NULL, NULL);
             
             // Status bar with Spinner and Time Left under log output
             g_labelSpinner = CreateWindow("STATIC", "", WS_CHILD | WS_VISIBLE, 296, 450, 30, 20, hwnd, NULL, NULL, NULL);
-            g_labelTimeLeft = CreateWindow("STATIC", "Estimated Time Left: --:--", WS_CHILD | WS_VISIBLE, 330, 450, 350, 20, hwnd, NULL, NULL, NULL);
+            g_labelTimeLeft = CreateWindow("STATIC", _T("time_left_label", "Estimated Time Left: --:--").c_str(), WS_CHILD | WS_VISIBLE, 330, 450, 560, 20, hwnd, NULL, NULL, NULL);
             
             // Bottom Action buttons row (Shifted to y=475)
-            g_btnTest = CreateWindow("BUTTON", "Test", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 284, 475, 70, 30, hwnd, (HMENU)ID_BTN_TEST, NULL, NULL);
-            g_btnStart = CreateWindow("BUTTON", "Start", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 360, 475, 70, 30, hwnd, (HMENU)ID_BTN_START, NULL, NULL);
-            g_btnStop = CreateWindow("BUTTON", "Stop", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 436, 475, 50, 30, hwnd, (HMENU)ID_BTN_STOP, NULL, NULL);
-            CreateWindow("BUTTON", "Preferences...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 492, 475, 95, 30, hwnd, (HMENU)ID_BTN_PREFS, NULL, NULL);
-            g_btnCreateIso = CreateWindow("BUTTON", "Create ISO...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 593, 475, 95, 30, hwnd, (HMENU)ID_BTN_CREATE_ISO, NULL, NULL);
-            CreateWindow("BUTTON", "Help", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 694, 475, 50, 30, hwnd, (HMENU)ID_BTN_HELP, NULL, NULL);
-            CreateWindow("BUTTON", "About...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 750, 475, 54, 30, hwnd, (HMENU)ID_BTN_ABOUT, NULL, NULL);
+            g_btnTest = CreateWindow("BUTTON", _T("test_btn", "Test").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 327, 475, 65, 30, hwnd, (HMENU)ID_BTN_TEST, NULL, NULL);
+            g_btnStart = CreateWindow("BUTTON", _T("start_btn", "Start").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 397, 475, 65, 30, hwnd, (HMENU)ID_BTN_START, NULL, NULL);
+            g_btnStop = CreateWindow("BUTTON", _T("stop_btn", "Stop").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 467, 475, 55, 30, hwnd, (HMENU)ID_BTN_STOP, NULL, NULL);
+            CreateWindow("BUTTON", _T("pref_title", "Preferences...").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 527, 475, 115, 30, hwnd, (HMENU)ID_BTN_PREFS, NULL, NULL);
+            g_btnCreateIso = CreateWindow("BUTTON", _T("create_iso_btn", "Create ISO...").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 647, 475, 115, 30, hwnd, (HMENU)ID_BTN_CREATE_ISO, NULL, NULL);
+            CreateWindow("BUTTON", _T("help_btn", "Help").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 767, 475, 65, 30, hwnd, (HMENU)ID_BTN_HELP, NULL, NULL);
+            CreateWindow("BUTTON", _T("about_btn", "About...").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 837, 475, 75, 30, hwnd, (HMENU)ID_BTN_ABOUT, NULL, NULL);
             
-            g_btnImportJson = CreateWindow("BUTTON", "Import JSON...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 12, 475, 120, 30, hwnd, (HMENU)ID_BTN_IMPORT_JSON, NULL, NULL);
-            g_btnVerifyRestore = CreateWindow("BUTTON", "Verify & Restore...", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 138, 475, 134, 30, hwnd, (HMENU)ID_BTN_VERIFY_RESTORE, NULL, NULL);
-            
-            EnableWindow(g_btnStop, FALSE);
+            g_btnImportJson = CreateWindow("BUTTON", _T("import_json_btn", "Import JSON...").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 12, 475, 120, 30, hwnd, (HMENU)ID_BTN_IMPORT_JSON, NULL, NULL);
+            g_btnVerifyRestore = CreateWindow("BUTTON", _T("verify_restore_btn", "Verify & Restore...").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 137, 475, 185, 30, hwnd, (HMENU)ID_BTN_VERIFY_RESTORE, NULL, NULL);
             
             // Setup visual font styles
             HFONT hFont = CreateFont(15, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "MS Shell Dlg");
@@ -1630,19 +1702,19 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             }, (LPARAM)hFont);
             
             // Premium Tooltips
-            CreateToolTip(hwnd, g_btnImportJson, "Import and parse offline JSON index files to view solved volume file details.");
-            CreateToolTip(hwnd, g_btnVerifyRestore, "Verify solved volumes or copy and restore damaged files using PAR3 archives.");
-            CreateToolTip(hwnd, g_btnTest, "Simulate packing without performing file operations to test volume utilization.");
-            CreateToolTip(hwnd, g_btnStart, "Run solver and organize files/folders according to preferences.");
-            CreateToolTip(hwnd, g_btnStop, "Abort current running packing or file organization process.");
-            CreateToolTip(hwnd, g_btnCreateIso, "Create ISO filesystem images from the solved volumes.");
-            CreateToolTip(hwnd, g_editSrc, "Semicolon-separated paths of folders to pack and consolidate.");
-            CreateToolTip(hwnd, g_editDest, "Destination path where volumes will be organized and written.");
-            CreateToolTip(hwnd, g_editSemantic, "Enter a prompt like 'keep audio together' to analyze files via MiniLM.");
-            CreateToolTip(hwnd, g_chkMove, "Move/cut original files/folders directly into target volume folders.");
-            CreateToolTip(hwnd, g_chkSymlink, "Create filesystem symbolic links in target volume folders (non-destructive).");
-            CreateToolTip(hwnd, g_chkSpan, "Enable spanning contents into multiple sequentially named folders.");
-            CreateToolTip(hwnd, g_chkTrace, "Log detailed diagnostics showing how folders/files are selected and split.");
+            CreateToolTip(hwnd, g_btnImportJson, _T("tooltip_import_json", "Import and parse offline JSON index files to view solved volume file details.").c_str());
+            CreateToolTip(hwnd, g_btnVerifyRestore, _T("tooltip_verify_restore", "Verify solved volumes or copy and restore damaged files using PAR3 archives.").c_str());
+            CreateToolTip(hwnd, g_btnTest, _T("tooltip_test", "Simulate packing without performing file operations to test volume utilization.").c_str());
+            CreateToolTip(hwnd, g_btnStart, _T("tooltip_start", "Run solver and organize files/folders according to preferences.").c_str());
+            CreateToolTip(hwnd, g_btnStop, _T("tooltip_stop", "Abort current running packing or file organization process.").c_str());
+            CreateToolTip(hwnd, g_btnCreateIso, _T("tooltip_create_iso", "Create ISO filesystem images from the solved volumes.").c_str());
+            CreateToolTip(hwnd, g_editSrc, _T("tooltip_source", "Semicolon-separated paths of folders to pack and consolidate.").c_str());
+            CreateToolTip(hwnd, g_editDest, _T("tooltip_target", "Destination path where volumes will be organized and written.").c_str());
+            CreateToolTip(hwnd, g_editSemantic, _T("tooltip_semantic", "Enter a prompt like 'keep audio together' to analyze files via MiniLM.").c_str());
+            CreateToolTip(hwnd, g_chkMove, _T("tooltip_move", "Move/cut original files/folders directly into target volume folders.").c_str());
+            CreateToolTip(hwnd, g_chkSymlink, _T("tooltip_symlink", "Create filesystem symbolic links in target volume folders (non-destructive).").c_str());
+            CreateToolTip(hwnd, g_chkSpan, _T("tooltip_span", "Enable spanning contents into multiple sequentially named folders.").c_str());
+            CreateToolTip(hwnd, g_chkTrace, _T("tooltip_trace", "Log detailed diagnostics showing how folders/files are selected and split.").c_str());
             ApplyWindowTheme(hwnd);
             ApplyThemeToTreeView(g_hwndTreeView);
             
@@ -1691,7 +1763,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 g_hwndFolderList = CreateWindowEx(
                     WS_EX_CONTROLPARENT,
                     "BttbWin32FolderListDialog",
-                    "Manage Source Folders",
+                    _T("manage_src_folders_title", "Manage Source Folders").c_str(),
                     WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
                     CW_USEDEFAULT, CW_USEDEFAULT, 500, 330,
                     hwnd, NULL, GetModuleHandle(NULL), NULL
@@ -1842,9 +1914,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 g_hwndPref = CreateWindowEx(
                     WS_EX_CONTROLPARENT,
                     "BttbWin32PrefDialog",
-                    "Preferences",
+                    _T("pref_title", "Preferences").c_str(),
                     WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
-                    CW_USEDEFAULT, CW_USEDEFAULT, 500, 680,
+                    CW_USEDEFAULT, CW_USEDEFAULT, 620, 720,
                     hwnd, NULL, GetModuleHandle(NULL), NULL
                 );
                 
@@ -1877,11 +1949,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 // Disable main window
                 EnableWindow(hwnd, FALSE);
                 
-                // Create Verify Window
+                 // Create Verify Window
                 g_hwndVerify = CreateWindowEx(
                     WS_EX_CONTROLPARENT,
                     "BttbWin32VerifyDialog",
-                    "Verify & Restore Volumes",
+                    _T("verify_title", "Verify & Restore Volumes").c_str(),
                     WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
                     CW_USEDEFAULT, CW_USEDEFAULT, 550, 480,
                     hwnd, NULL, GetModuleHandle(NULL), NULL
@@ -1911,7 +1983,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 g_hwndIso = CreateWindowEx(
                     WS_EX_CONTROLPARENT,
                     "BttbWin32ISODialog",
-                    "Create ISO Image",
+                    _T("iso_title", "Create ISO Image").c_str(),
                     WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
                     CW_USEDEFAULT, CW_USEDEFAULT, 550, 410,
                     hwnd, NULL, GetModuleHandle(NULL), NULL
@@ -1941,38 +2013,40 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             }
             
             if (wmId == ID_BTN_HELP) {
-                std::string helpText = 
-                    "Burn to the Brim (BTTB) Help Guide\r\n"
-                    "=============================\r\n\r\n"
-                    "1. Directory Split Depth\r\n"
-                    "Determines the folder nesting level at which items are split:\r\n"
-                    " - Depth 0 (Default): Top-level files and folders are treated as separate items.\r\n"
-                    " - Depth 1: Splitting occurs one level deeper, keeping top-level folders intact but splitting their immediate subfolders.\r\n\r\n"
-                    "2. Max Search Time\r\n"
-                    "The maximum seconds the backtracking solver is allowed to run. If reached, the best selection found up to that point is used.\r\n\r\n"
-                    "3. Spanning Slack\r\n"
-                    "Allows early solver termination once a volume is packed within this number of bytes from the absolute maximum capacity (e.g. 2048 bytes).\r\n\r\n"
-                    "4. File/Folder Grouping Rules\r\n"
-                    "Force matching items to remain grouped together on the same volume (e.g., matching '*.mp3' or regex '^album_.*').\r\n\r\n"
-                    "5. Multiple Source Folders (+)\r\n"
-                    "Click '+' to specify multiple source folders. BTTB acts as if they are in a single root folder. Nested source paths are ignored.\r\n\r\n"
-                    "6. Create Symbolic Links\r\n"
-                    "Instead of copying/moving files to the target folder, BTTB creates lightweight symbolic links pointing back to your original files.\r\n\r\n"
-                    "7. Neural Semantic Packing & MiniLM Setup Guide\r\n"
-                    "By specifying a semantic prompt, BTTB groups files with similar content using context-aware deep learning embeddings.\r\n"
-                    "To use the preferred, high-accuracy MiniLM neural model, you must install Python 3 and sentence-transformers:\r\n"
-                    " - Step 1: Ensure Python 3 & pip are installed.\r\n"
-                    "   (Linux: run 'sudo apt install python3 python3-pip python3-venv')\r\n"
-                    "   (Windows: Install from https://www.python.org/ and check 'Add Python to PATH')\r\n"
-                    " - Step 2: Install sentence-transformers via terminal/command prompt:\r\n"
-                    "   Option A (Recommended for simplicity):\r\n"
-                    "     pip install sentence-transformers\r\n"
-                    "   Option B (Virtual environment isolation):\r\n"
-                    "     python3 -m venv bttb_env\r\n"
-                    "     source bttb_env/bin/activate  # (Windows: bttb_env\\Scripts\\activate)\r\n"
-                    "     pip install sentence-transformers\r\n"
+                std::string helpTitle = _T("help_guide_title", "Burn to the Brim (BTTB) Help Guide");
+                
+                const char* default_help = 
+                    "1. Directory Split Depth\n"
+                    "Determines the folder nesting level at which items are split:\n"
+                    " - Depth 0 (Default): Top-level files and folders are treated as separate items.\n"
+                    " - Depth 1: Splitting occurs one level deeper, keeping top-level folders intact but splitting their immediate subfolders.\n\n"
+                    "2. Max Search Time\n"
+                    "The maximum seconds the backtracking solver is allowed to run. If reached, the best selection found up to that point is used.\n\n"
+                    "3. Spanning Slack\n"
+                    "Allows early solver termination once a volume is packed within this number of bytes from the absolute maximum capacity (e.g. 2048 bytes).\n\n"
+                    "4. File/Folder Grouping Rules\n"
+                    "Force matching items to remain grouped together on the same volume (e.g., matching '*.mp3' or regex '^album_.*').\n\n"
+                    "5. Multiple Source Folders (+)\n"
+                    "Click '+' to specify multiple source folders. BTTB acts as if they are in a single root folder. Nested source paths are ignored.\n\n"
+                    "6. Create Symbolic Links\n"
+                    "Instead of copying/moving files to the target folder, BTTB creates lightweight symbolic links pointing back to your original files.\n\n"
+                    "7. Neural Semantic Packing & MiniLM Setup Guide\n"
+                    "By specifying a semantic prompt, BTTB groups files with similar content using context-aware deep learning embeddings.\n"
+                    "To use the preferred, high-accuracy MiniLM neural model, you must install Python 3 and sentence-transformers:\n"
+                    " - Step 1: Ensure Python 3 & pip are installed.\n"
+                    "   (Linux: run 'sudo apt install python3 python3-pip python3-venv')\n"
+                    "   (Windows: Install from https://www.python.org/ and check 'Add Python to PATH')\n"
+                    " - Step 2: Install sentence-transformers via terminal/command prompt:\n"
+                    "   Option A (Recommended for simplicity):\n"
+                    "     pip install sentence-transformers\n"
+                    "   Option B (Virtual environment isolation):\n"
+                    "     python3 -m venv bttb_env\n"
+                    "     source bttb_env/bin/activate  # (Windows: bttb_env\\Scripts\\activate)\n"
+                    "     pip install sentence-transformers\n"
                     " - Step 3: Restart Burn to the Brim to automatically load MiniLM! If not found, BTTB falls back gracefully to a localized character TF-IDF projector.";
-                MessageBox(hwnd, helpText.c_str(), "Help - Burn to the Brim", MB_OK | MB_ICONINFORMATION);
+                    
+                std::string helpText = helpTitle + "\n=============================\n\n" + _T("help_guide_text", default_help);
+                MessageBox(hwnd, toWinNewlines(helpText).c_str(), _T("help_title", "Help - Burn to the Brim").c_str(), MB_OK | MB_ICONINFORMATION);
             }
             
             if (wmId == ID_BTN_ABOUT) {
@@ -1983,7 +2057,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 HWND hwndAbout = CreateWindowEx(
                     WS_EX_CONTROLPARENT,
                     "BttbWin32AboutDialog",
-                    "About Burn to the Brim",
+                    _T("about_title", "About Burn to the Brim").c_str(),
                     WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
                     CW_USEDEFAULT, CW_USEDEFAULT, 490, 385,
                     hwnd, NULL, GetModuleHandle(NULL), NULL
@@ -2094,6 +2168,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
 // Windows entry point
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+    std::setlocale(LC_ALL, "");
     g_hbrDarkBackground = CreateSolidBrush(RGB(24, 24, 24));
     g_hbrDarkEdit = CreateSolidBrush(RGB(38, 38, 38));
     
@@ -2273,7 +2348,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         "BttbWin32GUI",
         "Burn to the Brim (Native Win32 GUI)",
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
-        CW_USEDEFAULT, CW_USEDEFAULT, 830, 565,
+        CW_USEDEFAULT, CW_USEDEFAULT, 930, 565,
         NULL, NULL, hInstance, NULL
     );
     

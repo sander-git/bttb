@@ -1,4 +1,5 @@
 #include "ui_settings.hpp"
+#include "bttb_locale.hpp"
 #include <string>
 #include <vector>
 
@@ -20,6 +21,8 @@ struct DialogData {
     GtkWidget* enable_par3_switch;
     GtkWidget* par3_block_size_entry;
     GtkWidget* par3_redundancy_entry;
+    GtkWidget* language_combo;
+
     
     GtkListStore* rule_store;
     GtkWidget* rule_tree_view;
@@ -139,8 +142,8 @@ static void on_remove_rule(GtkButton* button, gpointer user_data) {
 void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     // Create transient modal window
     GtkWidget* dialog = gtk_window_new();
-    gtk_window_set_title(GTK_WINDOW(dialog), "Preferences");
-    gtk_window_set_default_size(GTK_WINDOW(dialog), 500, 500);
+    gtk_window_set_title(GTK_WINDOW(dialog), _T("pref_title", "Preferences").c_str());
+    gtk_window_set_default_size(GTK_WINDOW(dialog), 600, 800);
     gtk_window_set_modal(GTK_WINDOW(dialog), TRUE);
     gtk_window_set_transient_for(GTK_WINDOW(dialog), parent);
     
@@ -152,6 +155,7 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     gtk_widget_set_margin_end(main_box, 16);
     gtk_widget_set_margin_top(main_box, 16);
     gtk_widget_set_margin_bottom(main_box, 16);
+    
     gtk_window_set_child(GTK_WINDOW(dialog), main_box);
     
     // Grid for standard inputs
@@ -161,7 +165,7 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     gtk_box_append(GTK_BOX(main_box), grid);
     
     // Media size
-    GtkWidget* label_media = gtk_label_new("Media Size:");
+    GtkWidget* label_media = gtk_label_new(_T("media_size_label", "Media Size:").c_str());
     gtk_widget_set_halign(label_media, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(grid), label_media, 0, 0, 1, 1);
     
@@ -178,15 +182,15 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "USB (64 GB)");
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "USB (256 GB)");
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "USB (512 GB)");
-    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "Auto Size");
-    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "Custom Size");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), _T("auto_size", "Auto Size").c_str());
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), _T("custom_size", "Custom Size").c_str());
     for (const auto& cv : solver.customVolumes) {
         gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), cv.name.c_str());
     }
     gtk_grid_attach(GTK_GRID(grid), data->media_combo, 1, 0, 1, 1);
     
     // Capacity
-    GtkWidget* label_cap = gtk_label_new("Capacity:");
+    GtkWidget* label_cap = gtk_label_new(_T("capacity_label", "Capacity:").c_str());
     gtk_widget_set_halign(label_cap, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(grid), label_cap, 0, 1, 1, 1);
     
@@ -198,11 +202,11 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     gtk_grid_attach(GTK_GRID(grid), save_cv_box, 1, 2, 1, 1);
     
     data->cv_name_entry = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(data->cv_name_entry), "Custom Volume Name");
+    gtk_entry_set_placeholder_text(GTK_ENTRY(data->cv_name_entry), _T("custom_vol_name_placeholder", "Custom Volume Name").c_str());
     gtk_box_append(GTK_BOX(save_cv_box), data->cv_name_entry);
     
-    GtkWidget* cv_save_btn = gtk_button_new_with_label("Save");
-    gtk_widget_set_tooltip_text(cv_save_btn, "Save current capacity, sector, and slack as a named custom volume");
+    GtkWidget* cv_save_btn = gtk_button_new_with_label(_T("save_btn", "Save").c_str());
+    gtk_widget_set_tooltip_text(cv_save_btn, _T("save_cv_tooltip", "Save current capacity, sector, and slack as a named custom volume").c_str());
     gtk_box_append(GTK_BOX(save_cv_box), cv_save_btn);
     
     g_signal_connect(cv_save_btn, "clicked", G_CALLBACK(+[](GtkButton* btn, gpointer user_data) {
@@ -232,7 +236,7 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     gtk_grid_attach(GTK_GRID(grid), data->capacity_mb_label, 1, 3, 1, 1);
     
     // Cluster
-    GtkWidget* label_clus = gtk_label_new("Cluster Size (Bytes):");
+    GtkWidget* label_clus = gtk_label_new(_T("cluster_label", "Cluster Size (Bytes):").c_str());
     gtk_widget_set_halign(label_clus, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(grid), label_clus, 0, 4, 1, 1);
     
@@ -240,7 +244,7 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     gtk_grid_attach(GTK_GRID(grid), data->cluster_entry, 1, 4, 1, 1);
     
     // Slack
-    GtkWidget* label_slack = gtk_label_new("Slack Bytes:");
+    GtkWidget* label_slack = gtk_label_new(_T("slack_label", "Slack Bytes:").c_str());
     gtk_widget_set_halign(label_slack, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(grid), label_slack, 0, 5, 1, 1);
     
@@ -248,7 +252,7 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     gtk_grid_attach(GTK_GRID(grid), data->slack_entry, 1, 5, 1, 1);
     
     // Search Time
-    GtkWidget* label_time = gtk_label_new("Max Search Time (sec):");
+    GtkWidget* label_time = gtk_label_new(_T("search_time_label", "Max Search Time (sec):").c_str());
     gtk_widget_set_halign(label_time, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(grid), label_time, 0, 6, 1, 1);
     
@@ -256,7 +260,7 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     gtk_grid_attach(GTK_GRID(grid), data->search_time_entry, 1, 6, 1, 1);
     
     // Split Depth
-    GtkWidget* label_depth = gtk_label_new("Directory Split Depth:");
+    GtkWidget* label_depth = gtk_label_new(_T("split_depth_label", "Directory Split Depth:").c_str());
     gtk_widget_set_halign(label_depth, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(grid), label_depth, 0, 7, 1, 1);
     
@@ -264,56 +268,79 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     gtk_grid_attach(GTK_GRID(grid), data->split_depth_entry, 1, 7, 1, 1);
     
     // Skip empty switch
-    GtkWidget* label_empty = gtk_label_new("Skip Empty Files/Dirs:");
+    GtkWidget* label_empty = gtk_label_new(_T("skip_empty_label", "Skip Empty Files/Dirs:").c_str());
     gtk_widget_set_halign(label_empty, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(grid), label_empty, 0, 8, 1, 1);
     
     data->skip_empty_switch = gtk_switch_new();
     gtk_widget_set_halign(data->skip_empty_switch, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(grid), data->skip_empty_switch, 1, 8, 1, 1);
-
+ 
     // Rule conflict override
-    GtkWidget* label_conflict = gtk_label_new("Rule-based grouping wins:");
+    GtkWidget* label_conflict = gtk_label_new(_T("rule_wins_chk", "Rule-based grouping wins:").c_str());
     gtk_widget_set_halign(label_conflict, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(grid), label_conflict, 0, 9, 1, 1);
-
+ 
     data->conflict_switch = gtk_switch_new();
     gtk_widget_set_halign(data->conflict_switch, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(grid), data->conflict_switch, 1, 9, 1, 1);
     
     // Enable Dark Theme switch
-    GtkWidget* label_dark = gtk_label_new("Enable Dark Theme:");
+    GtkWidget* label_dark = gtk_label_new(_T("dark_theme_chk", "Enable Dark Theme:").c_str());
     gtk_widget_set_halign(label_dark, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(grid), label_dark, 0, 10, 1, 1);
-
+ 
     data->dark_theme_switch = gtk_switch_new();
     gtk_widget_set_halign(data->dark_theme_switch, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(grid), data->dark_theme_switch, 1, 10, 1, 1);
     
     // Enable PAR3 Parity protection switch
-    GtkWidget* label_par3 = gtk_label_new("Enable PAR3 Parity Protection:");
+    GtkWidget* label_par3 = gtk_label_new(_T("enable_par3_chk", "Enable PAR3 Parity Protection:").c_str());
     gtk_widget_set_halign(label_par3, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(grid), label_par3, 0, 11, 1, 1);
-
+ 
     data->enable_par3_switch = gtk_switch_new();
     gtk_widget_set_halign(data->enable_par3_switch, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(grid), data->enable_par3_switch, 1, 11, 1, 1);
-
+ 
     // PAR3 Block Size (Bytes) entry
-    GtkWidget* label_par3_block = gtk_label_new("PAR3 Block Size (Bytes):");
+    GtkWidget* label_par3_block = gtk_label_new(_T("par3_block_size", "PAR3 Block Size (Bytes):").c_str());
     gtk_widget_set_halign(label_par3_block, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(grid), label_par3_block, 0, 12, 1, 1);
-
+ 
     data->par3_block_size_entry = gtk_entry_new();
     gtk_grid_attach(GTK_GRID(grid), data->par3_block_size_entry, 1, 12, 1, 1);
-
+ 
     // PAR3 Redundancy Percent entry
-    GtkWidget* label_par3_red = gtk_label_new("PAR3 Redundancy Percent (%):");
+    GtkWidget* label_par3_red = gtk_label_new(_T("par3_redundancy", "PAR3 Redundancy Percent (%):").c_str());
     gtk_widget_set_halign(label_par3_red, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(grid), label_par3_red, 0, 13, 1, 1);
-
+ 
     data->par3_redundancy_entry = gtk_entry_new();
     gtk_grid_attach(GTK_GRID(grid), data->par3_redundancy_entry, 1, 13, 1, 1);
+    
+    // Language selection entry (Row 14)
+    GtkWidget* label_lang = gtk_label_new(_T("language_label", "Language:").c_str());
+    gtk_widget_set_halign(label_lang, GTK_ALIGN_START);
+    gtk_grid_attach(GTK_GRID(grid), label_lang, 0, 14, 1, 1);
+    
+    data->language_combo = gtk_combo_box_text_new();
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->language_combo), "System Default (Auto)");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->language_combo), "English");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->language_combo), "Deutsch");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->language_combo), "Nederlands");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->language_combo), "Français");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->language_combo), "Español");
+    
+    if (solver.language == "auto") gtk_combo_box_set_active(GTK_COMBO_BOX(data->language_combo), 0);
+    else if (solver.language == "en") gtk_combo_box_set_active(GTK_COMBO_BOX(data->language_combo), 1);
+    else if (solver.language == "de") gtk_combo_box_set_active(GTK_COMBO_BOX(data->language_combo), 2);
+    else if (solver.language == "nl") gtk_combo_box_set_active(GTK_COMBO_BOX(data->language_combo), 3);
+    else if (solver.language == "fr") gtk_combo_box_set_active(GTK_COMBO_BOX(data->language_combo), 4);
+    else if (solver.language == "es") gtk_combo_box_set_active(GTK_COMBO_BOX(data->language_combo), 5);
+    else gtk_combo_box_set_active(GTK_COMBO_BOX(data->language_combo), 0);
+    
+    gtk_grid_attach(GTK_GRID(grid), data->language_combo, 1, 14, 1, 1);
     
     // Grouping Rules list frame
     GtkWidget* rules_frame = gtk_frame_new("File/Folder Grouping Rules");
@@ -488,6 +515,24 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
         data->solver->par3BlockSize = std::stoll(gtk_editable_get_text(GTK_EDITABLE(data->par3_block_size_entry)));
         data->solver->par3RedundancyPercent = std::stoi(gtk_editable_get_text(GTK_EDITABLE(data->par3_redundancy_entry)));
         
+        int lang_idx = gtk_combo_box_get_active(GTK_COMBO_BOX(data->language_combo));
+        std::string new_lang = "auto";
+        if (lang_idx == 1) new_lang = "en";
+        else if (lang_idx == 2) new_lang = "de";
+        else if (lang_idx == 3) new_lang = "nl";
+        else if (lang_idx == 4) new_lang = "fr";
+        else if (lang_idx == 5) new_lang = "es";
+        
+        bool lang_changed = (new_lang != data->solver->language);
+        if (lang_changed) {
+            data->solver->language = new_lang;
+            if (new_lang == "auto") {
+                BttbLocale::getInstance().load(BttbLocale::getInstance().detectSystemLanguage());
+            } else {
+                BttbLocale::getInstance().load(new_lang);
+            }
+        }
+        
         // Apply immediately
         GtkSettings *settings = gtk_settings_get_default();
         g_object_set(settings, "gtk-application-prefer-dark-theme", data->solver->enableDarkTheme ? TRUE : FALSE, NULL);
@@ -534,9 +579,23 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
             valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(data->rule_store), &iter);
         }
         
-        // Destroy dialog
         GtkWidget* t_window = gtk_widget_get_ancestor(GTK_WIDGET(btn), GTK_TYPE_WINDOW);
-        gtk_window_destroy(GTK_WINDOW(t_window));
+        if (lang_changed) {
+            GtkWidget* msg_dialog = gtk_message_dialog_new(GTK_WINDOW(t_window),
+                                                         GTK_DIALOG_MODAL,
+                                                         GTK_MESSAGE_INFO,
+                                                         GTK_BUTTONS_OK,
+                                                         "%s", _T("restart_notice", "Language preferences saved. Please restart Burn to the Brim to apply the changes.").c_str());
+            g_signal_connect(msg_dialog, "response", G_CALLBACK(+[](GtkWidget* dlg, int response, gpointer window_to_destroy) {
+                gtk_window_destroy(GTK_WINDOW(dlg));
+                if (window_to_destroy) {
+                    gtk_window_destroy(GTK_WINDOW(window_to_destroy));
+                }
+            }), t_window);
+            gtk_window_present(GTK_WINDOW(msg_dialog));
+        } else {
+            gtk_window_destroy(GTK_WINDOW(t_window));
+        }
     }), data);
     
     // Free dialog data when window destroys

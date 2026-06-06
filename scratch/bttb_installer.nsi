@@ -1,5 +1,5 @@
 !ifndef VERSION
-  !define VERSION "4.2.1"
+  !define VERSION "4.3.0"
 !endif
 !ifndef SUFFIX
   !define SUFFIX ""
@@ -51,6 +51,13 @@ Section "Burn to the Brim (Required)" SecCore
   
   SetOutPath "$INSTDIR\src"
   File "../src/bttb_embed.py"
+  
+  SetOutPath "$INSTDIR\lang"
+  File "../lang\de.po"
+  File "../lang\nl.po"
+  File "../lang\fr.po"
+  File "../lang\es.po"
+  
   SetOutPath "$INSTDIR"
   
   WriteRegStr HKCU "Software\BurnToTheBrim" "InstallDir" "$INSTDIR"
@@ -83,7 +90,13 @@ Section "Uninstall"
   Delete "$INSTDIR\src\bttb_embed.py"
   Delete "$INSTDIR\uninstall.exe"
   
+  Delete "$INSTDIR\lang\de.po"
+  Delete "$INSTDIR\lang\nl.po"
+  Delete "$INSTDIR\lang\fr.po"
+  Delete "$INSTDIR\lang\es.po"
+  
   RMDir "$INSTDIR\src"
+  RMDir "$INSTDIR\lang"
   RMDir "$INSTDIR"
   
   Delete "$SMPROGRAMS\${APP_NAME}\${APP_NAME}.lnk"

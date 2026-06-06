@@ -70,6 +70,12 @@ static int path_search_recursive(PAR3_CTX *par3_ctx, char *sub_dir)
 					return RET_MEMORY_ERROR;
 				}
 
+				char parent_dir[_MAX_PATH * 2];
+				if (_getcwd(parent_dir, sizeof(parent_dir)) == NULL) {
+					perror("Failed to get current working directory");
+					return RET_FILE_IO_ERROR;
+				}
+
 				// goto inner directory
 				if (_chdir(c_file.name) != 0){
 					perror("Failed to go sub directory");
@@ -84,7 +90,7 @@ static int path_search_recursive(PAR3_CTX *par3_ctx, char *sub_dir)
 				}
 
 				// return to parent (this) directory
-				if (_chdir("..") != 0){
+				if (_chdir(parent_dir) != 0){
 					perror("Failed to return parent directory");
 					return RET_FILE_IO_ERROR;
 				}
@@ -268,6 +274,12 @@ int path_search(PAR3_CTX *par3_ctx, char *match_path, int flag_recursive)
 					return RET_MEMORY_ERROR;
 				}
 
+				char parent_dir[_MAX_PATH * 2];
+				if (_getcwd(parent_dir, sizeof(parent_dir)) == NULL) {
+					perror("Failed to get current working directory");
+					return RET_FILE_IO_ERROR;
+				}
+
 				// goto inner directory
 				if (_chdir(c_file.name) != 0){
 					perror("Failed to go sub directory");
@@ -282,7 +294,7 @@ int path_search(PAR3_CTX *par3_ctx, char *match_path, int flag_recursive)
 				}
 
 				// return to parent (this) directory
-				if (_chdir("..") != 0){
+				if (_chdir(parent_dir) != 0){
 					perror("Failed to return parent directory");
 					return RET_FILE_IO_ERROR;
 				}

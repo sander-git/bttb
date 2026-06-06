@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include <gtk/gtk.h>
+#include <clocale>
 #include "ui_main.hpp"
 #include "cli_engine.hpp"
 
@@ -69,6 +70,11 @@ static void on_activate(GtkApplication* app, gpointer user_data) {
 }
 
 int main(int argc, char* argv[]) {
+#ifdef __linux__
+    setenv("GTK_USE_PORTAL", "0", 1);
+#endif
+    std::setlocale(LC_ALL, "");
+    std::setlocale(LC_NUMERIC, "C");
     // 1. Detect if CLI mode is triggered
     if (bttb::isCliModeTriggered(argc, argv)) {
         return bttb::runCliEngine(argc, argv);

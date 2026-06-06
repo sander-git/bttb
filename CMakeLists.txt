@@ -92,6 +92,7 @@ add_library(libpar3 STATIC
 set(SOURCES
     src/main.cpp
     src/bttb_logic.cpp
+    src/bttb_locale.cpp
     src/ui_main.cpp
     src/ui_settings.cpp
     src/ui_iso.cpp
@@ -105,7 +106,7 @@ target_link_libraries(bttb PRIVATE PkgConfig::GTK4 libpar3 blake3 leopard platfo
 target_link_options(bttb PRIVATE -static-libgcc -static-libstdc++)
 
 # Test target
-add_executable(test_solver src/test_solver.cpp src/bttb_logic.cpp)
+add_executable(test_solver src/test_solver.cpp src/bttb_logic.cpp src/bttb_locale.cpp)
 target_include_directories(test_solver PRIVATE src src/libpar3 src/blake3 src/leopard src/platform)
 target_link_libraries(test_solver PRIVATE libpar3 blake3 leopard platform)
 
@@ -113,11 +114,12 @@ target_link_libraries(test_solver PRIVATE libpar3 blake3 leopard platform)
 install(TARGETS bttb DESTINATION bin)
 install(FILES README.md LICENSE DESTINATION share/doc/bttb)
 install(PROGRAMS src/bttb_embed.py DESTINATION bin)
+install(DIRECTORY lang DESTINATION share/bttb)
 
 # CPack packaging configuration
 set(CPACK_PACKAGE_NAME "bttb-cpp")
 set(CPACK_PACKAGE_VENDOR "BurnToTheBrim")
-set(CPACK_PACKAGE_VERSION "4.2.1")
+set(CPACK_PACKAGE_VERSION "4.3.0")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Burn to the Brim (C++ Port)")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")

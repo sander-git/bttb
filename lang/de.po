@@ -1,0 +1,644 @@
+msgid "app_title"
+msgstr "Burn to the Brim"
+
+msgid "pref_title"
+msgstr "Einstellungen"
+
+msgid "help_title"
+msgstr "Hilfe - Burn to the Brim"
+
+msgid "help_guide_title"
+msgstr "Burn to the Brim (BTTB) Hilfehandbuch"
+
+msgid "about_title"
+msgstr "Über Burn to the Brim"
+
+msgid "iso_title"
+msgstr "ISO-Image erstellen"
+
+msgid "verify_title"
+msgstr "Volumes verifizieren & wiederherstellen"
+
+msgid "start_btn"
+msgstr "Starten"
+
+msgid "test_btn"
+msgstr "Testen"
+
+msgid "stop_btn"
+msgstr "Stoppen"
+
+msgid "close_btn"
+msgstr "Schließen"
+
+msgid "browse_btn"
+msgstr "Durchsuchen..."
+
+msgid "add_btn"
+msgstr "Hinzufügen..."
+
+msgid "edit_btn"
+msgstr "Bearbeiten..."
+
+msgid "remove_btn"
+msgstr "Entfernen"
+
+msgid "cancel_btn"
+msgstr "Abbrechen"
+
+msgid "ok_btn"
+msgstr "OK"
+
+msgid "save_btn"
+msgstr "Speichern"
+
+msgid "source_folder"
+msgstr "Quellordner:"
+
+msgid "target_folder"
+msgstr "Zielordner:"
+
+msgid "semantic_prompt"
+msgstr "Semantischer Prompt:"
+
+msgid "filled_label"
+msgstr "Gefüllt: 0.00%"
+
+msgid "time_left_label"
+msgstr "Verbleibende Zeit: --:--"
+
+msgid "move_files_chk"
+msgstr "Verschiebe eingepasste Ordner/Dateien in den Zielordner"
+
+msgid "create_symlinks_chk"
+msgstr "Erstelle symbolische Links im Zielordner (Standard)"
+
+msgid "span_chk"
+msgstr "Auf mehrere Volumes aufteilen (Volume_1, Volume_2, etc.)"
+
+msgid "trace_chk"
+msgstr "Detaillierte Solver-Diagnoseverfolgung aktivieren (Trace)"
+
+msgid "skip_empty_chk"
+msgstr "Leere Ordner / Dateien überspringen"
+
+msgid "skip_unreadable_chk"
+msgstr "Unlesbare Dateien überspringen (Kulant)"
+
+msgid "integrate_ctx_chk"
+msgstr "In das Windows Explorer-Kontextmenü integrieren"
+
+msgid "rule_wins_chk"
+msgstr "Regelbasierte Gruppierung gewinnt vor semantischem Prompt"
+
+msgid "dark_theme_chk"
+msgstr "Dunkles Design aktivieren:"
+
+msgid "enable_par3_chk"
+msgstr "PAR3-Paritätsschutz aktivieren:"
+
+msgid "par3_block_size"
+msgstr "PAR3-Blockgröße (Bytes):"
+
+msgid "par3_redundancy"
+msgstr "PAR3-Redundanzprozent (%):"
+
+msgid "grouping_rules_frame"
+msgstr "Regeln zur Datei-/Ordnergruppierung"
+
+msgid "pattern_col"
+msgstr "Muster"
+
+msgid "files_col"
+msgstr "Dateien"
+
+msgid "folders_col"
+msgstr "Ordner"
+
+msgid "type_col"
+msgstr "Typ"
+
+msgid "add_rule_btn"
+msgstr "Regel hinzufügen"
+
+msgid "remove_selected_btn"
+msgstr "Ausgewählte entfernen"
+
+msgid "rule_pattern_placeholder"
+msgstr "Regelmuster (*.mp3 oder ^[0-9].*\\..*$)"
+
+msgid "custom_vol_name_placeholder"
+msgstr "Benutzerdefinierter Volumename"
+
+msgid "language_label"
+msgstr "Sprache:"
+
+msgid "restart_notice"
+msgstr "Spracheinstellungen gespeichert. Bitte starten Sie die Anwendung neu, um die Änderungen zu übernehmen."
+
+msgid "restart_title"
+msgstr "Sprache geändert"
+
+msgid "about_comments"
+msgstr ""
+"Burn to the Brim (BTTB) ist eine moderne C++20-Portierung der klassischen Delphi-Anwendung, die entwickelt wurde, um Dateien und Ordner optimal auf Zielspeichermedien (CDs, DVDs, Blu-rays oder USB-Sticks) zu verteilen.\n\n"
+"Funktionen in v4.3.0:\n"
+"- Offline-JSON-Indexerstellung und interaktiver Parser\n"
+"- Optionale PAR3-Paritätsdateierstellung und -verifizierung\n"
+"- Bitgenaue PAR3-kopierbasierte Wiederherstellung und Reparatur\n"
+"- Theme-Unterstützung inklusive Standard-Dunkel-Theme-Optionen auf Linux GTK4\n"
+"- Verbesserte Schätzung der verbleibenden Zeit direkt beim Start\n"
+"- Benannte benutzerdefinierte Medienprofile & dynamische automatische Volumengrößen\n"
+"- Einstellungsverlauf zur Wiederherstellung der zuletzt ausgewählten Konfiguration\n"
+"- Regelkonflikt-Überschreibungen (regelbasierte oder semantische Gruppierung gewinnt)\n"
+"- Transferratengestützte Zeitschätzung & Aktivitätsanzeige\n"
+"- Entropiebewusstes semantisches Packen basierend auf MiniLM-Embeddings\n"
+"- Explorer-Kontextmenü-Integration & Unterstützung für lange Pfade\n\n"
+"Verwendete Bibliotheken und Zuschreibungen:\n"
+"- libpar3 (von Yutaka Sawada, LGPL v2.1+): https://github.com/Parchive/par3cmdline\n"
+"- BLAKE3 (von BLAKE3 Team, CC0/Apache-2.0): https://github.com/BLAKE3-team/BLAKE3\n"
+"- Leopard-RS (von Christopher A. Taylor, BSD 3-Clause): https://github.com/catid/leopard\n"
+"- Galois Field Library (von James S. Plank): http://web.eecs.utk.edu/~jplank/plank/www/software.html\n\n"
+"Autoren: Sander Raaijmakers, Elwin Oost und das Burn to the Brim Team"
+
+msgid "help_guide_text"
+msgstr ""
+"1. Verzeichnis-Aufteilungstiefe\n"
+"Bestimmt die Ordnerebene, ab der Elemente aufgeteilt werden:\n"
+" - Tiefe 0 (Standard): Dateien und Ordner auf der obersten Ebene werden als separate Elemente behandelt.\n"
+" - Tiefe 1: Die Aufteilung erfolgt eine Ebene tiefer. Ordner der obersten Ebene bleiben intakt, ihre unmittelbaren Unterordner werden jedoch aufgeteilt.\n\n"
+"2. Maximale Suchzeit\n"
+"Die maximale Anzahl an Sekunden, die der Backtracking-Solver laufen darf. Wenn diese Zeit erreicht ist, wird die bis dahin beste Auswahl verwendet.\n\n"
+"3. Toleranzbereich (Spanning Slack)\n"
+"Ermöglicht eine vorzeitige Beendigung des Solvers, sobald ein Volume bis auf diese Anzahl von Bytes an die maximale Kapazität gefüllt ist (z. B. 2048 Bytes).\n\n"
+"4. Gruppierungsregeln für Dateien/Ordner\n"
+"Zwingt übereinstimmende Elemente dazu, auf demselben Volume gruppiert zu bleiben (z. B. passend zu '*.mp3' oder dem regulären Ausdruck '^album_.*').\n\n"
+"5. Mehrere Quellordner (+)\n"
+"Klicken Sie auf '+', um mehrere Quellordner anzugeben. BTTB verhält sich so, als befänden sie sich in einem einzigen Stammordner. Verschachtelte Quellpfade werden ignoriert.\n\n"
+"6. Symbolische Links erstellen\n"
+"Anstatt Dateien in den Zielordner zu kopieren oder zu verschieben, erstellt BTTB schlanke symbolische Links, die auf Ihre Originaldateien verweisen.\n\n"
+"7. Neuronales semantisches Packen & MiniLM-Installationsanleitung\n"
+"Durch die Angabe eines semantischen Prompts gruppiert BTTB Dateien mit ähnlichem Inhalt mithilfe von kontextsensitiven Deep-Learning-Embeddings.\n"
+"Um das bevorzugte, hochpräzise MiniLM-Neuronalmodell zu verwenden, müssen Sie Python 3 und sentence-transformers installieren:\n"
+" - Schritt 1: Stellen Sie sicher, dass Python 3 & pip installiert sind.\n"
+"   (Linux: 'sudo apt install python3 python3-pip python3-venv' ausführen)\n"
+"   (Windows: Von https://www.python.org/ installieren und 'Add Python to PATH' aktivieren)\n"
+" - Schritt 2: Installieren Sie sentence-transformers über das Terminal oder die Eingabeaufforderung:\n"
+"   Option A (Empfohlen wegen Einfachheit):\n"
+"     pip install sentence-transformers\n"
+"   Option B (Virtuelle Umgebung zur Isolation):\n"
+"     python3 -m venv bttb_env\n"
+"     source bttb_env/bin/activate  # (Windows: bttb_env\\Scripts\\activate)\n"
+"     pip install sentence-transformers\n"
+" - Schritt 3: Starten Sie Burn to the Brim neu, um MiniLM automatisch zu laden! Wenn es nicht gefunden wird, weicht BTTB elegant auf einen lokalisierten Zeichen-TF-IDF-Projektor aus."
+
+msgid "dir_setup_group"
+msgstr "Verzeichniseinstellungen"
+
+msgid "save_cv_label"
+msgstr "Benutzerdefiniertes Volume speichern:"
+
+msgid "progress_frame_title"
+msgstr "Status der eingepassten Kapazität"
+
+msgid "log_frame_title"
+msgstr "Solver-Ausgabeprotokoll"
+
+msgid "pref_btn"
+msgstr "Einstellungen..."
+
+msgid "create_iso_btn"
+msgstr "ISO erstellen..."
+
+msgid "help_btn"
+msgstr "Hilfe"
+
+msgid "about_btn"
+msgstr "Über..."
+
+msgid "import_json_btn"
+msgstr "JSON importieren..."
+
+msgid "verify_restore_btn"
+msgstr "Prüfen & Reparieren..."
+
+msgid "match_files_chk"
+msgstr "Dateien einbeziehen"
+
+msgid "match_folders_chk"
+msgstr "Ordner einbeziehen"
+
+msgid "regex_pattern_chk"
+msgstr "Regex-Muster"
+
+msgid "app_version"
+msgstr "Version 4.3.0"
+
+msgid "app_copyright"
+msgstr "Copyright © 2001-2026 Sander Raaijmakers, Elwin Oost und das Burn to the Brim Team"
+
+msgid "verify_only_btn"
+msgstr "Nur verifizieren"
+
+msgid "restore_repair_btn"
+msgstr "Wiederherstellen & Reparieren"
+
+msgid "log_frame_title_verify"
+msgstr "Verifizierungs- und Wiederherstellungsprotokoll"
+
+msgid "label_vol_directory"
+msgstr "Volume-Verzeichnis:"
+
+msgid "label_rec_directory"
+msgstr "Wiederherstellungsverzeichnis:"
+
+msgid "label_par3_base"
+msgstr "PAR3-Basisname:"
+
+msgid "select_vol_dir_title"
+msgstr "Volume-Verzeichnis auswählen"
+
+msgid "select_rec_dir_title"
+msgstr "Wiederherstellungsverzeichnis auswählen"
+
+msgid "tooltip_import_json"
+msgstr "Importieren und Analysieren von Offline-JSON-Indexdateien, um gelöste Volume-Dateidetails anzuzeigen."
+
+msgid "tooltip_verify_restore"
+msgstr "Verifizieren gelöster Volumes oder Kopieren und Wiederherstellen beschädigter Dateien mithilfe von PAR3-Archiven."
+
+msgid "tooltip_test"
+msgstr "Simulieren Sie das Packen ohne Dateivorgänge auf der Festplatte, um die Volume-Auslastung zu testen."
+
+msgid "tooltip_start"
+msgstr "Solver ausführen und Dateien/Ordner gemäß den Einstellungen organisieren."
+
+msgid "tooltip_stop"
+msgstr "Aktuellen Pack- oder Dateiorganisationsprozess abbrechen."
+
+msgid "tooltip_create_iso"
+msgstr "Erstellen Sie ISO-Dateisystem-Images aus den gelösten Volumes."
+
+msgid "tooltip_source"
+msgstr "Durch Semikolons getrennte Pfade von Ordnern, die gepackt und konsolidiert werden sollen."
+
+msgid "tooltip_target"
+msgstr "Zielpfad, in dem Volumes organisiert und geschrieben werden."
+
+msgid "tooltip_semantic"
+msgstr "Geben Sie einen Prompt wie 'Audio zusammenhalten' ein, um Dateien über MiniLM zu analysieren."
+
+msgid "tooltip_move"
+msgstr "Verschieben/Ausschneiden von Originaldateien/-ordnern direkt in Zielvolume-Ordner."
+
+msgid "tooltip_symlink"
+msgstr "Erstellen Sie symbolische Dateisystem-Links in Zielvolume-Ordnern (zerstörungsfrei)."
+
+msgid "tooltip_span"
+msgstr "Aktivieren Sie die Aufteilung von Inhalten auf mehrere nacheinander benannte Ordner."
+
+msgid "tooltip_trace"
+msgstr "Protokollieren Sie detaillierte Diagnosen, die zeigen, wie Ordner/Dateien ausgewählt und aufgeteilt werden."
+
+msgid "add_src_dir_title"
+msgstr "Quellverzeichnis hinzufügen"
+
+msgid "auto_size"
+msgstr "Automatische Größe"
+
+msgid "browse_dest_tooltip"
+msgstr "Nach Zielverzeichnis suchen"
+
+msgid "browse_src_tooltip"
+msgstr "Nach Quellverzeichnis suchen"
+
+msgid "capacity_label"
+msgstr "Kapazität:"
+
+msgid "cluster_label"
+msgstr "Clustergröße (Bytes):"
+
+msgid "complete_list_src_folders"
+msgstr "Vollständige Liste der Quellordner:"
+
+msgid "custom_size"
+msgstr "Benutzerdefinierte Größe"
+
+msgid "edit_src_dir_title"
+msgstr "Quellverzeichnis bearbeiten"
+
+msgid "execution_log"
+msgstr "Ausführungsprotokoll"
+
+msgid "fitted_status_col"
+msgstr "Einpassungsstatus"
+
+msgid "generate_btn"
+msgstr "Generieren"
+
+msgid "log_copying_repair"
+msgstr "Kopiere Volume-Inhalt und führe Reparatur aus. Bitte warten...\n"
+
+msgid "log_damaged_files"
+msgstr "Beschädigte oder fehlende Dateien gefunden:\n"
+
+msgid "log_errors"
+msgstr "Protokolle/Fehler: "
+
+msgid "log_fail_restore"
+msgstr "\nFEHLER: Wiederherstellung oder Reparatur fehlgeschlagen.\n"
+
+msgid "log_fail_verify_status"
+msgstr "\nVerifizierung hat Probleme erkannt (Status "
+
+msgid "log_index_fail"
+msgstr "Keine einzelnen beschädigten Dateien identifiziert, aber die Indexverifizierung ist fehlgeschlagen. Das PAR3-Archiv selbst ist möglicherweise beschädigt.\n"
+
+msgid "log_par3_base"
+msgstr "PAR3-Basisname: "
+
+msgid "log_recovery_path"
+msgstr "Wiederherstellungspfad: "
+
+msgid "log_start_restore"
+msgstr "Starte Volume-Wiederherstellung/-Reparatur...\n"
+
+msgid "log_start_verify"
+msgstr "Starte Volume-Verifizierung...\n"
+
+msgid "log_success_restore"
+msgstr "\nERFOLG: Volume erfolgreich kopiert und in separatem Wiederherstellungsordner repariert!\n"
+
+msgid "log_success_verify"
+msgstr "\nERFOLG: Alle Dateien verifiziert und sauber/bitgenau!\n"
+
+msgid "log_volume_path"
+msgstr "Volume-Pfad: "
+
+msgid "manage_src_folders_title"
+msgstr "Quellordner verwalten"
+
+msgid "media_size_label"
+msgstr "Mediumgröße:"
+
+msgid "move_tooltip"
+msgstr "Verschieben Sie Dateien auf ihre Ziel-Volumes, anstatt sie zu kopieren oder zu verknüpfen"
+
+msgid "rel_path_col"
+msgstr "Relativer Pfad / Kategorie"
+
+msgid "save_cv_tooltip"
+msgstr "Speichern Sie die aktuelle Kapazität, den Sektor und den Slack-Wert als benanntes benutzerdefiniertes Volume"
+
+msgid "search_time_label"
+msgstr "Max. Suchzeit (Sek):"
+
+msgid "select_dest_dir_title"
+msgstr "Zielverzeichnis auswählen"
+
+msgid "select_medium_label"
+msgstr "Medium auswählen:"
+
+msgid "semantic_placeholder"
+msgstr "z. B. ähnliche Inhalte zusammenhalten"
+
+msgid "semantic_tooltip"
+msgstr "Geben Sie eine semantische Beschreibung an, um ähnliche Dateien mithilfe von MiniLM-KI zu gruppieren"
+
+msgid "size_col"
+msgstr "Größe"
+
+msgid "skip_empty_label"
+msgstr "Leere Dateien/Ordner überspringen:"
+
+msgid "slack_label"
+msgstr "Slack-Bytes:"
+
+msgid "source_tooltip"
+msgstr "Quellverzeichnis, das die zu organisierenden Dateien enthält"
+
+msgid "span_tooltip"
+msgstr "Verteilen Sie verbleibende Dateien nacheinander auf mehrere Volumes, anstatt nur auf das erste Volume"
+
+msgid "split_depth_label"
+msgstr "Ordner-Aufteilungstiefe:"
+
+msgid "start_tooltip"
+msgstr "Starten Sie die Organisation der Dateien in optimale Volumes"
+
+msgid "stop_tooltip"
+msgstr "Stoppen Sie den aktuellen Solver oder Kopiervorgang"
+
+msgid "symlink_tooltip"
+msgstr "Erstellen Sie symbolische Links der Dateien am Zielort, anstatt sie zu kopieren"
+
+msgid "target_iso_file"
+msgstr "Ziel-ISO-Datei:"
+
+msgid "target_tooltip"
+msgstr "Zielverzeichnis, in dem organisierte Volumes erstellt werden"
+
+msgid "test_tooltip"
+msgstr "Simulieren Sie das Organisieren von Dateien und berechnen Sie Metriken, ohne Dateien auf der Festplatte zu ändern"
+
+msgid "trace_tooltip"
+msgstr "Zeigen Sie extra ausführliches Tracing und Performance-Metriken in den Protokollen an"
+
+msgid "volume_label"
+msgstr "Volume-Label:"
+
+
+msgid "log_warn_dir_unreadable_1"
+msgstr "Warnung: Verzeichnis '"
+
+msgid "log_warn_dir_unreadable_2"
+msgstr "' ist nicht lesbar ("
+
+msgid "log_scan_aborted_unreadable_dir"
+msgstr "Scannen durch Benutzer abgebrochen wegen nicht lesbarem Verzeichnis."
+
+msgid "log_warn_item_unreadable_1"
+msgstr "Warnung: Datei oder Ordner in '"
+
+msgid "log_warn_item_unreadable_2"
+msgstr "' ist nicht lesbar ("
+
+msgid "log_scan_aborted_unreadable_item"
+msgstr "Scannen durch Benutzer abgebrochen wegen nicht lesbarem Element."
+
+msgid "log_warn_failed_iterate_dir_1"
+msgstr "Warnung: Fehler beim Durchlaufen des Verzeichnisses '"
+
+msgid "log_warn_failed_iterate_dir_2"
+msgstr "' ("
+
+msgid "log_scan_aborted_failed_iterate"
+msgstr "Scannen durch Benutzer abgebrochen wegen unlesbarer Verzeichnisdurchlauf."
+
+msgid "log_scanning_folder"
+msgstr "Scannen von Ordner: "
+
+msgid "log_found_items"
+msgstr "Passende Elemente gefunden: "
+
+msgid "log_search_time_limit_exceeded_1"
+msgstr "Suchzeitlimit überschritten ("
+
+msgid "log_search_time_limit_exceeded_2"
+msgstr " Sekunden)."
+
+msgid "log_new_best_space_utilization"
+msgstr "Neue beste Platznutzung: "
+
+msgid "log_selection_within_slack_1"
+msgstr "Auswahl innerhalb des Toleranzbereichs ("
+
+msgid "log_selection_within_slack_2"
+msgstr "%) gefunden. Beende Suche vorzeitig."
+
+msgid "log_no_items_to_fit"
+msgstr "Keine Elemente zum Einpassen."
+
+msgid "log_auto_volume_cap_set_1"
+msgstr "Auto-Volumen-Kapazität gesetzt auf: "
+
+msgid "log_auto_volume_cap_set_2"
+msgstr " Bytes ("
+
+msgid "log_warn_item_exceeds_cap_1"
+msgstr "Warnung: Element '"
+
+msgid "log_warn_item_exceeds_cap_2"
+msgstr "' ("
+
+msgid "log_warn_item_exceeds_cap_3"
+msgstr " Bytes) ist größer als die Zielvolumengröße ("
+
+msgid "log_capacity_adapted_1"
+msgstr "Kapazität angepasst auf "
+
+msgid "log_capacity_adapted_2"
+msgstr " Bytes. Solver wird erneut versucht..."
+
+msgid "log_solver_aborted_files_exceed_cap"
+msgstr "Solver abgebrochen: Datensatz enthält Dateien, die die Kapazität überschreiten."
+
+msgid "log_solver_aborted_files_exceed_cap_adapt"
+msgstr "Solver abgebrochen: Datensatz enthält Dateien, die die Kapazität überschreiten. Passen Sie die Kapazität an oder aktivieren Sie das interaktive Wiederholen."
+
+msgid "log_volume_packing_estimation_header"
+msgstr "--- Volumenschätzung ---"
+
+msgid "log_total_dataset_size_1"
+msgstr "Gesamte Datensatzgröße: "
+
+msgid "log_total_dataset_size_2"
+msgstr " Bytes ("
+
+msgid "log_target_volume_cap_1"
+msgstr "Zielvolumenkapazität: "
+
+msgid "log_target_volume_cap_2"
+msgstr " Bytes ("
+
+msgid "log_theoretical_min_vols"
+msgstr "Theoretisch minimal benötigte Volumes: "
+
+msgid "log_medium_capacity_1"
+msgstr "Mediumkapazität: "
+
+msgid "log_medium_capacity_2"
+msgstr " Sektoren ("
+
+msgid "log_solving_for_vol_header_1"
+msgstr "\\n--- LÖSE FÜR VOLUME "
+
+msgid "log_solving_for_vol_header_2"
+msgstr " ---"
+
+msgid "log_solving_optimal_bin"
+msgstr "Löse optimale Fächeraufteilung..."
+
+msgid "log_finished_solving_1"
+msgstr "Lösen beendet. Verstrichene Zeit: "
+
+msgid "log_finished_solving_2"
+msgstr " ms"
+
+msgid "log_single_vol_sol_forcing"
+msgstr "Einzelvolumen-Lösung: Erzwinge Auswahl aller Dateien, um 100%ige Einbeziehung zu garantieren..."
+
+msgid "log_backtracking_failed_fallback_greedy"
+msgstr "Backtracking-Solver hat keine passende Aufteilung gefunden (oder Zeitlimit überschritten). Nutze Greedy-Zuweisung, um verbleibende Dateien einzuschließen..."
+
+msgid "log_forcing_progress_exceeds_cap_1"
+msgstr "Erzwinge Fortschritt: Packe verbleibendes Element, das größer als die Mediumkapazität ist ("
+
+msgid "log_optimal_selection_covers"
+msgstr "Optimale Auswahl deckt ab: "
+
+msgid "log_selected_items_for_volume_1"
+msgstr "Ausgewählte Elemente für Volume "
+
+msgid "log_selected_items"
+msgstr "Ausgewählte Elemente:"
+
+msgid "log_bytes_suffix"
+msgstr " Bytes)"
+
+msgid "log_organizing_item"
+msgstr "Organisiere Element: "
+
+msgid "log_failed_symlink_retry_copy_1"
+msgstr "Fehler beim Erstellen des symbolischen Links für "
+
+msgid "log_failed_symlink_retry_copy_2"
+msgstr " (Wiederhole mit Kopieren)"
+
+msgid "log_failed_organize_item_1"
+msgstr "Fehler beim Organisieren von "
+
+msgid "log_generating_par3_for_volume_1"
+msgstr "Erstelle PAR3-Paritätsdateien für Volume "
+
+msgid "log_success_par3_for_volume_1"
+msgstr "PAR3-Paritätsschutz erfolgreich erstellt für Volume "
+
+msgid "log_failed_par3_creation"
+msgstr "PAR3-Erstellung fehlgeschlagen: "
+
+msgid "log_no_files_written_on_disk"
+msgstr "Keine Dateien wurden kopiert, verlinkt oder auf der Festplatte verschoben."
+
+msgid "log_completed_file_organization"
+msgstr "Datei-Organisierung abgeschlossen."
+
+msgid "log_created_offline_json_index"
+msgstr "Offline-JSON-Indexdatei erstellt: "
+
+msgid "log_failed_create_json_index"
+msgstr "Fehler beim Erstellen der JSON-Indexdatei: "
+
+msgid "log_generating_semantic_embeddings"
+msgstr "Erzeuge semantische Embeddings..."
+
+msgid "log_failed_write_temp_embed_input"
+msgstr "Fehler beim Schreiben der temporären Embedding-Eingabedatei: "
+
+msgid "log_warn_python_embed_engine_failed"
+msgstr "Warnung: Subprozess-Python-Embedding-Engine fehlgeschlagen oder Python3 ist nicht installiert."
+
+msgid "log_semantic_grouping_fallback"
+msgstr "-> Semantische Gruppierung weicht auf lokale String-Vergleichsmetriken aus."
+
+msgid "log_failed_read_temp_embed_output"
+msgstr "Fehler beim Lesen der temporären Embedding-Ausgabedatei: "
+
+msgid "log_warn_embedded_output_empty"
+msgstr "Warnung: Eingebettete Ausgabe ist leer."
+
+msgid "log_running_semantic_clustering"
+msgstr "Führe agglomeratives semantisches Clustering aus (Schwellenwert=0.6)..."
+
+msgid "log_semantic_clustering_completed"
+msgstr "Semantisches Clustering abgeschlossen. Konsolidierte Gruppen insgesamt: "

@@ -1,0 +1,644 @@
+msgid "app_title"
+msgstr "Burn to the Brim"
+
+msgid "pref_title"
+msgstr "Voorkeuren"
+
+msgid "help_title"
+msgstr "Help - Burn to the Brim"
+
+msgid "help_guide_title"
+msgstr "Burn to the Brim (BTTB) Help Handleiding"
+
+msgid "about_title"
+msgstr "Over Burn to the Brim"
+
+msgid "iso_title"
+msgstr "ISO-bestand maken"
+
+msgid "verify_title"
+msgstr "Volumes verifiëren & herstellen"
+
+msgid "start_btn"
+msgstr "Starten"
+
+msgid "test_btn"
+msgstr "Testen"
+
+msgid "stop_btn"
+msgstr "Stoppen"
+
+msgid "close_btn"
+msgstr "Sluiten"
+
+msgid "browse_btn"
+msgstr "Bladeren..."
+
+msgid "add_btn"
+msgstr "Toevoegen..."
+
+msgid "edit_btn"
+msgstr "Bewerken..."
+
+msgid "remove_btn"
+msgstr "Verwijderen"
+
+msgid "cancel_btn"
+msgstr "Annuleren"
+
+msgid "ok_btn"
+msgstr "OK"
+
+msgid "save_btn"
+msgstr "Opslaan"
+
+msgid "source_folder"
+msgstr "Bronmap:"
+
+msgid "target_folder"
+msgstr "Doelmap:"
+
+msgid "semantic_prompt"
+msgstr "Semantische prompt:"
+
+msgid "filled_label"
+msgstr "Gevuld: 0.00%"
+
+msgid "time_left_label"
+msgstr "Resterende tijd: --:--"
+
+msgid "move_files_chk"
+msgstr "Verplaats ingepaste mappen/bestanden naar de doelmap"
+
+msgid "create_symlinks_chk"
+msgstr "Maak symbolische koppelingen in de doelmap (Standaard)"
+
+msgid "span_chk"
+msgstr "Verdelen over meerdere volumes (Volume_1, Volume_2, etc.)"
+
+msgid "trace_chk"
+msgstr "Gedetailleerde solver diagnostische tracering inschakelen (Trace)"
+
+msgid "skip_empty_chk"
+msgstr "Lege mappen / bestanden overslaan"
+
+msgid "skip_unreadable_chk"
+msgstr "Onleesbare bestanden overslaan (Gracieus)"
+
+msgid "integrate_ctx_chk"
+msgstr "Integreren met Windows Explorer Context Menu"
+
+msgid "rule_wins_chk"
+msgstr "Regelgebaseerde groepering wint van semantische prompt"
+
+msgid "dark_theme_chk"
+msgstr "Donker thema inschakelen:"
+
+msgid "enable_par3_chk"
+msgstr "PAR3-pariteitsbescherming inschakelen:"
+
+msgid "par3_block_size"
+msgstr "PAR3-blokgrootte (Bytes):"
+
+msgid "par3_redundancy"
+msgstr "PAR3-redundantiepercentage (%):"
+
+msgid "grouping_rules_frame"
+msgstr "Groeperingsregels voor bestanden/mappen"
+
+msgid "pattern_col"
+msgstr "Patroon"
+
+msgid "files_col"
+msgstr "Bestanden"
+
+msgid "folders_col"
+msgstr "Mappen"
+
+msgid "type_col"
+msgstr "Type"
+
+msgid "add_rule_btn"
+msgstr "Regel toevoegen"
+
+msgid "remove_selected_btn"
+msgstr "Geselecteerde verwijderen"
+
+msgid "rule_pattern_placeholder"
+msgstr "Regelpatroon (*.mp3 of ^[0-9].*\\..*$)"
+
+msgid "custom_vol_name_placeholder"
+msgstr "Aangepaste volumenaam"
+
+msgid "language_label"
+msgstr "Taal:"
+
+msgid "restart_notice"
+msgstr "Taalvoorkeuren opgeslagen. Start de applicatie opnieuw op om de wijzigingen toe te passen."
+
+msgid "restart_title"
+msgstr "Taal gewijzigd"
+
+msgid "about_comments"
+msgstr ""
+"Burn to the Brim (BTTB) is een moderne C++20-port van de klassieke Delphi-applicatie die is ontworpen om bestanden en mappen optimaal te verdelen over doelopslagmedia (cd's, dvd's, Blu-rays of USB-sticks).\n\n"
+"Functies in v4.3.0:\n"
+"- Offline JSON-indexcreatie en interactieve parser\n"
+"- Optionele PAR3-pariteitsbestandgeneratie en -verificatie\n"
+"- Bit-perfecte PAR3-kopieergebaseerde restauratie en reparatie\n"
+"- Thema-ondersteuning inclusief standaard donker thema op Linux GTK4\n"
+"- Verbeterde schatting van de resterende tijd direct bij het opstarten\n"
+"- Benoemde aangepaste media-profielen & dynamische automatische volumegrootte\n"
+"- Instellingengeheugen dat de laatst geselecteerde volumeconfiguratie herstelt\n"
+"- Regels conflict-overrides (regelgebaseerde of semantische groepering wint)\n"
+"- Overdrachtssnelheid-gebaseerde resterende tijd & activiteitsspinner\n"
+"- Entropie-bewust semantisch inpakken op basis van MiniLM-embeddings\n"
+"- Explorer-contextmenu-integratie & ondersteuning voor lange paden\n\n"
+"Gebruikte bibliotheken en bronvermeldingen:\n"
+"- libpar3 (door Yutaka Sawada, LGPL v2.1+): https://github.com/Parchive/par3cmdline\n"
+"- BLAKE3 (door BLAKE3 team, CC0/Apache-2.0): https://github.com/BLAKE3-team/BLAKE3\n"
+"- Leopard-RS (door Christopher A. Taylor, BSD 3-Clause): https://github.com/catid/leopard\n"
+"- Galois Field-bibliotheek (door James S. Plank): http://web.eecs.utk.edu/~jplank/plank/www/software.html\n\n"
+"Auteurs: Sander Raaijmakers, Elwin Oost en het Burn to the Brim-team"
+
+msgid "help_guide_text"
+msgstr ""
+"1. Mappen splitsen diepte\n"
+"Bepaalt het niveau van mapnesting waarop items worden gesplitst:\n"
+" - Diepte 0 (Standaard): Bestanden en mappen op het hoogste niveau worden als afzonderlijke items behandeld.\n"
+" - Diepte 1: Het splitsen gebeurt één niveau dieper, waardoor mappen op het hoogste niveau intact blijven maar hun directe submappen worden gesplitst.\n\n"
+"2. Maximale zoektijd\n"
+"Het maximale aantal seconden dat de backtracking-oplosser mag draaien. Indien bereikt, wordt de beste selectie gebruikt die tot dan toe is gevonden.\n\n"
+"3. Speling (Spanning Slack)\n"
+"Maakt voortijdige beëindiging van de oplosser mogelijk zodra een volume is gevuld tot binnen dit aantal bytes van de absolute maximale capaciteit (bijv. 2048 bytes).\n\n"
+"4. Groeperingsregels voor bestanden/mappen\n"
+"Dwingt overeenkomende items om samen op hetzelfde volume gegroepeerd te blijven (bijv. overeenkomend met '*.mp3' of regex '^album_.*').\n\n"
+"5. Meerdere bronmappen (+)\n"
+"Klik op '+' om meerdere bronmappen op te geven. BTTB doet alsof ze zich in één enkele hoofdmap bevinden. Geneste bronpaden worden genegeerd.\n\n"
+"6. Symbolische koppelingen maken\n"
+"In plaats van bestanden naar de doelmap te kopiëren of te verplaatsen, maakt BTTB lichte symbolische koppelingen die terugverwijzen naar uw originele bestanden.\n\n"
+"7. Neuraal semantisch inpakken & MiniLM-installatiegids\n"
+"Door een semantische prompt op te geven, groepeert BTTB bestanden met vergelijkbare inhoud met behulp van contextbewuste deep learning-embeddings.\n"
+"Om het geprefereerde MiniLM-neurale model met hoge nauwkeurigheid te gebruiken, moet u Python 3 en sentence-transformers installeren:\n"
+" - Stap 1: Zorg ervoor dat Python 3 & pip zijn geïnstalleerd.\n"
+"   (Linux: voer 'sudo apt install python3 python3-pip python3-venv' uit)\n"
+"   (Windows: Installeer vanaf https://www.python.org/ en vink 'Add Python to PATH' aan)\n"
+" - Stap 2: Installeer sentence-transformers via terminal of opdrachtprompt:\n"
+"   Optie A (Aanbevolen voor eenvoud):\n"
+"     pip install sentence-transformers\n"
+"   Optie B (Virtuele omgeving isolatie):\n"
+"     python3 -m venv bttb_env\n"
+"     source bttb_env/bin/activate  # (Windows: bttb_env\\Scripts\\activate)\n"
+"     pip install sentence-transformers\n"
+" - Stap 3: Start Burn to the Brim opnieuw op om MiniLM automatisch te laden! Indien niet gevonden, valt BTTB gracieus terug op een gelokaliseerde TF-IDF karakter-projector."
+
+msgid "dir_setup_group"
+msgstr "Mapinstellingen"
+
+msgid "save_cv_label"
+msgstr "Aangepaste volumegrootte opslaan (Bytes):"
+
+msgid "progress_frame_title"
+msgstr "Status van gevulde capaciteit"
+
+msgid "log_frame_title"
+msgstr "Solver uitvoerlogboek"
+
+msgid "pref_btn"
+msgstr "Voorkeuren..."
+
+msgid "create_iso_btn"
+msgstr "ISO maken..."
+
+msgid "help_btn"
+msgstr "Help"
+
+msgid "about_btn"
+msgstr "Over..."
+
+msgid "import_json_btn"
+msgstr "JSON importeren..."
+
+msgid "verify_restore_btn"
+msgstr "Verifiëren & herstellen..."
+
+msgid "match_files_chk"
+msgstr "Bestanden matchen"
+
+msgid "match_folders_chk"
+msgstr "Mappen matchen"
+
+msgid "regex_pattern_chk"
+msgstr "Regex-patroon"
+
+msgid "app_version"
+msgstr "Versie 4.3.0"
+
+msgid "app_copyright"
+msgstr "Copyright © 2001-2026 Sander Raaijmakers, Elwin Oost en het Burn to the Brim-team"
+
+msgid "verify_only_btn"
+msgstr "Alleen verifiëren"
+
+msgid "restore_repair_btn"
+msgstr "Herstellen & repareren"
+
+msgid "log_frame_title_verify"
+msgstr "Verificatie- en herstellogboek"
+
+msgid "label_vol_directory"
+msgstr "Volumemap:"
+
+msgid "label_rec_directory"
+msgstr "Herstelmap:"
+
+msgid "label_par3_base"
+msgstr "PAR3-basisnaam:"
+
+msgid "select_vol_dir_title"
+msgstr "Selecteer volumemap"
+
+msgid "select_rec_dir_title"
+msgstr "Selecteer herstelmap"
+
+msgid "tooltip_import_json"
+msgstr "Importeer en analyseer offline JSON-indexbestanden om opgeloste volumebestandsdetails te bekijken."
+
+msgid "tooltip_verify_restore"
+msgstr "Verifieer opgeloste volumes of kopieer en herstel beschadigde bestanden met behulp van PAR3-archieven."
+
+msgid "tooltip_test"
+msgstr "Simuleer inpakken zonder bestandsbewerkingen op schijf om volumegebruik te testen."
+
+msgid "tooltip_start"
+msgstr "Voer de solver uit en organiseer bestanden/mappen volgens de voorkeuren."
+
+msgid "tooltip_stop"
+msgstr "Annuleer het huidige inpak- of bestandsorganisatieproces."
+
+msgid "tooltip_create_iso"
+msgstr "Maak ISO-bestandssysteemimages van de opgeloste volumes."
+
+msgid "tooltip_source"
+msgstr "Door puntkomma's gescheiden paden van mappen die moeten worden ingepakt en geconsolideerd."
+
+msgid "tooltip_target"
+msgstr "Doelpad waar volumes worden georganiseerd en geschreven."
+
+msgid "tooltip_semantic"
+msgstr "Voer een prompt in zoals 'Houd audio bij elkaar' om bestanden te analyseren via MiniLM."
+
+msgid "tooltip_move"
+msgstr "Verplaats/knip originele bestanden/mappen rechtstreeks naar doelvolumemappen."
+
+msgid "tooltip_symlink"
+msgstr "Maak symbolische koppelingen in doelvolumemappen (niet-destructief)."
+
+msgid "tooltip_span"
+msgstr "Schakel het splitsen van inhoud in over meerdere opeenvolgend genummerde mappen."
+
+msgid "tooltip_trace"
+msgstr "Log gedetailleerde diagnostische gegevens die laten zien hoe mappen/bestanden worden geselecteerd en gesplitst."
+
+msgid "add_src_dir_title"
+msgstr "Bronmap toevoegen"
+
+msgid "auto_size"
+msgstr "Automatische grootte"
+
+msgid "browse_dest_tooltip"
+msgstr "Blader naar doelmap"
+
+msgid "browse_src_tooltip"
+msgstr "Blader naar bronmap"
+
+msgid "capacity_label"
+msgstr "Capaciteit:"
+
+msgid "cluster_label"
+msgstr "Clustergrootte (Bytes):"
+
+msgid "complete_list_src_folders"
+msgstr "Complete lijst met bronmappen:"
+
+msgid "custom_size"
+msgstr "Aangepaste grootte"
+
+msgid "edit_src_dir_title"
+msgstr "Bronmap bewerken"
+
+msgid "execution_log"
+msgstr "Uitvoeringslogboek"
+
+msgid "fitted_status_col"
+msgstr "Inpasbaarheid"
+
+msgid "generate_btn"
+msgstr "Generieren"
+
+msgid "log_copying_repair"
+msgstr "Volume-inhoud kopiëren en herstel uitvoeren. Even geduld...\n"
+
+msgid "log_damaged_files"
+msgstr "Beschadigde of ontbrekende bestanden gevonden:\n"
+
+msgid "log_errors"
+msgstr "Logboeken/Fouten: "
+
+msgid "log_fail_restore"
+msgstr "\nFOUT: Herstel of reparatie mislukt.\n"
+
+msgid "log_fail_verify_status"
+msgstr "\nVerificatie heeft problemen gedetecteerd (status "
+
+msgid "log_index_fail"
+msgstr "Geen individuele beschadigde bestanden geïdentificeerd, maar de indexverificatie is mislukt. Het PAR3-archief zelf is mogelijk beschadigd.\n"
+
+msgid "log_par3_base"
+msgstr "PAR3-basisnaam: "
+
+msgid "log_recovery_path"
+msgstr "Herstelpad: "
+
+msgid "log_start_restore"
+msgstr "Volume-herstel/-reparatie starten...\n"
+
+msgid "log_start_verify"
+msgstr "Volumeverificatie starten...\n"
+
+msgid "log_success_restore"
+msgstr "\nSUCCES: Volume met succes gekopieerd en hersteld in afzonderlijke herstelmap!\n"
+
+msgid "log_success_verify"
+msgstr "\nSUCCES: Alle bestanden geverifieerd en zijn schoon/bit-perfect!\n"
+
+msgid "log_volume_path"
+msgstr "Volumepad: "
+
+msgid "manage_src_folders_title"
+msgstr "Bronmappen beheren"
+
+msgid "media_size_label"
+msgstr "Mediumgrootte:"
+
+msgid "move_tooltip"
+msgstr "Verplaats bestanden naar hun doelvolumes in plaats van ze te kopiëren of te symlinken"
+
+msgid "rel_path_col"
+msgstr "Relatief pad / Categorie"
+
+msgid "save_cv_tooltip"
+msgstr "Sla de huidige capaciteit, sector en slack op als een benoemd aangepast volume"
+
+msgid "search_time_label"
+msgstr "Maximale zoektijd (sec):"
+
+msgid "select_dest_dir_title"
+msgstr "Selecteer doelmap"
+
+msgid "select_medium_label"
+msgstr "Selecteer medium:"
+
+msgid "semantic_placeholder"
+msgstr "bijv. houd vergelijkbare inhoud bij elkaar"
+
+msgid "semantic_tooltip"
+msgstr "Geef een semantische beschrijving op om vergelijkbare bestanden te groeperen met behulp van MiniLM AI"
+
+msgid "size_col"
+msgstr "Grootte"
+
+msgid "skip_empty_label"
+msgstr "Lege bestanden/mappen overslaan:"
+
+msgid "slack_label"
+msgstr "Slack bytes:"
+
+msgid "source_tooltip"
+msgstr "Bronmap die de te organiseren bestanden bevat"
+
+msgid "span_tooltip"
+msgstr "Verdeel de overgebleven bestanden achtereenvolgens over meerdere volumes in plaats van alleen het eerste volume"
+
+msgid "split_depth_label"
+msgstr "Map splitsdiepte:"
+
+msgid "start_tooltip"
+msgstr "Start met het organiseren van bestanden in optimale volumes"
+
+msgid "stop_tooltip"
+msgstr "Stop de huidige solver of kopieerbewerking"
+
+msgid "symlink_tooltip"
+msgstr "Maak symbolische koppelingen van de bestanden op hun bestemming in plaats van ze te kopiëren"
+
+msgid "target_iso_file"
+msgstr "Doel-ISO-bestand:"
+
+msgid "target_tooltip"
+msgstr "Doelmap waar georganiseerde volumes worden gemaakt"
+
+msgid "test_tooltip"
+msgstr "Simuleer het organiseren van bestanden en bereken statistieken zonder bestanden op de schijf te wijzigen"
+
+msgid "trace_tooltip"
+msgstr "Toon extra uitgebreide tracering en prestatiestatistieken in de logboeken"
+
+msgid "volume_label"
+msgstr "Volumelabel:"
+
+
+msgid "log_warn_dir_unreadable_1"
+msgstr "Waarschuwing: Map '"
+
+msgid "log_warn_dir_unreadable_2"
+msgstr "' is onleesbaar ("
+
+msgid "log_scan_aborted_unreadable_dir"
+msgstr "Scannen afgebroken door gebruiker vanwege onleesbare map."
+
+msgid "log_warn_item_unreadable_1"
+msgstr "Waarschuwing: Bestand of map in '"
+
+msgid "log_warn_item_unreadable_2"
+msgstr "' is onleesbaar ("
+
+msgid "log_scan_aborted_unreadable_item"
+msgstr "Scannen afgebroken door gebruiker vanwege onleesbaar item."
+
+msgid "log_warn_failed_iterate_dir_1"
+msgstr "Waarschuwing: Fout bij het doorlopen van map '"
+
+msgid "log_warn_failed_iterate_dir_2"
+msgstr "' ("
+
+msgid "log_scan_aborted_failed_iterate"
+msgstr "Scannen afgebroken door gebruiker vanwege onleesbare mapdoorloop."
+
+msgid "log_scanning_folder"
+msgstr "Scannen van map: "
+
+msgid "log_found_items"
+msgstr "Gevonden items om in te passen: "
+
+msgid "log_search_time_limit_exceeded_1"
+msgstr "Zoektijdlimiet overschreden ("
+
+msgid "log_search_time_limit_exceeded_2"
+msgstr " seconden)."
+
+msgid "log_new_best_space_utilization"
+msgstr "Nieuwe beste ruimtebenutting: "
+
+msgid "log_selection_within_slack_1"
+msgstr "Selectie binnen tolerantie ("
+
+msgid "log_selection_within_slack_2"
+msgstr "%) gevonden. Zoeken vroegtijdig afgebroken."
+
+msgid "log_no_items_to_fit"
+msgstr "Geen items om in te passen."
+
+msgid "log_auto_volume_cap_set_1"
+msgstr "Auto-volumecapaciteit ingesteld op: "
+
+msgid "log_auto_volume_cap_set_2"
+msgstr " bytes ("
+
+msgid "log_warn_item_exceeds_cap_1"
+msgstr "Waarschuwing: Item '"
+
+msgid "log_warn_item_exceeds_cap_2"
+msgstr "' ("
+
+msgid "log_warn_item_exceeds_cap_3"
+msgstr " bytes) is groter dan de doelvolumegrootte ("
+
+msgid "log_capacity_adapted_1"
+msgstr "Capaciteit aangepast naar "
+
+msgid "log_capacity_adapted_2"
+msgstr " bytes. Solver opnieuw proberen..."
+
+msgid "log_solver_aborted_files_exceed_cap"
+msgstr "Solver afgebroken: dataset bevat bestanden die de capaciteit overschrijden."
+
+msgid "log_solver_aborted_files_exceed_cap_adapt"
+msgstr "Solver afgebroken: dataset bevat bestanden die de capaciteit overschrijden. Pas de capaciteit aan of schakel interactief proberen in."
+
+msgid "log_volume_packing_estimation_header"
+msgstr "--- Schatting van volumepakking ---"
+
+msgid "log_total_dataset_size_1"
+msgstr "Totale datasetgrootte: "
+
+msgid "log_total_dataset_size_2"
+msgstr " bytes ("
+
+msgid "log_target_volume_cap_1"
+msgstr "Doelvolumecapaciteit: "
+
+msgid "log_target_volume_cap_2"
+msgstr " bytes ("
+
+msgid "log_theoretical_min_vols"
+msgstr "Theoretisch minimaal aantal volumes vereist: "
+
+msgid "log_medium_capacity_1"
+msgstr "Mediumcapaciteit: "
+
+msgid "log_medium_capacity_2"
+msgstr " sectoren ("
+
+msgid "log_solving_for_vol_header_1"
+msgstr "\\n--- ZOEKEN VOOR VOLUME "
+
+msgid "log_solving_for_vol_header_2"
+msgstr " ---"
+
+msgid "log_solving_optimal_bin"
+msgstr "Optimale selectie berekenen..."
+
+msgid "log_finished_solving_1"
+msgstr "Klaar met berekenen. Verstreken tijd: "
+
+msgid "log_finished_solving_2"
+msgstr " ms"
+
+msgid "log_single_vol_sol_forcing"
+msgstr "Enkel-volume oplossing: selectie van alle bestanden afdwingen om 100% opname te garanderen..."
+
+msgid "log_backtracking_failed_fallback_greedy"
+msgstr "Backtracking-solver heeft geen passende indeling gevonden (of time-out). Terugvallen op greedy toewijzing om resterende bestanden op te nemen..."
+
+msgid "log_forcing_progress_exceeds_cap_1"
+msgstr "Voortgang afdwingen: resterend item inpakken dat groter is dan mediumcapaciteit ("
+
+msgid "log_optimal_selection_covers"
+msgstr "Optimale selectie beslaat: "
+
+msgid "log_selected_items_for_volume_1"
+msgstr "Geselecteerde items voor Volume "
+
+msgid "log_selected_items"
+msgstr "Geselecteerde items:"
+
+msgid "log_bytes_suffix"
+msgstr " bytes)"
+
+msgid "log_organizing_item"
+msgstr "Item organiseren: "
+
+msgid "log_failed_symlink_retry_copy_1"
+msgstr "Maken van symbolische link mislukt voor "
+
+msgid "log_failed_symlink_retry_copy_2"
+msgstr " (opnieuw proberen met kopiëren)"
+
+msgid "log_failed_organize_item_1"
+msgstr "Organiseren mislukt voor "
+
+msgid "log_generating_par3_for_volume_1"
+msgstr "PAR3-pariteitsbestanden genereren voor Volume "
+
+msgid "log_success_par3_for_volume_1"
+msgstr "PAR3-pariteitsbescherming succesvol gemaakt voor Volume "
+
+msgid "log_failed_par3_creation"
+msgstr "PAR3-aanmaak mislukt: "
+
+msgid "log_no_files_written_on_disk"
+msgstr "Er zijn geen bestanden gekopieerd, gesymlinkt of verplaatst op de schijf."
+
+msgid "log_completed_file_organization"
+msgstr "Bestandsorganisatie voltooid."
+
+msgid "log_created_offline_json_index"
+msgstr "Offline JSON-indexbestand gemaakt: "
+
+msgid "log_failed_create_json_index"
+msgstr "Aanmaken van JSON-indexbestand mislukt: "
+
+msgid "log_generating_semantic_embeddings"
+msgstr "Semantische embeddings genereren..."
+
+msgid "log_failed_write_temp_embed_input"
+msgstr "Schrijven naar tijdelijk embedding-invoerbestand mislukt: "
+
+msgid "log_warn_python_embed_engine_failed"
+msgstr "Waarschuwing: Subproces python embedding engine mislukt of python3 is niet geïnstalleerd."
+
+msgid "log_semantic_grouping_fallback"
+msgstr "-> Semantische groepering valt terug op lokale string-vergelijkingsmetriken."
+
+msgid "log_failed_read_temp_embed_output"
+msgstr "Lezen van tijdelijk embedding-uitvoerbestand mislukt: "
+
+msgid "log_warn_embedded_output_empty"
+msgstr "Waarschuwing: Ingebedde uitvoer is leeg."
+
+msgid "log_running_semantic_clustering"
+msgstr "Agglomeratieve semantische clustering uitvoeren (drempelwaarde=0.6)..."
+
+msgid "log_semantic_clustering_completed"
+msgstr "Semantische clustering voltooid. Totaal geconsolideerde groepen: "

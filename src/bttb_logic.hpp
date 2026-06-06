@@ -103,6 +103,10 @@ public:
     bool enablePar3 = false;
     int64_t par3BlockSize = 2048;
     int par3RedundancyPercent = 10;
+    
+    // v4.3.0 Localization Enhancement
+    std::string language = "auto";
+
 
     // Control
     std::atomic<bool> stopRequested{false};
