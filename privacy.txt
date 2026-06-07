@@ -1,0 +1,19 @@
+Burn to the Brim (BTTB) - Privacy Policy
+Last Updated: June 7, 2026
+
+Your privacy is important to us. This Privacy Policy explains how Burn to the Brim (BTTB) handles your data.
+
+1. Scope of the Application
+Burn to the Brim is a file packaging and storage space optimization utility. It operates entirely locally on your computer to scan user-selected directories and organize files/folders onto target storage mediums.
+
+2. Data Access and Collection
+- Local File System Access: The application reads the file names, directory structures, and file sizes of the folders you select for scanning. This data is processed in-memory solely to compute optimal packing solutions.
+- Offline Execution: The application does not collect, log, store permanently, or transmit any of your personal details, directory paths, file contents, or usage habits.
+- No Background Processes: The application does not run any background telemetry, diagnostics, tracking, or analytics services.
+
+3. No Transmission or Sharing of Data
+Burn to the Brim does not connect to the internet or any external servers. No information or data processed by the application is ever transmitted from your computer. We do not share, sell, or distribute any data to third parties.
+
+4. Contact Information
+If you have any questions or concerns regarding this Privacy Policy or BTTB's data handling practices, please contact us at:
+Email: sraaijmakers@sourceforge.net
