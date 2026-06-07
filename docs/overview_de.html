@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Burn to the Brim: Overview</title>
+    <title>Burn to the Brim: Übersicht</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
 
@@ -286,101 +286,101 @@
     <div class="main-content">
         
         <div class="section-header">
-            <h1>Application Overview</h1>
-            <p>A high-performance storage space optimizer and directory packing utility.</p>
+            <h1>Anwendungsübersicht</h1>
+            <p>Ein leistungsstarkes Tool zur Speicherplatzoptimierung und Verzeichnispackung.</p>
             <div style="margin-top: 15px; font-size: 0.9rem; display: flex; gap: 10px; align-items: center;">
                 <span style="color: var(--text-secondary);">Languages:</span>
-                <a href="overview.html" style="color: var(--accent); text-decoration: none; font-weight: 600;">English</a> |
+                <a href="overview.html" style="color: var(--text-secondary); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">English</a> |
                 <a href="overview_es.html" style="color: var(--text-secondary); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Español</a> |
                 <a href="overview_nl.html" style="color: var(--text-secondary); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Nederlands</a> |
-                <a href="overview_de.html" style="color: var(--text-secondary); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Deutsch</a>
+                <a href="overview_de.html" style="color: var(--accent); text-decoration: none; font-weight: 600;">Deutsch</a>
             </div>
         </div>
 
         <!-- Store Description -->
         <div class="content-card">
-            <h2>Product Description</h2>
+            <h2>Produktbeschreibung</h2>
             <p>
-                <strong>Burn to the Brim</strong> is a professional file packaging and storage optimization utility. It solves the classic bin-packing and subset-sum optimization challenge, allowing you to fit files and folders perfectly onto target storage mediums—including recordable CDs, DVDs, Blu-rays, USB flash drives, or custom-capacity virtual drives—with virtually zero wasted space.
+                <strong>Burn to the Brim</strong> ist ein professionelles Dienstprogramm zur Dateiverpackung und Speicheroptimierung. Es löst das klassische Behälterproblem (Bin-Packing) und das Teilmengensummenproblem (Subset-Sum) und ermöglicht es Ihnen, Dateien und Ordner perfekt auf Zielspeichermedien—einschließlich beschreibbarer CDs, DVDs, Blu-rays, USB-Sticks oder virtueller Laufwerke mit benutzerdefinierter Kapazität—mit praktisch null Platzverschwendung zu verteilen.
             </p>
             <p>
-                Employing a highly optimized recursive backtracking solver, the application analyzes directory structures and file sizes to calculate near-perfect layout configurations in milliseconds. With a non-blocking multithreaded engine, the user interface remains completely fluid and interactive even when calculating solutions for very large datasets.
+                Durch den Einsatz eines hochgradig optimierten rekursiven Backtracking-Solvers analysiert die Anwendung Verzeichnisstrukturen und Dateigrößen, um in Millisekunden nahezu perfekte Layoutkonfigurationen zu berechnen. Dank einer nicht-blockierenden, multithreaded Engine bleibt die Benutzeroberfläche auch bei der Berechnung von Lösungen für sehr große Datensätze völlig flüssig und interaktiv.
             </p>
         </div>
 
         <!-- Key Features -->
         <div class="content-card">
-            <h2>Key Features</h2>
+            <h2>Hauptmerkmale</h2>
             <ul class="feature-bullets">
                 <li class="feature-bullet-item">
                     <span class="bullet-icon">&rarr;</span>
-                    <div><strong>Multi-Volume Spanning:</strong> Automatically splits massive file hierarchies that exceed single-drive capacities into optimally sized volume folders.</div>
+                    <div><strong>Multi-Volume Spanning (Mehrteilige Archive):</strong> Teilt riesige Dateimengen, die die Kapazität eines einzelnen Datenträgers überschreiten, automatisch in optimal dimensionierte Bandordner auf.</div>
                 </li>
                 <li class="feature-bullet-item">
                     <span class="bullet-icon">&rarr;</span>
-                    <div><strong>Cauchy Reed-Solomon PAR3 Parity:</strong> Automatically creates PAR3 parity archives for error correction, factoring overhead directly into layout checks.</div>
+                    <div><strong>Cauchy Reed-Solomon PAR3-Parität:</strong> Erstellt automatisch PAR3-Paritätsarchive zur Fehlerkorrektur und berücksichtigt den Overhead direkt bei den Solver-Prüfungen.</div>
                 </li>
                 <li class="feature-bullet-item">
                     <span class="bullet-icon">&rarr;</span>
-                    <div><strong>Integrity Verification &amp; Recovery:</strong> Scan and verify volumes against parity files to identify corrupted items and perform non-destructive restoration.</div>
+                    <div><strong>Integritätsprüfung &amp; Wiederherstellung:</strong> Scant und verifiziert Volumes anhand von Paritätsdateien, um beschädigte Elemente zu identifizieren, und führt eine zerstörungsfreie, kopierbasierte Wiederherstellung durch.</div>
                 </li>
                 <li class="feature-bullet-item">
                     <span class="bullet-icon">&rarr;</span>
-                    <div><strong>Explorer Context Menu Integration:</strong> Instantly append files and folders directly to active sessions via the Windows Explorer right-click menu.</div>
+                    <div><strong>Integration in das Explorer-Kontextmenü:</strong> Ermöglicht die Shell-Integration, um Dateien und Ordner über das Windows Explorer-Rechtsklickmenü direkt an eine aktive Sitzung anzuhängen.</div>
                 </li>
                 <li class="feature-bullet-item">
                     <span class="bullet-icon">&rarr;</span>
-                    <div><strong>Hybrid GUI/CLI Engine:</strong> Seamlessly switch between a lightweight native user interface (Win32 / GTK 4) and a full command-line mode for scripting.</div>
+                    <div><strong>Hybride GUI/CLI-Engine:</strong> Wechselt nahtlos zwischen einer schlanken nativen Benutzeroberfläche (Win32 / GTK 4) und einem vollwertigen Befehlszeilenmodus für Skripterstellung.</div>
                 </li>
                 <li class="feature-bullet-item">
                     <span class="bullet-icon">&rarr;</span>
-                    <div><strong>Unicode &amp; Long Path Support:</strong> Fully compatible with international character encodings and Windows UNC long paths up to 32,767 characters.</div>
+                    <div><strong>Unterstützung für Unicode &amp; Lange Pfade:</strong> Vollständig kompatibel mit internationalen Zeichenkodierungen und Windows UNC-Pfaden von bis zu 32.767 Zeichen.</div>
                 </li>
                 <li class="feature-bullet-item">
                     <span class="bullet-icon">&rarr;</span>
-                    <div><strong>Non-Blocking Tree Rendering:</strong> Displays large solution datasets incrementally using main-loop idle cycles to prevent GUI freezing.</div>
+                    <div><strong>Nicht-blockierendes Baum-Rendering:</strong> Zeigt große Ergebnislisten inkrementell über Leerlaufzyklen der Hauptschleife an, um ein Einfrieren der GUI zu verhindern.</div>
                 </li>
                 <li class="feature-bullet-item">
                     <span class="bullet-icon">&rarr;</span>
-                    <div><strong>Fractional MB Capacity Precision:</strong> Supports precise capacity inputs and saving, such as custom 180 KB or 0.18 MB volumes, for accurate packing.</div>
+                    <div><strong>Präzision bei fraktionellen MB-Kapazitäten:</strong> Unterstützt präzise Kapazitätseingaben und -einsparungen, wie z. B. benutzerdefinierte 180-KB- oder 0,18-MB-Volumes, für exaktes Packen.</div>
                 </li>
                 <li class="feature-bullet-item">
                     <span class="bullet-icon">&rarr;</span>
-                    <div><strong>Offline JSON Indexing:</strong> Generates a standardized <code>index.json</code> directory catalog during output, listing file attributes for offline browsing.</div>
+                    <div><strong>Offline-JSON-Indizierung:</strong> Generiert während der Ausgabe einen standardisierten <code>index.json</code>-Verzeichniskatalog, der Dateiattribute für das Offline-Browsen auflistet.</div>
                 </li>
                 <li class="feature-bullet-item">
                     <span class="bullet-icon">&rarr;</span>
-                    <div><strong>Rule-Based and Semantic Grouping:</strong> Group files together on the same medium using standard wildcards, regular expressions, or context-aware semantic clustering.</div>
+                    <div><strong>Regelbasierte und Semantische Gruppierung:</strong> Gruppiert Dateien auf demselben Medium mithilfe von Standard-Wildcards, regulären Ausdrücken oder kontextbezogenem semantischem Clustering.</div>
                 </li>
             </ul>
         </div>
 
         <!-- Privacy & Performance Commitments -->
         <div class="content-card">
-            <h2>Privacy &amp; Performance Commitments</h2>
+            <h2>Datenschutz- und Performance-Garantien</h2>
             <p>
-                Burn to the Brim is built with user privacy, system performance, and clean software standards in mind:
+                Burn to the Brim wurde im Hinblick auf den Schutz der Benutzersphäre, Systemleistung und saubere Softwarestandards entwickelt:
             </p>
             <ul class="feature-bullets">
                 <li class="feature-bullet-item">
                     <span class="bullet-icon red">&#10007;</span>
-                    <div><strong>Strict Offline Execution (No Spyware):</strong> The application operates entirely locally on your system. It never logs, tracks, or transmits your directory paths, file names, or personal information over the network.</div>
+                    <div><strong>Strikte Offline-Ausführung (Keine Spyware):</strong> Die Anwendung läuft vollständig lokal auf Ihrem System. Sie protokolliert, verfolgt oder überträgt Ihre Verzeichnispfade, Dateinamen oder persönlichen Daten niemals über das Netzwerk.</div>
                 </li>
                 <li class="feature-bullet-item">
                     <span class="bullet-icon red">&#10007;</span>
-                    <div><strong>No Adware:</strong> The application does not contain advertisements, commercial banners, or sponsored popups.</div>
+                    <div><strong>Keine Adware:</strong> Die Anwendung enthält keine Werbung, kommerzielle Banner oder gesponserte Popups.</div>
                 </li>
                 <li class="feature-bullet-item">
                     <span class="bullet-icon red">&#10007;</span>
-                    <div><strong>Ultra-Lightweight Footprint:</strong> Statically compiled native C++ code ensures minimal memory usage and zero framework overhead.</div>
+                    <div><strong>Ultraleichter Ressourcenbedarf:</strong> Statisch kompilierter nativer C++-Code sorgt für minimalen Speicherverbrauch und keinerlei Framework-Overhead.</div>
                 </li>
                 <li class="feature-bullet-item">
                     <span class="bullet-icon red">&#10007;</span>
-                    <div><strong>Zero System Clutter:</strong> The installer registers only what is necessary for Windows integration, and the application does not litter your registry with junk files.</div>
+                    <div><strong>Kein Systeemmüll:</strong> Das Installationsprogramm registriert nur das, was für die Windows-Integration erforderlich ist, und die Anwendung hinterlässt keinen Datenmüll in Ihrer Registrierung.</div>
                 </li>
                 <li class="feature-bullet-item">
                     <span class="bullet-icon red">&#10007;</span>
-                    <div><strong>Clean Uninstallation:</strong> Standard uninstall removal completely cleans all program directories and shortcuts from your system.</div>
+                    <div><strong>Saubere Deinstallation:</strong> Das Standard-Deinstallationsverfahren entfernt alle Programmverzeichnisse und Verknüpfungen vollständig von Ihrem System.</div>
                 </li>
             </ul>
         </div>
