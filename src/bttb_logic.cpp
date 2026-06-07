@@ -677,9 +677,9 @@ bool compareDirEntries(const std::unique_ptr<DirEntry>& a, const std::unique_ptr
 }
 
 // Thread-local backtracking solver search state recursive solver
-bool BttbSolver::ThreadSearchState::findAWay(int64_t currentSectors, int poz, int selectedFileCount) {
+bool BttbSolver::ThreadSearchState::checkLimitsAndLog(int64_t currentSectors, int poz) {
     explored++;
-    if (solver->stopRequested || solver->searchTimedOut) return false;
+    if (solver->stopRequested || solver->searchTimedOut) return true;
 
     // Check timeout periodically (every 10000 states to minimize chrono overhead)
     if (solver->maxSearchTimeSeconds > 0 && (explored % 10000 == 0)) {
@@ -688,7 +688,7 @@ bool BttbSolver::ThreadSearchState::findAWay(int64_t currentSectors, int poz, in
         if (elapsed >= solver->maxSearchTimeSeconds) {
             solver->searchTimedOut = true;
             solver->logNotify(_T("log_search_time_limit_exceeded_1", "Search time limit exceeded (") + std::to_string(solver->maxSearchTimeSeconds) + _T("log_search_time_limit_exceeded_2", " seconds)."), 2);
-            return false;
+            return true;
         }
     }
     
@@ -703,7 +703,53 @@ bool BttbSolver::ThreadSearchState::findAWay(int64_t currentSectors, int poz, in
     if (solver->enableTrace && (explored % 10000 == 0)) {
         solver->logNotify("[TRACE] Explored: " + std::to_string(explored) + " states, Pruned: " + std::to_string(pruned) + " branches (currentBest=" + std::to_string(currentBest) + " sectors)", 0);
     }
+
+    return false;
+}
+
+void BttbSolver::ThreadSearchState::handleNewSelection(int64_t testSectors) {
+    int64_t globalBest = solver->currentBestSectors.load();
+    if (testSectors >= globalBest) {
+        std::lock_guard<std::mutex> lock(solver->solverMutex);
+        if (testSectors >= solver->currentBestSectors) {
+            if (testSectors > solver->currentBestSectors) {
+                solver->currentBestSectors = testSectors;
+                solver->minNumberOfClusters = INT_MAX;
+                
+                double percentage = (double)testSectors / solver->maxSectors * 100.0;
+                solver->logNotify(_T("log_new_best_space_utilization", "New best space utilization: ") + std::to_string(percentage) + "%", 3);
+
+                if (testSectors >= solver->maxSectors - solver->slackSectors) {
+                    solver->searchTimedOut = true;
+                    solver->logNotify(_T("log_selection_within_slack_1", "Selection within slack tolerance (") + std::to_string(percentage) + _T("log_selection_within_slack_2", "%) found. Terminating search early."), 1);
+                }
+            }
+            
+            int numClusters = 0;
+            for (const auto& item : items) {
+                if (item->isSelected) {
+                    numClusters += solver->countClusters(item->relativePath);
+                }
+            }
+            
+            if (numClusters < solver->minNumberOfClusters) {
+                solver->minNumberOfClusters = numClusters;
+                
+                solver->bestSelectionIndices.clear();
+                for (size_t i = 0; i < items.size(); ++i) {
+                    if (items[i]->isSelected) {
+                        solver->bestSelectionIndices.push_back(i);
+                    }
+                }
+            }
+        }
+    }
+}
+
+bool BttbSolver::ThreadSearchState::findAWay(int64_t currentSectors, int poz, int selectedFileCount) {
+    if (checkLimitsAndLog(currentSectors, poz)) return false;
     
+    int64_t currentBest = solver->currentBestSectors.load();
     if (poz < 0 || (items[poz]->prefixSumSectors + currentSectors < currentBest)) {
         return false;
     }
@@ -721,42 +767,7 @@ bool BttbSolver::ThreadSearchState::findAWay(int64_t currentSectors, int poz, in
         items[poz]->isSelected = true;
         
         if (!findAWay(testSectors, poz - 1, selectedFileCount + 1)) {
-            int64_t globalBest = solver->currentBestSectors.load();
-            if (testSectors >= globalBest) {
-                std::lock_guard<std::mutex> lock(solver->solverMutex);
-                if (testSectors >= solver->currentBestSectors) {
-                    if (testSectors > solver->currentBestSectors) {
-                        solver->currentBestSectors = testSectors;
-                        solver->minNumberOfClusters = INT_MAX;
-                        
-                        double percentage = (double)testSectors / solver->maxSectors * 100.0;
-                        solver->logNotify(_T("log_new_best_space_utilization", "New best space utilization: ") + std::to_string(percentage) + "%", 3);
-
-                        if (testSectors >= solver->maxSectors - solver->slackSectors) {
-                            solver->searchTimedOut = true;
-                            solver->logNotify(_T("log_selection_within_slack_1", "Selection within slack tolerance (") + std::to_string(percentage) + _T("log_selection_within_slack_2", "%) found. Terminating search early."), 1);
-                        }
-                    }
-                    
-                    int numClusters = 0;
-                    for (const auto& item : items) {
-                        if (item->isSelected) {
-                            numClusters += solver->countClusters(item->relativePath);
-                        }
-                    }
-                    
-                    if (numClusters < solver->minNumberOfClusters) {
-                        solver->minNumberOfClusters = numClusters;
-                        
-                        solver->bestSelectionIndices.clear();
-                        for (size_t i = 0; i < items.size(); ++i) {
-                            if (items[i]->isSelected) {
-                                solver->bestSelectionIndices.push_back(i);
-                            }
-                        }
-                    }
-                }
-            }
+            handleNewSelection(testSectors);
         }
         
         items[poz]->isSelected = false;
@@ -767,10 +778,9 @@ bool BttbSolver::ThreadSearchState::findAWay(int64_t currentSectors, int poz, in
     }
 }
 
-// Backtracking solver
-bool BttbSolver::findAWay(int64_t currentSectors, int poz, int selectedFileCount) {
+bool BttbSolver::checkLimitsAndLog(int64_t currentSectors, int poz) {
     exploredStates++;
-    if (stopRequested || searchTimedOut) return false;
+    if (stopRequested || searchTimedOut) return true;
 
     // Check timeout periodically (every 10000 states to minimize chrono overhead)
     if (maxSearchTimeSeconds > 0 && (exploredStates % 10000 == 0)) {
@@ -779,7 +789,7 @@ bool BttbSolver::findAWay(int64_t currentSectors, int poz, int selectedFileCount
         if (elapsed >= maxSearchTimeSeconds) {
             searchTimedOut = true;
             logNotify(_T("log_search_time_limit_exceeded_1", "Search time limit exceeded (") + std::to_string(maxSearchTimeSeconds) + _T("log_search_time_limit_exceeded_2", " seconds)."), 2);
-            return false;
+            return true;
         }
     }
     
@@ -793,6 +803,43 @@ bool BttbSolver::findAWay(int64_t currentSectors, int poz, int selectedFileCount
     if (enableTrace && (exploredStates % 10000 == 0)) {
         logNotify("[TRACE] Explored: " + std::to_string(exploredStates) + " states, Pruned: " + std::to_string(prunedStates) + " branches (currentBest=" + std::to_string(currentBestSectors) + " sectors)", 0);
     }
+
+    return false;
+}
+
+void BttbSolver::handleNewSelection(int64_t testSectors) {
+    if (testSectors >= currentBestSectors) {
+        if (testSectors > currentBestSectors) {
+            currentBestSectors = testSectors;
+            minNumberOfClusters = INT_MAX;
+            
+            double percentage = (double)currentBestSectors / maxSectors * 100.0;
+            logNotify(_T("log_new_best_space_utilization", "New best space utilization: ") + std::to_string(percentage) + "%", 3);
+
+            // Check for early termination if within slack tolerance
+            if (currentBestSectors >= maxSectors - slackSectors) {
+                searchTimedOut = true;
+                logNotify(_T("log_selection_within_slack_1", "Selection within slack tolerance (") + std::to_string(percentage) + _T("log_selection_within_slack_2", "%) found. Terminating search early."), 1);
+            }
+        }
+        
+        // Keep clusters together (minimize number of folder boundaries)
+        int numClusters = 0;
+        for (const auto& item : itemsToSplit) {
+            if (item->isSelected) {
+                numClusters += countClusters(item->relativePath);
+            }
+        }
+        
+        if (numClusters < minNumberOfClusters) {
+            minNumberOfClusters = numClusters;
+            saveBestSelection();
+        }
+    }
+}
+
+bool BttbSolver::findAWay(int64_t currentSectors, int poz, int selectedFileCount) {
+    if (checkLimitsAndLog(currentSectors, poz)) return false;
     
     if (poz < 0 || (itemsToSplit[poz]->prefixSumSectors + currentSectors < currentBestSectors)) {
         return false;
@@ -811,34 +858,7 @@ bool BttbSolver::findAWay(int64_t currentSectors, int poz, int selectedFileCount
         itemsToSplit[poz]->isSelected = true;
         
         if (!findAWay(testSectors, poz - 1, selectedFileCount + 1)) {
-            if (testSectors >= currentBestSectors) {
-                if (testSectors > currentBestSectors) {
-                    currentBestSectors = testSectors;
-                    minNumberOfClusters = INT_MAX;
-                    
-                    double percentage = (double)currentBestSectors / maxSectors * 100.0;
-                    logNotify(_T("log_new_best_space_utilization", "New best space utilization: ") + std::to_string(percentage) + "%", 3);
-
-                    // Check for early termination if within slack tolerance
-                    if (currentBestSectors >= maxSectors - slackSectors) {
-                        searchTimedOut = true;
-                        logNotify(_T("log_selection_within_slack_1", "Selection within slack tolerance (") + std::to_string(percentage) + _T("log_selection_within_slack_2", "%) found. Terminating search early."), 1);
-                    }
-                }
-                
-                // Keep clusters together (minimize number of folder boundaries)
-                int numClusters = 0;
-                for (const auto& item : itemsToSplit) {
-                    if (item->isSelected) {
-                        numClusters += countClusters(item->relativePath);
-                    }
-                }
-                
-                if (numClusters < minNumberOfClusters) {
-                    minNumberOfClusters = numClusters;
-                    saveBestSelection();
-                }
-            }
+            handleNewSelection(testSectors);
         }
         
         itemsToSplit[poz]->isSelected = false;

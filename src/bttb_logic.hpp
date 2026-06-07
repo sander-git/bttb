@@ -146,6 +146,8 @@ public:
         uint64_t explored = 0;
         uint64_t pruned = 0;
         bool findAWay(int64_t currentSectors, int poz, int selectedFileCount);
+        bool checkLimitsAndLog(int64_t currentSectors, int poz);
+        void handleNewSelection(int64_t testSectors);
     };
 
     std::atomic<int64_t> currentBestSectors{0};
@@ -162,6 +164,8 @@ private:
     
     // Core subset-sum recursive backtracking search
     bool findAWay(int64_t currentSectors, int poz, int selectedFileCount);
+    bool checkLimitsAndLog(int64_t currentSectors, int poz);
+    void handleNewSelection(int64_t testSectors);
     
     void saveBestSelection();
     int countClusters(const std::string& path);

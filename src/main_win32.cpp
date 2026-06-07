@@ -487,6 +487,7 @@ LRESULT CALLBACK VerifyWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
             y += 35;
             CreateWindow("BUTTON", _T("log_frame_title_verify", "Verification & Restoration Log").c_str(), WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 12, y, 510, 200, hwnd, NULL, NULL, NULL);
             g_editVerifyLog = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL | ES_READONLY, 24, y + 20, 480, 165, hwnd, NULL, NULL, NULL);
+            SendMessage(g_editVerifyLog, EM_SETLIMITTEXT, 10485760, 0);
             
             y += 215;
             g_btnVerifyRun = CreateWindow("BUTTON", _T("verify_only_btn", "Verify Only").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 40, y, 120, 30, hwnd, (HMENU)ID_BTN_VERIFY_RUN, NULL, NULL);
@@ -707,6 +708,7 @@ LRESULT CALLBACK IsoWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             y += 35;
             CreateWindow("BUTTON", _T("execution_log", "Execution Log").c_str(), WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 12, y, 510, 200, hwnd, NULL, NULL, NULL);
             g_editIsoLog = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL | ES_READONLY, 24, y + 20, 480, 165, hwnd, NULL, NULL, NULL);
+            SendMessage(g_editIsoLog, EM_SETLIMITTEXT, 10485760, 0);
             
             y += 215;
             g_btnIsoGenerate = CreateWindow("BUTTON", _T("generate_btn", "Generate").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 240, y, 120, 30, hwnd, (HMENU)ID_BTN_ISO_GENERATE, NULL, NULL);
@@ -1698,6 +1700,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             // Group 3: Log Output (Shifted to y=300)
             CreateWindow("BUTTON", _T("log_frame_title", "Solver Output Log").c_str(), WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 284, 300, 630, 160, hwnd, NULL, NULL, NULL);
             g_editLog = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL | ES_READONLY, 296, 324, 600, 120, hwnd, NULL, NULL, NULL);
+            SendMessage(g_editLog, EM_SETLIMITTEXT, 10485760, 0);
             
             // Status bar with Spinner and Time Left under log output
             g_labelSpinner = CreateWindow("STATIC", "", WS_CHILD | WS_VISIBLE, 296, 450, 30, 20, hwnd, NULL, NULL, NULL);

@@ -109,7 +109,7 @@ link_avx2_cmd = [
 ] + c_obj_files + common_cpp_obj_files + leopard_avx2_obj_files + [
     "src/bttb_rc.o",
     "-lcomctl32", "-lshell32", "-lole32", "-lcomdlg32", "-ldwmapi", "-luxtheme",
-    "-Wl,--dynamicbase", "-Wl,--nxcompat", "-Wl,--high-entropy-va",
+    "-Wl,--dynamicbase", "-Wl,--nxcompat", "-Wl,--high-entropy-va", "-Wl,--stack,16777216",
     "-o", "build/bttb_win32.exe"
 ]
 subprocess.run(link_avx2_cmd, cwd=base_dir, check=True)
@@ -121,7 +121,7 @@ link_compat_cmd = [
 ] + c_obj_files + common_cpp_obj_files + leopard_compat_obj_files + [
     "src/bttb_rc.o",
     "-lcomctl32", "-lshell32", "-lole32", "-lcomdlg32", "-ldwmapi", "-luxtheme",
-    "-Wl,--dynamicbase", "-Wl,--nxcompat", "-Wl,--high-entropy-va",
+    "-Wl,--dynamicbase", "-Wl,--nxcompat", "-Wl,--high-entropy-va", "-Wl,--stack,16777216",
     "-o", "build/bttb_win32_compat.exe"
 ]
 subprocess.run(link_compat_cmd, cwd=base_dir, check=True)

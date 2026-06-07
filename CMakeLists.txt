@@ -110,6 +110,12 @@ add_executable(test_solver src/test_solver.cpp src/bttb_logic.cpp src/bttb_local
 target_include_directories(test_solver PRIVATE src src/libpar3 src/blake3 src/leopard src/platform)
 target_link_libraries(test_solver PRIVATE libpar3 blake3 leopard platform)
 
+if(WIN32)
+    target_link_options(bttb PRIVATE "-Wl,--stack,16777216")
+    target_link_options(test_solver PRIVATE "-Wl,--stack,16777216")
+endif()
+
+
 # Install targets
 install(TARGETS bttb DESTINATION bin)
 install(FILES README.md LICENSE DESTINATION share/doc/bttb)
