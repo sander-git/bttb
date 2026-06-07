@@ -20,6 +20,12 @@
     <td height="347" bgcolor="#FFCCCC">&nbsp;</td>
     <td valign="top"><!-- InstanceBeginEditable name="EditRegion0" --><font face="Arial, Helvetica, sans-serif">
 <p>+: New feature -: Bug fixed *: Improved feature</p>
+      <p>V4.4.0<br>
+        + Added non-blocking incremental GUI rendering for large datasets on both GTK and Win32 interfaces<br>
+        + Added "Skip files exceeding capacity" option to volume capacity warnings (Resize/Skip/Cancel choices)<br>
+        + Added "Skipped" category to index.json outputting absolute paths of skipped files<br>
+        + Added locale-independent parsing and precise formatting for fractional MB volume capacities (e.g. 180KB/0.18MB)<br>
+        * Replaced synchronous tree insertions with batch rendering to eliminate GUI freezing</p>
       <p>V4.3.0<br>
         + Added complete modular localization via Gettext .po translation files<br>
         + Added default languages for German, Dutch, French, and Spanish in separate lang/ files<br>

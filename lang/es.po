@@ -142,7 +142,7 @@ msgstr "Idioma cambiado"
 msgid "about_comments"
 msgstr ""
 "Burn to the Brim (BTTB) es una adaptación moderna en C++20 de la clásica aplicación Delphi diseñada para organizar de manera óptima archivos y carpetas en medios de almacenamiento de destino (CD, DVD, Blu-ray o USB).\n\n"
-"Características en v4.3.0:\n"
+"Características en v4.4.0:\n"
 "- Creación de índice JSON fuera de línea y analizador interactivo\n"
 "- Generación y verificación opcional de archivos de paridad PAR3\n"
 "- Restauración y reparación basadas en copias bit-perfect de PAR3\n"
@@ -232,7 +232,7 @@ msgid "regex_pattern_chk"
 msgstr "Patrón Regex"
 
 msgid "app_version"
-msgstr "Versión 4.3.0"
+msgstr "Versión 4.4.0"
 
 msgid "app_copyright"
 msgstr "Copyright © 2001-2026 Sander Raaijmakers, Elwin Oost y el equipo de Burn to the Brim"
@@ -642,3 +642,21 @@ msgstr "Ejecutando agrupamiento semántico aglomerativo (umbral=0.6)..."
 
 msgid "log_semantic_clustering_completed"
 msgstr "Agrupamiento semántico completado. Total de grupos consolidados: "
+
+msgid "capacity_recommend_prompt_gtk"
+msgstr "El elemento escaneado más grande requiere una capacidad de volumen de al menos %.2f MB.\n\nElija una acción:"
+
+msgid "btn_resize"
+msgstr "Redimensionar"
+
+msgid "btn_skip"
+msgstr "Omitir archivos"
+
+msgid "btn_cancel"
+msgstr "Cancelar"
+
+msgid "capacity_recommend_prompt_win32"
+msgstr "El elemento escaneado más grande requiere una capacidad de volumen de al menos %.2f MB.\n\nHaga clic en [Sí] para cambiar el tamaño de la capacidad a %.2f MB y volver a intentarlo.\nHaga clic en [No] para omitir los archivos que excedan la capacidad y volver a intentarlo.\nHaga clic en [Cancelar] para abortar el empaquetado."
+
+msgid "log_capacity_skip_larger"
+msgstr "Archivos más grandes omitidos. Reintentando el solucionador..."

@@ -322,6 +322,24 @@
 
         <div class="news-container">
 
+            <!-- News Item 4.4.0 -->
+            <div class="news-card">
+                <div class="news-date">June 7, 2026</div>
+                <h2>Version 4.4.0 Released: Non-Blocking GUI, Interactive Resize/Skip Warnings &amp; Fractional MB Precision</h2>
+                <p>
+                    Today we are pleased to announce **Burn to the Brim 4.4.0**, a performance and robustness release bringing non-blocking tree rendering for large datasets, interactive volume capacity resize/skip warning prompts, and precise, locale-independent formatting and parsing of small/fractional MB capacities.
+                </p>
+                <p>
+                    <strong>Incremental, Non-Blocking Tree Rendering:</strong> When solving large filesets (e.g. 250+ files or directories), the results TreeView loading previously blocked GUI operations, causing windows to hang. BTTB v4.4.0 implements background-threaded batching of 100 insertions at a time using GTK idle loop callbacks and Win32 message queue triggers. The GUI remains fully interactive and responsive with active visual busy progress spinners throughout the process.
+                </p>
+                <p>
+                    <strong>Interactive Warnings &amp; Skipped Files Array:</strong> When abnormal directory scans discover files exceeding capacity bounds, the solver prompts the user (with custom buttons on Linux/Windows and clean text cues in terminal CLI) to either: (1) Resize the volume capacity, (2) Skip larger files and continue, or (3) Cancel. Skipped files are compiled and documented inside a root-level <code>"Skipped"</code> absolute paths array inside the output <code>index.json</code>.
+                </p>
+                <p>
+                    <strong>Precise Fractional MB Capacity:</strong> To prevent data loss for small/fractional volume sizes (e.g. 180KB or 0.18MB), capacity parsing/formatting has been refactored to retain specific suffixes. Numeric locale variables (<code>LC_NUMERIC</code>) are forced to <code>"C"</code> to avoid decimal mark issues, and input parsing automatically interprets both comma and dot decimal separators natively.
+                </p>
+            </div>
+
             <!-- News Item 4.3.0 -->
             <div class="news-card">
                 <div class="news-date">June 6, 2026</div>

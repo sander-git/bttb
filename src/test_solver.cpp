@@ -325,11 +325,11 @@ void run_test5() {
     solverExceed.mediumInfo.slackBytes = 0;
     
     bool callbackTriggered = false;
-    solverExceed.recommendCapacityNotify = [&](int64_t recommendedBytes) -> bool {
+    solverExceed.recommendCapacityNotify = [&](int64_t recommendedBytes) -> bttb::CapacityRecommendResult {
         std::cout << "[Solver Test 5 - Recommendation Callback] Recommended: " << recommendedBytes << " bytes (Expected: 6144 bytes [sector aligned])" << std::endl;
         callbackTriggered = true;
         assert(recommendedBytes == 6144);
-        return true; // Accept and adapt!
+        return bttb::CapacityRecommendResult::RESIZE; // Accept and adapt!
     };
     
     solverExceed.logNotify = [](const std::string& msg, int type) {
@@ -650,6 +650,97 @@ void run_test7() {
     std::cout << "SUCCESS: PAR3 test suite completed successfully!" << std::endl;
 }
 
+void run_test8() {
+    std::cout << "\n--- STARTING TEST 8: MULTI-THREADED VS SINGLE-THREADED SOLVER COMPETING PERFORMANCE (BTTB v4.4.0) ---" << std::endl;
+    
+    std::string test_src = "./mock_multithread_src";
+    std::string test_dest = "./mock_multithread_dest";
+    std::filesystem::remove_all(test_src);
+    std::filesystem::remove_all(test_dest);
+    std::filesystem::create_directories(test_src);
+    
+    // Generate 250 files of distinct sizes
+    int64_t totalBytes = 0;
+    for (int i = 0; i < 250; ++i) {
+        std::string filename = test_src + "/file_" + std::to_string(i) + ".bin";
+        std::ofstream f(filename, std::ios::binary);
+        int64_t size = 1000 + i * 13;
+        totalBytes += size;
+        std::string dummy(size, 'a');
+        f << dummy;
+    }
+    
+    std::cout << "Generated 250 files of distinct sizes. Total size: " << totalBytes << " bytes." << std::endl;
+    
+    // Configure BttbSolver for single-threaded run
+    bttb::BttbSolver solver;
+    solver.sourceDirectories.push_back(test_src);
+    solver.targetDirectory = test_dest;
+    solver.moveFiles = false;
+    solver.createSymlinks = false;
+    solver.spanMultipleVolumes = false; // single volume
+    solver.maxSearchTimeSeconds = 1; // 1 second limit
+    solver.enableTrace = false;
+    
+    // Align capacity to sector size (2KB)
+    solver.mediumInfo.capacityBytes = 327680; // 320 KB
+    solver.mediumInfo.sectorSize = 2048;
+    solver.mediumInfo.slackBytes = 0;
+    
+    // Single-threaded run
+    solver.enableMultiThreading = false;
+    std::cout << "Running single-threaded solver..." << std::endl;
+    auto t1 = std::chrono::steady_clock::now();
+    solver.run();
+    auto t2 = std::chrono::steady_clock::now();
+    auto elapsedSingleMs = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+    uint64_t exploredSingle = solver.exploredStates;
+    double percentageSingle = (double)solver.currentBestSectors * solver.mediumInfo.sectorSize / solver.mediumInfo.capacityBytes * 100.0;
+    std::cout << "Single-threaded: explored " << exploredSingle << " states in " << elapsedSingleMs << " ms. Best utilization: " << percentageSingle << "%" << std::endl;
+    
+    // Configure BttbSolver for multi-threaded run
+    bttb::BttbSolver solverMulti;
+    solverMulti.sourceDirectories.push_back(test_src);
+    solverMulti.targetDirectory = test_dest;
+    solverMulti.moveFiles = false;
+    solverMulti.createSymlinks = false;
+    solverMulti.spanMultipleVolumes = false;
+    solverMulti.maxSearchTimeSeconds = 1;
+    solverMulti.enableTrace = false;
+    solverMulti.mediumInfo.capacityBytes = 327680;
+    solverMulti.mediumInfo.sectorSize = 2048;
+    solverMulti.mediumInfo.slackBytes = 0;
+    
+    // Multi-threaded run
+    solverMulti.enableMultiThreading = true;
+    std::cout << "Running multi-threaded solver..." << std::endl;
+    auto t3 = std::chrono::steady_clock::now();
+    solverMulti.run();
+    auto t4 = std::chrono::steady_clock::now();
+    auto elapsedMultiMs = std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t3).count();
+    uint64_t exploredMulti = solverMulti.exploredStates;
+    double percentageMulti = (double)solverMulti.currentBestSectors * solverMulti.mediumInfo.sectorSize / solverMulti.mediumInfo.capacityBytes * 100.0;
+    std::cout << "Multi-threaded: explored " << exploredMulti << " states in " << elapsedMultiMs << " ms. Best utilization: " << percentageMulti << "%" << std::endl;
+    
+    // Verify performance
+    unsigned int hardwareCores = std::thread::hardware_concurrency();
+    std::cout << "System CPU Core count: " << hardwareCores << std::endl;
+    
+    if (hardwareCores > 1) {
+        std::cout << "Verifying that multi-threaded solver explored more states..." << std::endl;
+        assert(exploredMulti > exploredSingle);
+        std::cout << "Performance verification SUCCESS: Multi-threaded solver explored " 
+                  << (double)exploredMulti / exploredSingle << "x more states than single-threaded!" << std::endl;
+    } else {
+        std::cout << "Single core detected. Skipping performance ratio assertion." << std::endl;
+    }
+    
+    // Clean up
+    std::filesystem::remove_all(test_src);
+    std::filesystem::remove_all(test_dest);
+    std::cout << "SUCCESS: Multi-threaded solver test completed successfully!" << std::endl;
+}
+
 int main() {
     std::cout << "Starting BTTB automated verification suite..." << std::endl;
     run_test1();
@@ -659,6 +750,7 @@ int main() {
     run_test5();
     run_test6();
     run_test7();
+    run_test8();
     std::cout << "\nALL TESTS PASSED SUCCESSFULLY!" << std::endl;
     return 0;
 }

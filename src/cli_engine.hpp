@@ -155,14 +155,24 @@ inline int runCliEngine(int argc, char* argv[]) {
     };
     
     // Terminal recommended capacity query
-    solver.recommendCapacityNotify = [](int64_t recommendedBytes) -> bool {
+    solver.recommendCapacityNotify = [](int64_t recommendedBytes) -> CapacityRecommendResult {
         double recMB = (double)recommendedBytes / (1024.0 * 1024.0);
         std::cout << "\n\033[1;33m[WARNING] Minimum volume size recommended: " 
                   << recMB << " MB (" << recommendedBytes << " bytes) based on maximum file size scanned.\033[0m" << std::endl;
-        std::cout << "Would you like to automatically adapt the volume size and retry? (y/n): " << std::flush;
+        std::cout << "Choose action:\n"
+                  << "  [r] Resize: Automatically adapt the volume size and retry\n"
+                  << "  [s] Skip: Skip any larger files and continue\n"
+                  << "  [c] Cancel: Abort solving\n"
+                  << "Choice (r/s/c): " << std::flush;
         std::string answer;
         std::getline(std::cin, answer);
-        return (answer == "y" || answer == "Y" || answer == "yes" || answer == "YES");
+        if (answer == "r" || answer == "R" || answer == "resize" || answer == "RESIZE") {
+            return CapacityRecommendResult::RESIZE;
+        } else if (answer == "s" || answer == "S" || answer == "skip" || answer == "SKIP") {
+            return CapacityRecommendResult::SKIP_LARGER;
+        } else {
+            return CapacityRecommendResult::CANCEL;
+        }
     };
     
     std::cout << "Starting solver process in CLI mode...\n";

@@ -7,6 +7,9 @@
 #include <regex>
 #include <atomic>
 #include <functional>
+#include <mutex>
+#include <thread>
+#include <set>
 
 namespace bttb {
 
@@ -54,10 +57,16 @@ struct PackedVolume {
     std::vector<std::string> itemDates;
 };
 
+enum class CapacityRecommendResult {
+    RESIZE,
+    SKIP_LARGER,
+    CANCEL
+};
+
 // Callback types for thread-safe UI notifications
 using LogCallback = std::function<void(const std::string&, int msgType)>;
 using ProgressCallback = std::function<void(double currentMediumProgress, double overallProgress)>;
-using RecommendCapacityCallback = std::function<bool(int64_t recommendedCapacityBytes)>;
+using RecommendCapacityCallback = std::function<CapacityRecommendResult(int64_t recommendedCapacityBytes)>;
 using TimeLeftCallback = std::function<void(double secondsLeft)>;
 
 class BttbSolver {
@@ -82,8 +91,8 @@ public:
     std::vector<PackedVolume> packedVolumes;
     std::vector<std::unique_ptr<DirEntry>> itemsToSplit;
     bool enableTrace = false;
-    uint64_t exploredStates = 0;
-    uint64_t prunedStates = 0;
+    std::atomic<uint64_t> exploredStates{0};
+    std::atomic<uint64_t> prunedStates{0};
     std::chrono::steady_clock::time_point solverStartTime;
 
     // Semantic Packing (Milestone v4.0.0)
@@ -106,6 +115,8 @@ public:
     
     // v4.3.0 Localization Enhancement
     std::string language = "auto";
+    bool enableMultiThreading = true;
+    std::set<std::string> skippedFilePaths;
 
 
     // Control
@@ -127,9 +138,20 @@ public:
     double computeCosineSimilarity(const std::vector<float>& a, const std::vector<float>& b);
     void runSemanticClustering();
 
+    std::mutex solverMutex;
+
+    struct ThreadSearchState {
+        BttbSolver* solver;
+        std::vector<std::unique_ptr<DirEntry>> items;
+        uint64_t explored = 0;
+        uint64_t pruned = 0;
+        bool findAWay(int64_t currentSectors, int poz, int selectedFileCount);
+    };
+
+    std::atomic<int64_t> currentBestSectors{0};
+
 private:
     std::vector<int> bestSelectionIndices;
-    int64_t currentBestSectors = 0;
     int64_t maxSectors = 0;
     int64_t slackSectors = 0;
     int64_t minNumberOfClusters = 0;
@@ -152,6 +174,9 @@ std::regex globToRegex(const std::string& glob);
 
 // Parse human-readable sizes like 512MB, 2.5GB, 1.5TB
 int64_t parseHumanSize(const std::string& input);
+
+// Cleanly format bytes to human-readable size
+std::string formatHumanSize(int64_t bytes);
 
 // Ignore folders nested in other folders
 std::vector<std::string> filterNestedDirectories(const std::vector<std::string>& dirs);

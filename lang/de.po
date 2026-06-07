@@ -142,7 +142,7 @@ msgstr "Sprache geändert"
 msgid "about_comments"
 msgstr ""
 "Burn to the Brim (BTTB) ist eine moderne C++20-Portierung der klassischen Delphi-Anwendung, die entwickelt wurde, um Dateien und Ordner optimal auf Zielspeichermedien (CDs, DVDs, Blu-rays oder USB-Sticks) zu verteilen.\n\n"
-"Funktionen in v4.3.0:\n"
+"Funktionen in v4.4.0:\n"
 "- Offline-JSON-Indexerstellung und interaktiver Parser\n"
 "- Optionale PAR3-Paritätsdateierstellung und -verifizierung\n"
 "- Bitgenaue PAR3-kopierbasierte Wiederherstellung und Reparatur\n"
@@ -232,7 +232,7 @@ msgid "regex_pattern_chk"
 msgstr "Regex-Muster"
 
 msgid "app_version"
-msgstr "Version 4.3.0"
+msgstr "Version 4.4.0"
 
 msgid "app_copyright"
 msgstr "Copyright © 2001-2026 Sander Raaijmakers, Elwin Oost und das Burn to the Brim Team"
@@ -642,3 +642,21 @@ msgstr "Führe agglomeratives semantisches Clustering aus (Schwellenwert=0.6)...
 
 msgid "log_semantic_clustering_completed"
 msgstr "Semantisches Clustering abgeschlossen. Konsolidierte Gruppen insgesamt: "
+
+msgid "capacity_recommend_prompt_gtk"
+msgstr "Das größte gescannte Element erfordert eine Volumenkapazität von mindestens %.2f MB.\n\nWählen Sie eine Aktion:"
+
+msgid "btn_resize"
+msgstr "Größe ändern"
+
+msgid "btn_skip"
+msgstr "Dateien überspringen"
+
+msgid "btn_cancel"
+msgstr "Abbrechen"
+
+msgid "capacity_recommend_prompt_win32"
+msgstr "Das größte gescannte Element erfordert eine Volumenkapazität von mindestens %.2f MB.\n\nKlicken Sie auf [Ja], um die Kapazität auf %.2f MB zu ändern und es erneut zu versuchen.\nKlicken Sie auf [Nein], um Dateien, die die Kapazität überschreiten, zu überspringen und es erneut zu versuchen.\nKlicken Sie auf [Abbrechen], um den Vorgang abzubrechen."
+
+msgid "log_capacity_skip_larger"
+msgstr "Größere Dateien übersprungen. Solver wird neu gestartet..."

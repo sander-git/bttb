@@ -72,6 +72,7 @@ void ApplyThemeToListView(HWND hwndLV) {
 #define WM_ISO_FINISHED    (WM_USER + 11)
 #define WM_SOLVER_TIMELEFT (WM_USER + 4)
 #define TIMER_SPINNER 1001
+#define WM_RENDER_NEXT_BATCH (WM_USER + 12)
 
 // Control IDs
 #define ID_BTN_SRC_BROWSE  1001
@@ -922,12 +923,13 @@ LRESULT CALLBACK AboutWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             SendMessage(hIcon, STM_SETICON, (WPARAM)hIco, 0);
             
             CreateWindow("STATIC", _T("app_title", "Burn to the Brim").c_str(), WS_CHILD | WS_VISIBLE, 70, 20, 300, 20, hwnd, NULL, NULL, NULL);
-            CreateWindow("STATIC", _T("app_version", "Version 4.3.0").c_str(), WS_CHILD | WS_VISIBLE, 70, 40, 300, 20, hwnd, NULL, NULL, NULL);
+            CreateWindow("STATIC", _T("app_version", "Version 4.4.0").c_str(), WS_CHILD | WS_VISIBLE, 70, 40, 300, 20, hwnd, NULL, NULL, NULL);
             CreateWindow("STATIC", _T("app_copyright", "Copyright \u00a9 2001-2026 Sander Raaijmakers, Elwin Oost and the Burn to the Brim team").c_str(), WS_CHILD | WS_VISIBLE, 70, 60, 350, 40, hwnd, NULL, NULL, NULL);
             
             const char* default_comments = 
                 "Burn to the Brim (BTTB) is a modern C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums (CDs, DVDs, Blu-rays, or USBs).\n\n"
-                "Features in v4.3.0:\n"
+                "Features in v4.4.0:\n"
+                "- Non-blocking incremental GUI rendering & skip file capacity warnings\n"
                 "- Offline JSON Index creation and interactive parser\n"
                 "- Optional PAR3 parity file generation and verification\n"
                 "- Bit-perfect PAR3 copy-based restoration and repair\n"
@@ -939,6 +941,7 @@ LRESULT CALLBACK AboutWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 "- Transfer-rate estimated Time Left & status activity spinner\n"
                 "- Entropy-Aware Semantic Packing based on MiniLM embeddings\n"
                 "- Explorer Context Menu integration & long path support\n\n"
+                "BTTB is fully localized and dynamically translates the entire user interface based on standard gettext .po templates in German, Dutch, French, and Spanish.\n\n"
                 "Libraries and Attributions Used:\n"
                 "- libpar3 (by Yutaka Sawada, LGPL v2.1+): https://github.com/Parchive/par3cmdline\n"
                 "- BLAKE3 (by BLAKE3 team, CC0/Apache-2.0): https://github.com/BLAKE3-team/BLAKE3\n"
@@ -1157,10 +1160,8 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             else if (g_solver.mediumInfo.capacityBytes == 256000000000LL) SetWindowText(g_editPrefCap, "256 GB");
             else if (g_solver.mediumInfo.capacityBytes == 512000000000LL) SetWindowText(g_editPrefCap, "512 GB");
             else {
-                double gb = (double)g_solver.mediumInfo.capacityBytes / (1024.0 * 1024.0 * 1024.0);
-                char buf[64];
-                snprintf(buf, sizeof(buf), "%.3f GB", gb);
-                SetWindowText(g_editPrefCap, buf);
+                std::string sizeStr = bttb::formatHumanSize(g_solver.mediumInfo.capacityBytes);
+                SetWindowText(g_editPrefCap, sizeStr.c_str());
             }
             
             SetWindowText(g_editPrefClus, std::to_string(g_solver.mediumInfo.sectorSize).c_str());
@@ -1273,10 +1274,8 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
                     int cvIdx = index - 14;
                     if (cvIdx >= 0 && cvIdx < (int)g_solver.customVolumes.size()) {
                         const auto& cv = g_solver.customVolumes[cvIdx];
-                        double gb = (double)cv.capacityBytes / (1024.0 * 1024.0 * 1024.0);
-                        char buf[64];
-                        snprintf(buf, sizeof(buf), "%.3f GB", gb);
-                        SetWindowText(g_editPrefCap, buf);
+                        std::string sizeStr = bttb::formatHumanSize(cv.capacityBytes);
+                        SetWindowText(g_editPrefCap, sizeStr.c_str());
                         SetWindowText(g_editPrefClus, std::to_string(cv.sectorSize).c_str());
                         SetWindowText(g_editPrefSlack, std::to_string(cv.slackBytes).c_str());
                         EnableWindow(g_editPrefCap, FALSE);
@@ -1484,106 +1483,128 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
     return 0;
 }
 
-// Populate standard Win32 TreeView control with solved volumes and unfitted items
-void PopulateTreeView(HWND hwndTV) {
+struct Win32TreeInsertTask {
+    enum class Type {
+        CREATE_VOLUME_PARENT,
+        CREATE_FILE_CHILD,
+        CREATE_SUBPATH_GRANDCHILD,
+        CREATE_REMAINING_PARENT,
+        CREATE_REMAINING_CHILD,
+        CREATE_REMAINING_SUBPATH_GRANDCHILD
+    };
+    Type type;
+    int volumeIndex = 0;
+    int64_t totalBytes = 0;
+    std::string path;
+    int64_t sizeBytes = 0;
+    std::string statusTag;
+};
+
+static std::vector<Win32TreeInsertTask> g_render_tasks;
+static size_t g_render_task_index = 0;
+static HTREEITEM g_current_volume_parent = NULL;
+static HTREEITEM g_current_file_child = NULL;
+static HTREEITEM g_current_remaining_parent = NULL;
+static HTREEITEM g_current_remaining_child = NULL;
+
+void SetWin32UiSensitive(HWND hwnd, BOOL sensitive) {
+    EnableWindow(g_btnStart, sensitive);
+    EnableWindow(g_btnTest, sensitive);
+    if (sensitive) {
+        EnableWindow(g_btnStop, FALSE);
+    } else {
+        EnableWindow(g_btnStop, TRUE);
+    }
+    EnableWindow(g_chkMove, sensitive);
+    EnableWindow(g_chkSymlink, sensitive);
+    EnableWindow(g_chkSpan, sensitive);
+    EnableWindow(g_chkTrace, sensitive);
+    EnableWindow(g_editSemantic, sensitive);
+}
+
+void StartWin32TreeViewRendering(HWND hwndTV, bool includeUnfitted, const std::string& statusTag = "Fitted") {
     TreeView_DeleteAllItems(hwndTV);
-    
+    g_render_tasks.clear();
+    g_render_task_index = 0;
+    g_current_volume_parent = NULL;
+    g_current_file_child = NULL;
+    g_current_remaining_parent = NULL;
+    g_current_remaining_child = NULL;
+
     // 1. Walk through each solved volume in packedVolumes
     for (const auto& vol : g_solver.packedVolumes) {
-        char vol_name[256];
-        snprintf(vol_name, sizeof(vol_name), "Volume %d (Total: %.2f MB)", vol.volumeIndex, (double)vol.totalBytes / (1024.0 * 1024.0));
-        
-        TVINSERTSTRUCT tvis = {0};
-        tvis.hParent = TVI_ROOT;
-        tvis.hInsertAfter = TVI_LAST;
-        tvis.item.mask = TVIF_TEXT;
-        tvis.item.pszText = const_cast<LPSTR>(vol_name);
-        
-        HTREEITEM hParent = TreeView_InsertItem(hwndTV, &tvis);
+        Win32TreeInsertTask task;
+        task.type = Win32TreeInsertTask::Type::CREATE_VOLUME_PARENT;
+        task.volumeIndex = vol.volumeIndex;
+        task.totalBytes = vol.totalBytes;
+        task.statusTag = statusTag;
+        g_render_tasks.push_back(task);
         
         for (size_t i = 0; i < vol.itemPaths.size(); ++i) {
-            char child_name[512];
-            snprintf(child_name, sizeof(child_name), "%s (%lld bytes)", vol.itemPaths[i].c_str(), static_cast<long long>(vol.itemSizes[i]));
+            Win32TreeInsertTask child;
+            child.type = Win32TreeInsertTask::Type::CREATE_FILE_CHILD;
+            child.path = vol.itemPaths[i];
+            child.sizeBytes = vol.itemSizes[i];
+            child.statusTag = statusTag;
+            g_render_tasks.push_back(child);
             
-            TVINSERTSTRUCT tvisChild = {0};
-            tvisChild.hParent = hParent;
-            tvisChild.hInsertAfter = TVI_LAST;
-            tvisChild.item.mask = TVIF_TEXT;
-            tvisChild.item.pszText = const_cast<LPSTR>(child_name);
-            
-            HTREEITEM hChild = TreeView_InsertItem(hwndTV, &tvisChild);
-            
-            // If it is a semantic or rules group, add nested files under it!
             if (i < vol.itemGroupedPaths.size() && !vol.itemGroupedPaths[i].empty()) {
                 for (const auto& subPath : vol.itemGroupedPaths[i]) {
-                    char sub_name[512];
-                    snprintf(sub_name, sizeof(sub_name), "%s", subPath.c_str());
-                    
-                    TVINSERTSTRUCT tvisSub = {0};
-                    tvisSub.hParent = hChild;
-                    tvisSub.hInsertAfter = TVI_LAST;
-                    tvisSub.item.mask = TVIF_TEXT;
-                    tvisSub.item.pszText = const_cast<LPSTR>(sub_name);
-                    
-                    TreeView_InsertItem(hwndTV, &tvisSub);
+                    Win32TreeInsertTask subChild;
+                    subChild.type = Win32TreeInsertTask::Type::CREATE_SUBPATH_GRANDCHILD;
+                    subChild.path = subPath;
+                    subChild.statusTag = statusTag;
+                    g_render_tasks.push_back(subChild);
                 }
-                TreeView_Expand(hwndTV, hChild, TVE_EXPAND);
             }
         }
+    }
+    
+    // 2. Add remaining (unfitted) items
+    if (includeUnfitted && !g_solver.itemsToSplit.empty()) {
+        int64_t unfitted_bytes = 0;
+        for (const auto& item : g_solver.itemsToSplit) {
+            unfitted_bytes += item->sizeBytes;
+        }
         
-        TreeView_Expand(hwndTV, hParent, TVE_EXPAND);
-     }
-     
-     // 2. Add remaining (unfitted) items
-     if (!g_solver.itemsToSplit.empty()) {
-         int64_t unfitted_bytes = 0;
-         for (const auto& item : g_solver.itemsToSplit) {
-             unfitted_bytes += item->sizeBytes;
-         }
-         
-         char unfitted_label[256];
-         snprintf(unfitted_label, sizeof(unfitted_label), "Remaining Items (Total: %.2f MB)", (double)unfitted_bytes / (1024.0 * 1024.0));
-         
-         TVINSERTSTRUCT tvis = {0};
-         tvis.hParent = TVI_ROOT;
-         tvis.hInsertAfter = TVI_LAST;
-         tvis.item.mask = TVIF_TEXT;
-         tvis.item.pszText = const_cast<LPSTR>(unfitted_label);
-         
-         HTREEITEM hParent = TreeView_InsertItem(hwndTV, &tvis);
-         
-         for (const auto& item : g_solver.itemsToSplit) {
-             char child_name[512];
-             snprintf(child_name, sizeof(child_name), "%s (%lld bytes)", item->relativePath.c_str(), static_cast<long long>(item->sizeBytes));
-             
-             TVINSERTSTRUCT tvisChild = {0};
-             tvisChild.hParent = hParent;
-             tvisChild.hInsertAfter = TVI_LAST;
-             tvisChild.item.mask = TVIF_TEXT;
-             tvisChild.item.pszText = const_cast<LPSTR>(child_name);
-             
-             HTREEITEM hChild = TreeView_InsertItem(hwndTV, &tvisChild);
-             
-             // If it is a group, add nested files under it!
-             if (!item->groupedPaths.empty()) {
-                 for (const auto& subPath : item->groupedPaths) {
-                     char sub_name[512];
-                     snprintf(sub_name, sizeof(sub_name), "%s", subPath.c_str());
-                     
-                     TVINSERTSTRUCT tvisSub = {0};
-                     tvisSub.hParent = hChild;
-                     tvisSub.hInsertAfter = TVI_LAST;
-                     tvisSub.item.mask = TVIF_TEXT;
-                     tvisSub.item.pszText = const_cast<LPSTR>(sub_name);
-                     
-                     TreeView_InsertItem(hwndTV, &tvisSub);
-                 }
-                 TreeView_Expand(hwndTV, hChild, TVE_EXPAND);
-             }
-         }
-         
-         TreeView_Expand(hwndTV, hParent, TVE_EXPAND);
-     }
+        Win32TreeInsertTask task;
+        task.type = Win32TreeInsertTask::Type::CREATE_REMAINING_PARENT;
+        task.totalBytes = unfitted_bytes;
+        g_render_tasks.push_back(task);
+        
+        for (const auto& item : g_solver.itemsToSplit) {
+            Win32TreeInsertTask child;
+            child.type = Win32TreeInsertTask::Type::CREATE_REMAINING_CHILD;
+            child.path = item->relativePath;
+            child.sizeBytes = item->sizeBytes;
+            g_render_tasks.push_back(child);
+            
+            if (!item->groupedPaths.empty()) {
+                for (const auto& subPath : item->groupedPaths) {
+                    Win32TreeInsertTask subChild;
+                    subChild.type = Win32TreeInsertTask::Type::CREATE_REMAINING_SUBPATH_GRANDCHILD;
+                    subChild.path = subPath;
+                    g_render_tasks.push_back(subChild);
+                }
+            }
+        }
+    }
+
+    HWND hwndMain = GetParent(hwndTV);
+
+    if (g_render_tasks.empty()) {
+        KillTimer(hwndMain, 1);
+        SetWindowText(g_labelSpinner, "");
+        SetWindowText(g_labelTimeLeft, "Estimated Time Left: Complete");
+        SetWin32UiSensitive(hwndMain, TRUE);
+        return;
+    }
+
+    SetWin32UiSensitive(hwndMain, FALSE);
+    SetTimer(hwndMain, 1, 150, NULL);
+    SetWindowText(g_labelTimeLeft, "Estimated Time Left: Rendering results...");
+
+    PostMessage(hwndMain, WM_RENDER_NEXT_BATCH, 0, 0);
 }
 
 // Window Procedure for Main Window
@@ -1871,15 +1892,19 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                     PostMessage(hwnd, WM_SOLVER_TIMELEFT, static_cast<WPARAM>(percentSec), 0);
                 };
                 
-                g_solver.recommendCapacityNotify = [hwnd](int64_t recommendedBytes) -> bool {
+                g_solver.recommendCapacityNotify = [hwnd](int64_t recommendedBytes) -> bttb::CapacityRecommendResult {
                     double recMB = (double)recommendedBytes / (1024.0 * 1024.0);
                     char buf[512];
-                    snprintf(buf, sizeof(buf), 
+                    std::string formatStr = _T("capacity_recommend_prompt_win32", 
                         "The largest scanned item requires a volume capacity of at least %.2f MB.\n\n"
-                        "Would you like to automatically increase the volume capacity to %.2f MB and retry packing?", 
-                        recMB, recMB);
-                    int res = MessageBox(hwnd, buf, "Volume Capacity Recommendation", MB_YESNO | MB_ICONWARNING | MB_SETFOREGROUND);
-                    return (res == IDYES);
+                        "Click [Yes] to resize the capacity to %.2f MB and retry.\n"
+                        "Click [No] to skip files exceeding capacity and retry.\n"
+                        "Click [Cancel] to abort packing.");
+                    snprintf(buf, sizeof(buf), formatStr.c_str(), recMB, recMB);
+                    int res = MessageBox(hwnd, buf, "Volume Capacity Recommendation", MB_YESNOCANCEL | MB_ICONWARNING | MB_SETFOREGROUND);
+                    if (res == IDYES) return bttb::CapacityRecommendResult::RESIZE;
+                    if (res == IDNO) return bttb::CapacityRecommendResult::SKIP_LARGER;
+                    return bttb::CapacityRecommendResult::CANCEL;
                 };
                 
                 // Start text-based activity spinner animation
@@ -1932,7 +1957,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 if (!path.empty()) {
                     std::string err;
                     if (bttb::parseIndexJson(path, g_solver.packedVolumes, err)) {
-                        PopulateTreeView(g_hwndTreeView);
+                        g_solver.itemsToSplit.clear();
+                        StartWin32TreeViewRendering(g_hwndTreeView, false, "Imported");
                         AppendTextToLog(g_editLog, "Successfully imported JSON index file: " + path);
                     } else {
                         MessageBox(hwnd, ("Failed to parse JSON index:\n" + err).c_str(), "Error", MB_ICONERROR);
@@ -2099,25 +2125,116 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case WM_SOLVER_FINISHED: {
             AppendTextToLog(g_editLog, "\nSolver processing complete.");
             
-            // Stop spinner timer
-            KillTimer(hwnd, 1);
-            SetWindowText(g_labelSpinner, "");
-            SetWindowText(g_labelTimeLeft, "Estimated Time Left: Complete");
-            
-            // Re-enable start and control inputs
-            EnableWindow(g_btnStart, TRUE);
-            EnableWindow(g_btnTest, TRUE);
-            EnableWindow(g_btnStop, FALSE);
-            EnableWindow(g_chkMove, TRUE);
-            EnableWindow(g_chkSymlink, TRUE);
-            EnableWindow(g_chkSpan, TRUE);
-            EnableWindow(g_chkTrace, TRUE);
-            EnableWindow(g_editSemantic, TRUE);
-            
-            PopulateTreeView(g_hwndTreeView);
-            
             if (g_solver_thread.joinable()) {
                 g_solver_thread.join();
+            }
+            
+            StartWin32TreeViewRendering(g_hwndTreeView, true, "Fitted");
+            break;
+        }
+        
+        case WM_RENDER_NEXT_BATCH: {
+            size_t processed = 0;
+            const size_t batch_size = 100;
+            HWND hwndTV = g_hwndTreeView;
+            
+            while (g_render_task_index < g_render_tasks.size() && processed < batch_size) {
+                const auto& task = g_render_tasks[g_render_task_index];
+                switch (task.type) {
+                    case Win32TreeInsertTask::Type::CREATE_VOLUME_PARENT: {
+                        char vol_name[256];
+                        snprintf(vol_name, sizeof(vol_name), "Volume %d (Total: %.2f MB)", task.volumeIndex, (double)task.totalBytes / (1024.0 * 1024.0));
+                        
+                        TVINSERTSTRUCT tvis = {0};
+                        tvis.hParent = TVI_ROOT;
+                        tvis.hInsertAfter = TVI_LAST;
+                        tvis.item.mask = TVIF_TEXT;
+                        tvis.item.pszText = const_cast<LPSTR>(vol_name);
+                        
+                        g_current_volume_parent = TreeView_InsertItem(hwndTV, &tvis);
+                        TreeView_Expand(hwndTV, g_current_volume_parent, TVE_EXPAND);
+                        break;
+                    }
+                    case Win32TreeInsertTask::Type::CREATE_FILE_CHILD: {
+                        char child_name[512];
+                        snprintf(child_name, sizeof(child_name), "%s (%lld bytes)", task.path.c_str(), static_cast<long long>(task.sizeBytes));
+                        
+                        TVINSERTSTRUCT tvisChild = {0};
+                        tvisChild.hParent = g_current_volume_parent;
+                        tvisChild.hInsertAfter = TVI_LAST;
+                        tvisChild.item.mask = TVIF_TEXT;
+                        tvisChild.item.pszText = const_cast<LPSTR>(child_name);
+                        
+                        g_current_file_child = TreeView_InsertItem(hwndTV, &tvisChild);
+                        break;
+                    }
+                    case Win32TreeInsertTask::Type::CREATE_SUBPATH_GRANDCHILD: {
+                        char sub_name[512];
+                        snprintf(sub_name, sizeof(sub_name), "%s", task.path.c_str());
+                        
+                        TVINSERTSTRUCT tvisSub = {0};
+                        tvisSub.hParent = g_current_file_child;
+                        tvisSub.hInsertAfter = TVI_LAST;
+                        tvisSub.item.mask = TVIF_TEXT;
+                        tvisSub.item.pszText = const_cast<LPSTR>(sub_name);
+                        
+                        TreeView_InsertItem(hwndTV, &tvisSub);
+                        TreeView_Expand(hwndTV, g_current_file_child, TVE_EXPAND);
+                        break;
+                    }
+                    case Win32TreeInsertTask::Type::CREATE_REMAINING_PARENT: {
+                        char unfitted_label[256];
+                        snprintf(unfitted_label, sizeof(unfitted_label), "Remaining Items (Total: %.2f MB)", (double)task.totalBytes / (1024.0 * 1024.0));
+                        
+                        TVINSERTSTRUCT tvis = {0};
+                        tvis.hParent = TVI_ROOT;
+                        tvis.hInsertAfter = TVI_LAST;
+                        tvis.item.mask = TVIF_TEXT;
+                        tvis.item.pszText = const_cast<LPSTR>(unfitted_label);
+                        
+                        g_current_remaining_parent = TreeView_InsertItem(hwndTV, &tvis);
+                        TreeView_Expand(hwndTV, g_current_remaining_parent, TVE_EXPAND);
+                        break;
+                    }
+                    case Win32TreeInsertTask::Type::CREATE_REMAINING_CHILD: {
+                        char child_name[512];
+                        snprintf(child_name, sizeof(child_name), "%s (%lld bytes)", task.path.c_str(), static_cast<long long>(task.sizeBytes));
+                        
+                        TVINSERTSTRUCT tvisChild = {0};
+                        tvisChild.hParent = g_current_remaining_parent;
+                        tvisChild.hInsertAfter = TVI_LAST;
+                        tvisChild.item.mask = TVIF_TEXT;
+                        tvisChild.item.pszText = const_cast<LPSTR>(child_name);
+                        
+                        g_current_remaining_child = TreeView_InsertItem(hwndTV, &tvisChild);
+                        break;
+                    }
+                    case Win32TreeInsertTask::Type::CREATE_REMAINING_SUBPATH_GRANDCHILD: {
+                        char sub_name[512];
+                        snprintf(sub_name, sizeof(sub_name), "%s", task.path.c_str());
+                        
+                        TVINSERTSTRUCT tvisSub = {0};
+                        tvisSub.hParent = g_current_remaining_child;
+                        tvisSub.hInsertAfter = TVI_LAST;
+                        tvisSub.item.mask = TVIF_TEXT;
+                        tvisSub.item.pszText = const_cast<LPSTR>(sub_name);
+                        
+                        TreeView_InsertItem(hwndTV, &tvisSub);
+                        TreeView_Expand(hwndTV, g_current_remaining_child, TVE_EXPAND);
+                        break;
+                    }
+                }
+                g_render_task_index++;
+                processed++;
+            }
+            
+            if (g_render_task_index < g_render_tasks.size()) {
+                PostMessage(hwnd, WM_RENDER_NEXT_BATCH, 0, 0);
+            } else {
+                KillTimer(hwnd, 1);
+                SetWindowText(g_labelSpinner, "");
+                SetWindowText(g_labelTimeLeft, "Estimated Time Left: Complete");
+                SetWin32UiSensitive(hwnd, TRUE);
             }
             break;
         }
@@ -2169,6 +2286,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 // Windows entry point
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     std::setlocale(LC_ALL, "");
+    std::setlocale(LC_NUMERIC, "C");
     g_hbrDarkBackground = CreateSolidBrush(RGB(24, 24, 24));
     g_hbrDarkEdit = CreateSolidBrush(RGB(38, 38, 38));
     

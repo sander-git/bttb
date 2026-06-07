@@ -96,10 +96,8 @@ static void on_media_changed(GtkComboBox* combo, gpointer user_data) {
         int cvIdx = active - 14;
         if (cvIdx >= 0 && cvIdx < (int)data->solver->customVolumes.size()) {
             const auto& cv = data->solver->customVolumes[cvIdx];
-            double gb = (double)cv.capacityBytes / (1024.0 * 1024.0 * 1024.0);
-            char buf[64];
-            snprintf(buf, sizeof(buf), "%.3f GB", gb);
-            gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), buf);
+            std::string sizeStr = formatHumanSize(cv.capacityBytes);
+            gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), sizeStr.c_str());
             gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), std::to_string(cv.sectorSize).c_str());
             gtk_editable_set_text(GTK_EDITABLE(data->slack_entry), std::to_string(cv.slackBytes).c_str());
             gtk_widget_set_sensitive(data->capacity_entry, FALSE);
@@ -431,10 +429,8 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     else if (solver.mediumInfo.capacityBytes == 256000000000LL) gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "256 GB");
     else if (solver.mediumInfo.capacityBytes == 512000000000LL) gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "512 GB");
     else {
-        double gb = (double)solver.mediumInfo.capacityBytes / (1024.0 * 1024.0 * 1024.0);
-        char buf[64];
-        snprintf(buf, sizeof(buf), "%.3f GB", gb);
-        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), buf);
+        std::string sizeStr = formatHumanSize(solver.mediumInfo.capacityBytes);
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), sizeStr.c_str());
     }
     
     gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), std::to_string(solver.mediumInfo.sectorSize).c_str());

@@ -135,6 +135,9 @@ int64_t parseHumanSize(const std::string& input) {
     s.erase(std::remove_if(s.begin(), s.end(), ::isspace), s.end());
     if (s.empty()) return 0;
     
+    // Replace commas with dots for locale independence
+    std::replace(s.begin(), s.end(), ',', '.');
+    
     double multiplier = 1.0;
     std::string numPart = s;
     
@@ -192,6 +195,39 @@ int64_t parseHumanSize(const std::string& input) {
             return 0;
         }
     }
+}
+
+std::string formatHumanSize(int64_t bytes) {
+    double val = static_cast<double>(bytes);
+    const char* suffix = "B";
+    if (bytes >= 1024ULL * 1024ULL * 1024ULL * 1024ULL) {
+        val /= 1024.0 * 1024.0 * 1024.0 * 1024.0;
+        suffix = "TB";
+    } else if (bytes >= 1024ULL * 1024ULL * 1024ULL) {
+        val /= 1024.0 * 1024.0 * 1024.0;
+        suffix = "GB";
+    } else if (bytes >= 1024ULL * 1024ULL) {
+        val /= 1024.0 * 1024.0;
+        suffix = "MB";
+    } else if (bytes >= 1024ULL) {
+        val /= 1024.0;
+        suffix = "KB";
+    } else {
+        return std::to_string(bytes) + " B";
+    }
+
+    char buf[128];
+    snprintf(buf, sizeof(buf), "%.3f", val);
+    std::string s(buf);
+    if (s.find('.') != std::string::npos) {
+        while (s.back() == '0') {
+            s.pop_back();
+        }
+        if (s.back() == '.') {
+            s.pop_back();
+        }
+    }
+    return s + " " + suffix;
 }
 
 // Ignore folders nested in other folders
@@ -379,6 +415,8 @@ void BttbSolver::loadSettings() {
             try { par3RedundancyPercent = std::stoi(val); } catch (...) {}
         } else if (key == "language") {
             language = val;
+        } else if (key == "enableMultiThreading") {
+            enableMultiThreading = (val == "1");
         } else if (key.rfind("customVolume_", 0) == 0) {
             std::stringstream ss(val);
             std::string name, capStr, secStr, slkStr;
@@ -425,6 +463,7 @@ void BttbSolver::saveSettings() {
     f << "par3BlockSize=" << par3BlockSize << "\n";
     f << "par3RedundancyPercent=" << par3RedundancyPercent << "\n";
     f << "language=" << language << "\n";
+    f << "enableMultiThreading=" << (enableMultiThreading ? "1" : "0") << "\n";
     
     for (size_t i = 0; i < customVolumes.size(); ++i) {
         f << "customVolume_" << i << "=" 
@@ -457,10 +496,14 @@ BttbSolver::BttbSolver() {
     semanticCoherenceFactor = 0.7;
 
     language = "auto";
+    enableMultiThreading = true;
     loadSettings();
 }
 
 void BttbSolver::addEntry(const std::string& relPath, const std::string& absPath, int64_t size, bool isDir) {
+    if (skippedFilePaths.count(absPath) > 0) {
+        return;
+    }
     bool bypassRule = false;
     if (enableSemanticPacking && !semanticPrompt.empty() && !ruleBasedWins) {
         bypassRule = true;
@@ -633,6 +676,97 @@ bool compareDirEntries(const std::unique_ptr<DirEntry>& a, const std::unique_ptr
     return a->sectorCount < b->sectorCount;
 }
 
+// Thread-local backtracking solver search state recursive solver
+bool BttbSolver::ThreadSearchState::findAWay(int64_t currentSectors, int poz, int selectedFileCount) {
+    explored++;
+    if (solver->stopRequested || solver->searchTimedOut) return false;
+
+    // Check timeout periodically (every 10000 states to minimize chrono overhead)
+    if (solver->maxSearchTimeSeconds > 0 && (explored % 10000 == 0)) {
+        auto now = std::chrono::steady_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - solver->solverStartTime).count();
+        if (elapsed >= solver->maxSearchTimeSeconds) {
+            solver->searchTimedOut = true;
+            solver->logNotify(_T("log_search_time_limit_exceeded_1", "Search time limit exceeded (") + std::to_string(solver->maxSearchTimeSeconds) + _T("log_search_time_limit_exceeded_2", " seconds)."), 2);
+            return false;
+        }
+    }
+    
+    int64_t currentBest = solver->currentBestSectors.load();
+    if (poz >= 0 && (items[poz]->prefixSumSectors + currentSectors < currentBest)) {
+        pruned++;
+        if (solver->enableTrace && (pruned % 10000 == 0)) {
+            solver->logNotify("[TRACE] Pruning branch at index " + std::to_string(poz) + " (" + items[poz]->relativePath + "): currentBest=" + std::to_string(currentBest) + " sectors", 0);
+        }
+    }
+    
+    if (solver->enableTrace && (explored % 10000 == 0)) {
+        solver->logNotify("[TRACE] Explored: " + std::to_string(explored) + " states, Pruned: " + std::to_string(pruned) + " branches (currentBest=" + std::to_string(currentBest) + " sectors)", 0);
+    }
+    
+    if (poz < 0 || (items[poz]->prefixSumSectors + currentSectors < currentBest)) {
+        return false;
+    }
+    
+    int64_t testSectors = currentSectors + items[poz]->sectorCount;
+    
+    int64_t par3Sectors = 0;
+    if (solver->enablePar3) {
+        int64_t testBytes = testSectors * solver->mediumInfo.sectorSize;
+        int64_t par3Bytes = (testBytes * solver->par3RedundancyPercent / 100) + 65536 + (4096 * (selectedFileCount + 1));
+        par3Sectors = (par3Bytes + solver->mediumInfo.sectorSize - 1) / solver->mediumInfo.sectorSize;
+    }
+
+    if (testSectors + par3Sectors <= solver->maxSectors) {
+        items[poz]->isSelected = true;
+        
+        if (!findAWay(testSectors, poz - 1, selectedFileCount + 1)) {
+            int64_t globalBest = solver->currentBestSectors.load();
+            if (testSectors >= globalBest) {
+                std::lock_guard<std::mutex> lock(solver->solverMutex);
+                if (testSectors >= solver->currentBestSectors) {
+                    if (testSectors > solver->currentBestSectors) {
+                        solver->currentBestSectors = testSectors;
+                        solver->minNumberOfClusters = INT_MAX;
+                        
+                        double percentage = (double)testSectors / solver->maxSectors * 100.0;
+                        solver->logNotify(_T("log_new_best_space_utilization", "New best space utilization: ") + std::to_string(percentage) + "%", 3);
+
+                        if (testSectors >= solver->maxSectors - solver->slackSectors) {
+                            solver->searchTimedOut = true;
+                            solver->logNotify(_T("log_selection_within_slack_1", "Selection within slack tolerance (") + std::to_string(percentage) + _T("log_selection_within_slack_2", "%) found. Terminating search early."), 1);
+                        }
+                    }
+                    
+                    int numClusters = 0;
+                    for (const auto& item : items) {
+                        if (item->isSelected) {
+                            numClusters += solver->countClusters(item->relativePath);
+                        }
+                    }
+                    
+                    if (numClusters < solver->minNumberOfClusters) {
+                        solver->minNumberOfClusters = numClusters;
+                        
+                        solver->bestSelectionIndices.clear();
+                        for (size_t i = 0; i < items.size(); ++i) {
+                            if (items[i]->isSelected) {
+                                solver->bestSelectionIndices.push_back(i);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        items[poz]->isSelected = false;
+        findAWay(currentSectors, poz - 1, selectedFileCount);
+        return true;
+    } else {
+        return findAWay(currentSectors, poz - 1, selectedFileCount);
+    }
+}
+
 // Backtracking solver
 bool BttbSolver::findAWay(int64_t currentSectors, int poz, int selectedFileCount) {
     exploredStates++;
@@ -738,6 +872,7 @@ void BttbSolver::run() {
     stopRequested = false;
     searchTimedOut = false;
     packedVolumes.clear();
+    skippedFilePaths.clear();
     
     while (!stopRequested) {
         scanDirectory();
@@ -786,9 +921,24 @@ void BttbSolver::run() {
             logNotify(_T("log_warn_item_exceeds_cap_1", "Warning: Item '") + maxItemName + _T("log_warn_item_exceeds_cap_2", "' (") + std::to_string(maxItemSize) + _T("log_warn_item_exceeds_cap_3", " bytes) is larger than target volume size (") + std::to_string(mediumInfo.capacityBytes) + " bytes).", 2);
             if (recommendCapacityNotify) {
                 int64_t recommendedBytes = ((maxItemSize + mediumInfo.sectorSize - 1) / mediumInfo.sectorSize) * mediumInfo.sectorSize;
-                if (recommendCapacityNotify(recommendedBytes)) {
+                CapacityRecommendResult res = recommendCapacityNotify(recommendedBytes);
+                if (res == CapacityRecommendResult::RESIZE) {
                     mediumInfo.capacityBytes = recommendedBytes;
                     logNotify(_T("log_capacity_adapted_1", "Capacity adapted to ") + std::to_string(recommendedBytes) + _T("log_capacity_adapted_2", " bytes. Retrying solver..."), 1);
+                    continue;
+                } else if (res == CapacityRecommendResult::SKIP_LARGER) {
+                    for (const auto& item : itemsToSplit) {
+                        if (item->sizeBytes > mediumInfo.capacityBytes) {
+                            if (!item->absoluteGroupedPaths.empty()) {
+                                for (const auto& gp : item->absoluteGroupedPaths) {
+                                    skippedFilePaths.insert(gp);
+                                }
+                            } else {
+                                skippedFilePaths.insert(item->absolutePath);
+                            }
+                        }
+                    }
+                    logNotify(_T("log_capacity_skip_larger", "Larger files skipped. Retrying solver..."), 1);
                     continue;
                 } else {
                     logNotify(_T("log_solver_aborted_files_exceed_cap", "Solver aborted: dataset contains files exceeding capacity."), 2);
@@ -886,8 +1036,123 @@ void BttbSolver::run() {
         
         logNotify(_T("log_solving_optimal_bin", "Solving optimal bin selection..."), 0);
         
-        // Start recursion in backtracking
-        findAWay(0, itemsToSplit.size() - 1, 0);
+        // Start recursion in backtracking (either single or multi-threaded)
+        if (!enableMultiThreading || itemsToSplit.size() < 12) {
+            findAWay(0, itemsToSplit.size() - 1, 0);
+        } else {
+            unsigned int numThreads = std::thread::hardware_concurrency();
+            if (numThreads == 0) numThreads = 4;
+            
+            int K = 0;
+            while ((1 << K) < 2 * (int)numThreads) {
+                K++;
+            }
+            if (K > (int)itemsToSplit.size()) {
+                K = itemsToSplit.size();
+            }
+            
+            struct SearchTask {
+                int64_t initialSectors;
+                int initialSelectedFileCount;
+                int initialPoz;
+                std::vector<bool> initialSelection;
+            };
+            std::vector<SearchTask> tasks;
+            
+            int N = itemsToSplit.size();
+            int numConfigs = 1 << K;
+            for (int mask = 0; mask < numConfigs; ++mask) {
+                int64_t sumSectors = 0;
+                int selectedCount = 0;
+                bool valid = true;
+                std::vector<bool> selection(K, false);
+                
+                for (int i = 0; i < K; ++i) {
+                    if ((mask >> i) & 1) {
+                        selection[i] = true;
+                        sumSectors += itemsToSplit[N - 1 - i]->sectorCount;
+                        selectedCount++;
+                    }
+                }
+                
+                int64_t par3Sectors = 0;
+                if (enablePar3) {
+                    int64_t testBytes = sumSectors * mediumInfo.sectorSize;
+                    int64_t par3Bytes = (testBytes * par3RedundancyPercent / 100) + 65536 + (4096 * (selectedCount));
+                    par3Sectors = (par3Bytes + mediumInfo.sectorSize - 1) / mediumInfo.sectorSize;
+                }
+                
+                if (sumSectors + par3Sectors > maxSectors) {
+                    valid = false;
+                }
+                
+                if (valid) {
+                    SearchTask task;
+                    task.initialSectors = sumSectors;
+                    task.initialSelectedFileCount = selectedCount;
+                    task.initialPoz = N - 1 - K;
+                    task.initialSelection = selection;
+                    tasks.push_back(task);
+                }
+            }
+            
+            std::atomic<size_t> nextTaskIndex{0};
+            std::vector<std::thread> workers;
+            
+            for (unsigned int t = 0; t < numThreads; ++t) {
+                workers.emplace_back([this, &tasks, &nextTaskIndex]() {
+                    ThreadSearchState state;
+                    state.solver = this;
+                    state.explored = 0;
+                    state.pruned = 0;
+                    
+                    state.items.reserve(itemsToSplit.size());
+                    for (const auto& item : itemsToSplit) {
+                        auto clone = std::make_unique<DirEntry>();
+                        clone->relativePath = item->relativePath;
+                        clone->absolutePath = item->absolutePath;
+                        clone->sizeBytes = item->sizeBytes;
+                        clone->sectorCount = item->sectorCount;
+                        clone->isDirectory = item->isDirectory;
+                        clone->isSelected = false;
+                        clone->prefixSumSectors = item->prefixSumSectors;
+                        clone->groupedPaths = item->groupedPaths;
+                        clone->absoluteGroupedPaths = item->absoluteGroupedPaths;
+                        clone->embedding = item->embedding;
+                        state.items.push_back(std::move(clone));
+                    }
+                    
+                    int N = state.items.size();
+                    int K = N - 1 - tasks[0].initialPoz;
+                    
+                    while (true) {
+                        size_t taskIdx = nextTaskIndex.fetch_add(1);
+                        if (taskIdx >= tasks.size()) {
+                            break;
+                        }
+                        
+                        const auto& task = tasks[taskIdx];
+                        
+                        for (auto& item : state.items) {
+                            item->isSelected = false;
+                        }
+                        
+                        for (int i = 0; i < K; ++i) {
+                            state.items[N - 1 - i]->isSelected = task.initialSelection[i];
+                        }
+                        
+                        state.findAWay(task.initialSectors, task.initialPoz, task.initialSelectedFileCount);
+                    }
+                    
+                    exploredStates += state.explored;
+                    prunedStates += state.pruned;
+                });
+            }
+            
+            for (auto& worker : workers) {
+                worker.join();
+            }
+        }
         
         auto endTime = std::chrono::steady_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
@@ -1104,6 +1369,20 @@ void BttbSolver::run() {
                     }
                     indexFile << "      ]\n";
                     indexFile << "    }" << (v + 1 < packedVolumes.size() ? ",\n" : "\n");
+                }
+                indexFile << "  ],\n  \"Skipped\": [\n";
+                size_t sIdx = 0;
+                for (auto it = skippedFilePaths.begin(); it != skippedFilePaths.end(); ++it) {
+                    std::string escapedPath = "";
+                    for (char c : *it) {
+                        if (c == '\\') escapedPath += "\\\\";
+                        else if (c == '"') escapedPath += "\\\"";
+                        else if (c == '\n') escapedPath += "\\n";
+                        else if (c == '\r') escapedPath += "\\r";
+                        else if (c == '\t') escapedPath += "\\t";
+                        else escapedPath += c;
+                    }
+                    indexFile << "    \"" << escapedPath << "\"" << (++sIdx < skippedFilePaths.size() ? ",\n" : "\n");
                 }
                 indexFile << "  ]\n}\n";
                 indexFile.close();

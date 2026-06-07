@@ -265,44 +265,7 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
                 if (parseIndexJson(jsonPath, self->solver.packedVolumes, errMsg)) {
                     self->append_log("Successfully imported JSON index file: " + jsonPath, 1);
                     
-                    // Clear and populate tree store
-                    gtk_tree_store_clear(self->tree_store);
-                    for (const auto& vol : self->solver.packedVolumes) {
-                        GtkTreeIter vol_parent;
-                        gtk_tree_store_append(self->tree_store, &vol_parent, nullptr);
-                        
-                        char vol_name[128];
-                        snprintf(vol_name, sizeof(vol_name), "Volume %d (Total: %.2f MB)", vol.volumeIndex, (double)vol.totalBytes / (1024.0 * 1024.0));
-                        
-                        gtk_tree_store_set(self->tree_store, &vol_parent,
-                                           0, vol_name,
-                                           1, "",
-                                           2, "Imported",
-                                           -1);
-                        
-                        for (size_t i = 0; i < vol.itemPaths.size(); ++i) {
-                            GtkTreeIter child;
-                            gtk_tree_store_append(self->tree_store, &child, &vol_parent);
-                            gtk_tree_store_set(self->tree_store, &child,
-                                               0, vol.itemPaths[i].c_str(),
-                                               1, std::to_string(vol.itemSizes[i]).c_str(),
-                                               2, "Imported",
-                                               -1);
-                            
-                            // If it is a semantic or rules group, add nested files under it!
-                            if (i < vol.itemGroupedPaths.size() && !vol.itemGroupedPaths[i].empty()) {
-                                for (const auto& subPath : vol.itemGroupedPaths[i]) {
-                                    GtkTreeIter subChild;
-                                    gtk_tree_store_append(self->tree_store, &subChild, &child);
-                                    gtk_tree_store_set(self->tree_store, &subChild,
-                                                       0, subPath.c_str(),
-                                                       1, "",
-                                                       2, "Imported",
-                                                       -1);
-                                }
-                            }
-                        }
-                    }
+                    self->start_rendering(false, "Imported");
                 } else {
                     self->append_log("Failed to parse JSON index: " + errMsg, 3);
                     GtkWidget* msg_dialog = gtk_message_dialog_new(GTK_WINDOW(self->window),
@@ -344,14 +307,15 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
         gtk_window_set_transient_for(GTK_WINDOW(about), GTK_WINDOW(self->window));
         
         gtk_about_dialog_set_program_name(GTK_ABOUT_DIALOG(about), "Burn to the Brim");
-        gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(about), "4.3.0");
+        gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(about), "4.4.0");
         gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(about), "Copyright \u00a9 2001-2026 Sander Raaijmakers, Elwin Oost and the Burn to the Brim team");
         gtk_about_dialog_set_license_type(GTK_ABOUT_DIALOG(about), GTK_LICENSE_GPL_2_0);
         gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(about), "https://sourceforge.net/projects/bttb/");
         
         const char* default_comments = 
             "Burn to the Brim (BTTB) is a modern C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums (CDs, DVDs, Blu-rays, or USBs).\n\n"
-            "Features in v4.3.0:\n"
+            "Features in v4.4.0:\n"
+            "- Non-blocking incremental GUI rendering & skip file capacity warnings\n"
             "- Offline JSON Index creation and interactive parser\n"
             "- Optional PAR3 parity file generation and verification\n"
             "- Bit-perfect PAR3 copy-based restoration and repair\n"
@@ -363,6 +327,7 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
             "- Transfer-rate estimated Time Left & status activity spinner\n"
             "- Entropy-Aware Semantic Packing based on MiniLM embeddings\n"
             "- Explorer Context Menu integration & long path support\n\n"
+            "BTTB is fully localized and dynamically translates the entire user interface based on standard gettext .po templates in German, Dutch, French, and Spanish.\n\n"
             "Libraries and Attributions Used:\n"
             "- libpar3 (by Yutaka Sawada, LGPL v2.1+): https://github.com/Parchive/par3cmdline\n"
             "- BLAKE3 (by BLAKE3 team, CC0/Apache-2.0): https://github.com/BLAKE3-team/BLAKE3\n"
@@ -859,10 +824,10 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
         std::mutex mtx;
         std::condition_variable cv;
         bool ready = false;
-        bool response = false;
+        CapacityRecommendResult response = CapacityRecommendResult::CANCEL;
     };
 
-    solver.recommendCapacityNotify = [this](int64_t recommendedBytes) -> bool {
+    solver.recommendCapacityNotify = [this](int64_t recommendedBytes) -> CapacityRecommendResult {
         GtkDialogSync sync;
         
         struct DialogPayload {
@@ -879,22 +844,36 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
             
             double recMB = (double)recommendedBytes / (1024.0 * 1024.0);
             
+            char msgBuf[512];
+            std::string promptFormat = _T("capacity_recommend_prompt_gtk", "The largest scanned item requires a volume capacity of at least %.2f MB.\n\nChoose an action:");
+            snprintf(msgBuf, sizeof(msgBuf), promptFormat.c_str(), recMB);
+
             GtkWidget* dialog = gtk_message_dialog_new(
                 GTK_WINDOW(win->window),
                 GTK_DIALOG_MODAL,
                 GTK_MESSAGE_WARNING,
-                GTK_BUTTONS_YES_NO,
-                "The largest scanned item requires a volume capacity of at least %.2f MB.\n\nWould you like to automatically increase the volume capacity to %.2f MB and retry packing?",
-                recMB, recMB
+                GTK_BUTTONS_NONE,
+                "%s",
+                msgBuf
             );
             
             gtk_window_set_title(GTK_WINDOW(dialog), "Volume Capacity Recommendation");
+            
+            gtk_dialog_add_button(GTK_DIALOG(dialog), _T("btn_resize", "Resize").c_str(), GTK_RESPONSE_YES);
+            gtk_dialog_add_button(GTK_DIALOG(dialog), _T("btn_skip", "Skip Files").c_str(), GTK_RESPONSE_ACCEPT);
+            gtk_dialog_add_button(GTK_DIALOG(dialog), _T("btn_cancel", "Cancel").c_str(), GTK_RESPONSE_NO);
             
             g_signal_connect(dialog, "response", G_CALLBACK(+[](GtkDialog* dlg, int response_id, gpointer user_data) {
                 auto* cs_inner = static_cast<GtkDialogSync*>(user_data);
                 {
                     std::lock_guard<std::mutex> lock(cs_inner->mtx);
-                    cs_inner->response = (response_id == GTK_RESPONSE_YES);
+                    if (response_id == GTK_RESPONSE_YES) {
+                        cs_inner->response = CapacityRecommendResult::RESIZE;
+                    } else if (response_id == GTK_RESPONSE_ACCEPT) {
+                        cs_inner->response = CapacityRecommendResult::SKIP_LARGER;
+                    } else {
+                        cs_inner->response = CapacityRecommendResult::CANCEL;
+                    }
                     cs_inner->ready = true;
                 }
                 cs_inner->cv.notify_one();
@@ -966,112 +945,200 @@ void MainWindow::update_time_left(double secondsLeft) {
     }
 }
 
-void MainWindow::solver_finished() {
-    gtk_spinner_stop(GTK_SPINNER(activity_spinner));
-    gtk_label_set_text(GTK_LABEL(time_left_label), "Time Left: Complete");
-
-    // Re-enable inputs
-    gtk_widget_set_sensitive(start_button, TRUE);
-    gtk_widget_set_sensitive(test_button, TRUE);
-    gtk_widget_grab_focus(start_button);
-    gtk_widget_set_sensitive(stop_button, FALSE);
-    gtk_widget_set_sensitive(source_entry, TRUE);
-    gtk_widget_set_sensitive(target_entry, TRUE);
-    gtk_widget_set_sensitive(semantic_entry, TRUE);
-    gtk_widget_set_sensitive(move_check, TRUE);
-    gtk_widget_set_sensitive(symlink_check, TRUE);
-    gtk_widget_set_sensitive(span_check, TRUE);
-    gtk_widget_set_sensitive(trace_check, TRUE);
-    
-    // Join background thread securely
-    if (solver_thread.joinable()) {
-        solver_thread.join();
+void MainWindow::set_ui_sensitive(gboolean sensitive) {
+    gtk_widget_set_sensitive(start_button, sensitive);
+    gtk_widget_set_sensitive(test_button, sensitive);
+    if (sensitive) {
+        gtk_widget_grab_focus(start_button);
+        gtk_widget_set_sensitive(stop_button, FALSE);
+    } else {
+        gtk_widget_set_sensitive(stop_button, TRUE);
     }
-    
-    // Populate Results Tree
+    gtk_widget_set_sensitive(source_entry, sensitive);
+    gtk_widget_set_sensitive(target_entry, sensitive);
+    gtk_widget_set_sensitive(move_check, sensitive);
+    gtk_widget_set_sensitive(symlink_check, sensitive);
+    gtk_widget_set_sensitive(span_check, sensitive);
+    gtk_widget_set_sensitive(trace_check, sensitive);
+    gtk_widget_set_sensitive(semantic_entry, sensitive);
+}
+
+void MainWindow::start_rendering(bool includeUnfitted, const std::string& statusTag) {
+    // Empty the tree store
     gtk_tree_store_clear(tree_store);
-    
+    render_tasks.clear();
+    render_task_index = 0;
+
     // 1. Walk through each solved volume in packedVolumes
     for (const auto& vol : solver.packedVolumes) {
-        GtkTreeIter vol_parent;
-        gtk_tree_store_append(tree_store, &vol_parent, nullptr);
-        
-        char vol_name[128];
-        snprintf(vol_name, sizeof(vol_name), "Volume %d (Total: %.2f MB)", vol.volumeIndex, (double)vol.totalBytes / (1024.0 * 1024.0));
-        
-        gtk_tree_store_set(tree_store, &vol_parent,
-                           0, vol_name,
-                           1, "",
-                           2, "Fitted",
-                           -1);
+        TreeInsertTask task;
+        task.type = TreeInsertTask::Type::CREATE_VOLUME_PARENT;
+        task.volumeIndex = vol.volumeIndex;
+        task.totalBytes = vol.totalBytes;
+        task.statusTag = statusTag;
+        render_tasks.push_back(task);
         
         for (size_t i = 0; i < vol.itemPaths.size(); ++i) {
-            GtkTreeIter child;
-            gtk_tree_store_append(tree_store, &child, &vol_parent);
-            gtk_tree_store_set(tree_store, &child,
-                               0, vol.itemPaths[i].c_str(),
-                               1, std::to_string(vol.itemSizes[i]).c_str(),
-                               2, "Fitted",
-                               -1);
+            TreeInsertTask child;
+            child.type = TreeInsertTask::Type::CREATE_FILE_CHILD;
+            child.path = vol.itemPaths[i];
+            child.sizeBytes = vol.itemSizes[i];
+            child.statusTag = statusTag;
+            render_tasks.push_back(child);
             
-            // If it is a semantic or rules group, add nested files under it!
             if (i < vol.itemGroupedPaths.size() && !vol.itemGroupedPaths[i].empty()) {
                 for (const auto& subPath : vol.itemGroupedPaths[i]) {
-                    GtkTreeIter subChild;
-                    gtk_tree_store_append(tree_store, &subChild, &child);
-                    gtk_tree_store_set(tree_store, &subChild,
-                                       0, subPath.c_str(),
-                                       1, "",
-                                       2, "Fitted",
-                                       -1);
+                    TreeInsertTask subChild;
+                    subChild.type = TreeInsertTask::Type::CREATE_SUBPATH_GRANDCHILD;
+                    subChild.path = subPath;
+                    subChild.statusTag = statusTag;
+                    render_tasks.push_back(subChild);
                 }
             }
         }
     }
     
-    // 2. Add remaining (unfitted) items
-    if (!solver.itemsToSplit.empty()) {
-        GtkTreeIter unfitted_parent;
-        gtk_tree_store_append(tree_store, &unfitted_parent, nullptr);
-        
+    // 2. Add remaining (unfitted) items if requested
+    if (includeUnfitted && !solver.itemsToSplit.empty()) {
         int64_t unfitted_bytes = 0;
         for (const auto& item : solver.itemsToSplit) {
             unfitted_bytes += item->sizeBytes;
         }
         
-        char unfitted_label[128];
-        snprintf(unfitted_label, sizeof(unfitted_label), "Remaining Items (Total: %.2f MB)", (double)unfitted_bytes / (1024.0 * 1024.0));
-        
-        gtk_tree_store_set(tree_store, &unfitted_parent,
-                           0, unfitted_label,
-                           1, "",
-                           2, "Not Fitted",
-                           -1);
+        TreeInsertTask task;
+        task.type = TreeInsertTask::Type::CREATE_REMAINING_PARENT;
+        task.totalBytes = unfitted_bytes;
+        render_tasks.push_back(task);
         
         for (const auto& item : solver.itemsToSplit) {
-            GtkTreeIter child;
-            gtk_tree_store_append(tree_store, &child, &unfitted_parent);
-            gtk_tree_store_set(tree_store, &child,
-                               0, item->relativePath.c_str(),
-                               1, std::to_string(item->sizeBytes).c_str(),
-                               2, "Not Fitted",
-                               -1);
+            TreeInsertTask child;
+            child.type = TreeInsertTask::Type::CREATE_REMAINING_CHILD;
+            child.path = item->relativePath;
+            child.sizeBytes = item->sizeBytes;
+            render_tasks.push_back(child);
             
-            // If it is a group, add nested files under it!
             if (!item->groupedPaths.empty()) {
                 for (const auto& subPath : item->groupedPaths) {
-                    GtkTreeIter subChild;
-                    gtk_tree_store_append(tree_store, &subChild, &child);
-                    gtk_tree_store_set(tree_store, &subChild,
-                                       0, subPath.c_str(),
-                                       1, "",
-                                       2, "Not Fitted",
-                                       -1);
+                    TreeInsertTask subChild;
+                    subChild.type = TreeInsertTask::Type::CREATE_REMAINING_SUBPATH_GRANDCHILD;
+                    subChild.path = subPath;
+                    render_tasks.push_back(subChild);
                 }
             }
         }
     }
-    gtk_tree_view_expand_all(GTK_TREE_VIEW(tree_view));
+
+    if (render_tasks.empty()) {
+        // Nothing to render
+        gtk_spinner_stop(GTK_SPINNER(activity_spinner));
+        gtk_label_set_text(GTK_LABEL(time_left_label), "Time Left: Complete");
+        set_ui_sensitive(TRUE);
+        return;
+    }
+
+    // Set UI to insensitive but keep spinner spinning
+    set_ui_sensitive(FALSE);
+    gtk_spinner_start(GTK_SPINNER(activity_spinner));
+    gtk_label_set_text(GTK_LABEL(time_left_label), "Time Left: Rendering results...");
+
+    // Register idle task to render batches
+    g_idle_add([](gpointer data) -> gboolean {
+        MainWindow* self = static_cast<MainWindow*>(data);
+        return self->process_render_batch() ? G_SOURCE_CONTINUE : G_SOURCE_REMOVE;
+    }, this);
+}
+
+bool MainWindow::process_render_batch() {
+    size_t processed = 0;
+    const size_t batch_size = 100;
+    
+    while (render_task_index < render_tasks.size() && processed < batch_size) {
+        const auto& task = render_tasks[render_task_index];
+        switch (task.type) {
+            case TreeInsertTask::Type::CREATE_VOLUME_PARENT: {
+                gtk_tree_store_append(tree_store, &current_volume_parent_iter, nullptr);
+                char vol_name[128];
+                snprintf(vol_name, sizeof(vol_name), "Volume %d (Total: %.2f MB)", task.volumeIndex, (double)task.totalBytes / (1024.0 * 1024.0));
+                gtk_tree_store_set(tree_store, &current_volume_parent_iter,
+                                   0, vol_name,
+                                   1, "",
+                                   2, task.statusTag.c_str(),
+                                   -1);
+                break;
+            }
+            case TreeInsertTask::Type::CREATE_FILE_CHILD: {
+                gtk_tree_store_append(tree_store, &current_file_child_iter, &current_volume_parent_iter);
+                gtk_tree_store_set(tree_store, &current_file_child_iter,
+                                   0, task.path.c_str(),
+                                   1, std::to_string(task.sizeBytes).c_str(),
+                                   2, task.statusTag.c_str(),
+                                   -1);
+                break;
+            }
+            case TreeInsertTask::Type::CREATE_SUBPATH_GRANDCHILD: {
+                GtkTreeIter subChild;
+                gtk_tree_store_append(tree_store, &subChild, &current_file_child_iter);
+                gtk_tree_store_set(tree_store, &subChild,
+                                   0, task.path.c_str(),
+                                   1, "",
+                                   2, task.statusTag.c_str(),
+                                   -1);
+                break;
+            }
+            case TreeInsertTask::Type::CREATE_REMAINING_PARENT: {
+                gtk_tree_store_append(tree_store, &current_remaining_parent_iter, nullptr);
+                char unfitted_label[128];
+                snprintf(unfitted_label, sizeof(unfitted_label), "Remaining Items (Total: %.2f MB)", (double)task.totalBytes / (1024.0 * 1024.0));
+                gtk_tree_store_set(tree_store, &current_remaining_parent_iter,
+                                   0, unfitted_label,
+                                   1, "",
+                                   2, "Not Fitted",
+                                   -1);
+                break;
+            }
+            case TreeInsertTask::Type::CREATE_REMAINING_CHILD: {
+                gtk_tree_store_append(tree_store, &current_remaining_child_iter, &current_remaining_parent_iter);
+                gtk_tree_store_set(tree_store, &current_remaining_child_iter,
+                                   0, task.path.c_str(),
+                                   1, std::to_string(task.sizeBytes).c_str(),
+                                   2, "Not Fitted",
+                                   -1);
+                break;
+            }
+            case TreeInsertTask::Type::CREATE_REMAINING_SUBPATH_GRANDCHILD: {
+                GtkTreeIter subChild;
+                gtk_tree_store_append(tree_store, &subChild, &current_remaining_child_iter);
+                gtk_tree_store_set(tree_store, &subChild,
+                                   0, task.path.c_str(),
+                                   1, "",
+                                   2, "Not Fitted",
+                                   -1);
+                break;
+            }
+        }
+        render_task_index++;
+        processed++;
+    }
+    
+    if (render_task_index >= render_tasks.size()) {
+        // Complete
+        gtk_spinner_stop(GTK_SPINNER(activity_spinner));
+        gtk_label_set_text(GTK_LABEL(time_left_label), "Time Left: Complete");
+        gtk_tree_view_expand_all(GTK_TREE_VIEW(tree_view));
+        set_ui_sensitive(TRUE);
+        return false; // Stop idle loop
+    }
+    
+    return true; // Continue idle loop
+}
+
+void MainWindow::solver_finished() {
+    // Join background thread securely
+    if (solver_thread.joinable()) {
+        solver_thread.join();
+    }
+    
+    start_rendering(true, "Fitted");
 }
 
 } // namespace bttb

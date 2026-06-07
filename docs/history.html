@@ -325,6 +325,32 @@
 
         <div class="timeline">
 
+            <!-- v4.4.0 -->
+            <div class="timeline-card major">
+                <div class="version-title">
+                    <span>v4.4.0 &mdash; Non-Blocking Tree Rendering, Interactive Capacity Warnings &amp; Skipped Files</span>
+                    <span class="version-date">June 7, 2026</span>
+                </div>
+                <ul class="changes-list">
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Non-Blocking Tree Rendering:</strong> Solved GUI freezes on large datasets by inserting tree items incrementally in background batches of 100 using idle handlers (GTK) and custom windows message loop batching (Win32).</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Interactive Resize/Skip Warnings:</strong> Added multi-choice warnings letting the user automatically adapt volume size, skip larger files, or cancel.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Skipped Files Log:</strong> Exports skipped files to a root-level <code>"Skipped"</code> array of absolute paths in the generated <code>index.json</code>.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type star">*</span>
+                        <div><strong>Fractional MB Capacity Precision:</strong> Added robust parsing and precise formatting for small/fractional MB capacities (e.g. 180KB or 0.18MB) working seamlessly across decimal locales.</div>
+                    </li>
+                </ul>
+            </div>
+
             <!-- v4.3.0 -->
             <div class="timeline-card major">
                 <div class="version-title">

@@ -142,7 +142,7 @@ msgstr "Taal gewijzigd"
 msgid "about_comments"
 msgstr ""
 "Burn to the Brim (BTTB) is een moderne C++20-port van de klassieke Delphi-applicatie die is ontworpen om bestanden en mappen optimaal te verdelen over doelopslagmedia (cd's, dvd's, Blu-rays of USB-sticks).\n\n"
-"Functies in v4.3.0:\n"
+"Functies in v4.4.0:\n"
 "- Offline JSON-indexcreatie en interactieve parser\n"
 "- Optionele PAR3-pariteitsbestandgeneratie en -verificatie\n"
 "- Bit-perfecte PAR3-kopieergebaseerde restauratie en reparatie\n"
@@ -232,7 +232,7 @@ msgid "regex_pattern_chk"
 msgstr "Regex-patroon"
 
 msgid "app_version"
-msgstr "Versie 4.3.0"
+msgstr "Versie 4.4.0"
 
 msgid "app_copyright"
 msgstr "Copyright © 2001-2026 Sander Raaijmakers, Elwin Oost en het Burn to the Brim-team"
@@ -642,3 +642,21 @@ msgstr "Agglomeratieve semantische clustering uitvoeren (drempelwaarde=0.6)..."
 
 msgid "log_semantic_clustering_completed"
 msgstr "Semantische clustering voltooid. Totaal geconsolideerde groepen: "
+
+msgid "capacity_recommend_prompt_gtk"
+msgstr "Het grootste gescande item vereist een volumecapaciteit van ten minste %.2f MB.\n\nKies een actie:"
+
+msgid "btn_resize"
+msgstr "Grootte aanpassen"
+
+msgid "btn_skip"
+msgstr "Bestanden overslaan"
+
+msgid "btn_cancel"
+msgstr "Annuleren"
+
+msgid "capacity_recommend_prompt_win32"
+msgstr "Het grootste gescande item vereist een volumecapaciteit van ten minste %.2f MB.\n\nKlik op [Ja] om de capaciteit aan te passen naar %.2f MB en opnieuw te proberen.\nKlik op [Nee] om bestanden die de capaciteit overschrijden over te slaan en opnieuw te proberen.\nKlik op [Annuleren] om het inpakken af te breken."
+
+msgid "log_capacity_skip_larger"
+msgstr "Grotere bestanden overgeslagen. Solver opnieuw opstarten..."
