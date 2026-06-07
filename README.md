@@ -121,6 +121,44 @@ To build the native GTK 4 Windows GUI from source:
 
 ---
 
+## Generating Release Packages and Installers (Cross-Compilation on Ubuntu)
+
+To cross-compile the Windows binaries, build the `.msi` installers, and generate the Linux `.deb` packages on an Ubuntu development machine:
+
+### 1. Install Prerequisites
+
+Install the required build tools, cross-compilers, and packaging utilities:
+```bash
+sudo apt update
+sudo apt install -y \
+  build-essential \
+  cmake \
+  pkg-config \
+  libgtk-4-dev \
+  genisoimage \
+  gcc-mingw-w64-x86-64 \
+  g++-mingw-w64-x86-64 \
+  msitools
+```
+
+### 2. Run the Release Packaging Script
+
+Navigate to the project root directory and run the packaging script:
+```bash
+python scratch/package_release.py
+```
+
+This script automates the entire packaging pipeline:
+1. **Linux Compilation**: Compiles the native GTK 4 application and generates the `.deb` package via CMake.
+2. **Windows Cross-Compilation**: Uses MinGW-w64 to build the native 64-bit Windows GUI executables (`bttb_win32.exe` and `bttb_win32_compat.exe`) with exploit mitigations and strips symbols.
+3. **Release ZIPs**: Packages all portable ZIP archives for Linux and Windows releases.
+4. **MSI Installer Creation**: Converts the plain-text `LICENSE` file into a formatted `License.rtf` and runs `wixl` to compile the enterprise-grade `.msi` installers in the `build/` directory:
+   * `bttb-cpp-4.4.0-Win64-Installer.msi` (Native AVX2 release)
+   * `bttb-cpp-4.4.0-Win64-Compat-Installer.msi` (Compatibility SSSE3 release)
+5. **Unified Source Archive**: Generates the unified source code ZIP.
+
+---
+
 ## License
 
 This program is free software; you can redistribute it and/or modify it under the terms of the **GNU General Public License as published by the Free Software Foundation; version 2 of the License** (GPLv2). See the accompanying [LICENSE](LICENSE) file for the full terms.
