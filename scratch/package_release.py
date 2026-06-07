@@ -169,12 +169,47 @@ with zipfile.ZipFile(win_compat_zip_path, 'w', zipfile.ZIP_DEFLATED) as z:
     for f in glob.glob("lang/*.po"):
         z.write(os.path.join(base_dir, f), os.path.join(win_compat_zip_name, f))
 
-# 5. Compile Setup Installers via NSIS
-print("Compiling Windows Native Setup Installer via NSIS makensis...")
-subprocess.run(["makensis", "-DVERSION=" + version, "scratch/bttb_installer.nsi"], cwd=base_dir, check=True)
+# 5. Compile Setup Installers via msitools (wixl)
+print("Generating License.rtf from LICENSE...")
+txt_path = os.path.join(base_dir, "LICENSE")
+rtf_path = os.path.join(base_dir, "License.rtf")
+with open(txt_path, "r", encoding="utf-8") as f:
+    text = f.read()
+rtf_text = text.replace("\\", "\\\\").replace("{", "\\{").replace("}", "\\}")
+rtf_lines = [line.replace("\t", "\\tab ") + "\\par" for line in rtf_text.splitlines()]
+rtf_content = "{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0\\fnil\\fcharset0 Courier New;}}\\viewkind4\\uc1\\pard\\f0\\fs18\n" + "\n".join(rtf_lines) + "\n}"
+with open(rtf_path, "w", encoding="utf-8") as f:
+    f.write(rtf_content)
 
-print("Compiling Windows Compat Setup Installer via NSIS makensis...")
-subprocess.run(["makensis", "-DVERSION=" + version, "-DSUFFIX=-Compat", "-DCOMPAT=1", "scratch/bttb_installer.nsi"], cwd=base_dir, check=True)
+print("Compiling Windows Native Setup Installer via wixl...")
+subprocess.run([
+    "wixl",
+    "-o", f"build/bttb-cpp-{version}-Win64-Installer.msi",
+    "--arch", "x64",
+    "--ext", "ui",
+    "-D", f"VERSION={version}",
+    "-D", "EXE_FILE=bttb_win32.exe",
+    "-D", "APP_NAME=Burn to the Brim",
+    "-D", "UPGRADE_CODE=4E75A9C6-8E1A-4C2F-9E07-4C0F733526E3",
+    "scratch/bttb_installer.wxs"
+], cwd=base_dir, check=True)
+
+print("Compiling Windows Compat Setup Installer via wixl...")
+subprocess.run([
+    "wixl",
+    "-o", f"build/bttb-cpp-{version}-Win64-Compat-Installer.msi",
+    "--arch", "x64",
+    "--ext", "ui",
+    "-D", f"VERSION={version}",
+    "-D", "EXE_FILE=bttb_win32_compat.exe",
+    "-D", "APP_NAME=Burn to the Brim (Compat)",
+    "-D", "UPGRADE_CODE=5F86BA07-9F2B-4D3C-AF18-5D1A844637F4",
+    "scratch/bttb_installer.wxs"
+], cwd=base_dir, check=True)
+
+# Clean up generated License.rtf
+if os.path.exists(rtf_path):
+    os.remove(rtf_path)
 
 # 6. Create Unified Source ZIP
 source_zip_name = f"bttb-cpp-{version}-source-unified"

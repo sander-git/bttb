@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="windows-1252"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Name="$(var.APP_NAME) $(var.VERSION)" Id="*" UpgradeCode="$(var.UPGRADE_CODE)" 
+           Language="1033" Codepage="1252" Version="$(var.VERSION)" Manufacturer="BurnToTheBrim Team">
+    
+    <Package Id="*" Keywords="Installer" Description="$(var.APP_NAME) $(var.VERSION) Installer" 
+             Manufacturer="BurnToTheBrim Team" InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+    
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    
+    <Media Id="1" Cabinet="bttb.cab" EmbedCab="yes" />
+    
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="INSTALLDIR" Name="BurnToTheBrim">
+          
+          <Component Id="MainExecutableComponent" Guid="*" Win64="yes">
+            <File Id="bttb_exe" Name="$(var.EXE_FILE)" Source="build/$(var.EXE_FILE)" KeyPath="yes" />
+            <File Id="license" Name="LICENSE" Source="LICENSE" />
+            <File Id="readme" Name="README.md" Source="README.md" />
+            
+            <RegistryKey Root="HKLM" Key="Software\BurnToTheBrim">
+              <RegistryValue Name="InstallDir" Value="[INSTALLDIR]" Type="string" />
+            </RegistryKey>
+          </Component>
+          
+          <Directory Id="SrcDir" Name="src">
+            <Component Id="SrcComponent" Guid="*" Win64="yes">
+              <File Id="bttb_embed_py" Name="bttb_embed.py" Source="src/bttb_embed.py" KeyPath="yes" />
+            </Component>
+          </Directory>
+          
+          <Directory Id="LangDir" Name="lang">
+            <Component Id="LangComponent" Guid="*" Win64="yes">
+              <File Id="de_po" Name="de.po" Source="lang/de.po" KeyPath="yes" />
+              <File Id="nl_po" Name="nl.po" Source="lang/nl.po" />
+              <File Id="fr_po" Name="fr.po" Source="lang/fr.po" />
+              <File Id="es_po" Name="es.po" Source="lang/es.po" />
+            </Component>
+          </Directory>
+
+        </Directory>
+      </Directory>
+
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="$(var.APP_NAME)">
+          <Component Id="ApplicationShortcutComponent" Guid="*" Win64="yes">
+            <RegistryKey Root="HKLM" Key="Software\BurnToTheBrim">
+              <RegistryValue Name="Shortcuts" Value="1" Type="integer" KeyPath="yes" />
+            </RegistryKey>
+            <Shortcut Id="StartMenuShortcut" 
+                      Name="$(var.APP_NAME)" 
+                      Target="[INSTALLDIR]$(var.EXE_FILE)"
+                      WorkingDirectory="INSTALLDIR"
+                      Icon="bttb.ico" />
+            <Shortcut Id="DesktopShortcut" 
+                      Name="$(var.APP_NAME)" 
+                      Target="[INSTALLDIR]$(var.EXE_FILE)"
+                      WorkingDirectory="INSTALLDIR"
+                      Directory="DesktopFolder"
+                      Icon="bttb.ico" />
+            <RemoveFolder Id="RemoveApplicationProgramsFolder" On="uninstall" />
+          </Component>
+        </Directory>
+      </Directory>
+      
+      <Directory Id="DesktopFolder" Name="Desktop" />
+    </Directory>
+    
+    <Icon Id="bttb.ico" SourceFile="src/bttb.ico" />
+    <Property Id="ARPPRODUCTICON" Value="bttb.ico" />
+    
+    <UIRef Id="WixUI_Minimal" />
+    
+    <Feature Id="Complete" Level="1">
+      <ComponentRef Id="MainExecutableComponent" />
+      <ComponentRef Id="SrcComponent" />
+      <ComponentRef Id="LangComponent" />
+      <ComponentRef Id="ApplicationShortcutComponent" />
+    </Feature>
+  </Product>
+</Wix>
