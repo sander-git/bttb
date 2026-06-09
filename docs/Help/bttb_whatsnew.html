@@ -20,6 +20,10 @@
     <td height="347" bgcolor="#FFCCCC">&nbsp;</td>
     <td valign="top"><!-- InstanceBeginEditable name="EditRegion0" --><font face="Arial, Helvetica, sans-serif">
 <p>+: New feature -: Bug fixed *: Improved feature</p>
+      <p>V4.4.1<br>
+        - Fixed stack overflow exception (0xC00000FD) during deep recursive backtracking solver runs on Windows by minimizing stack frame sizes<br>
+        - Fixed log truncation in Windows Win32 multi-line Edit controls by increasing text buffer limits to 10MB using EM_SETLIMITTEXT<br>
+        * Configured cross-compiled Windows binaries with a default 16MB thread stack allocation size</p>
       <p>V4.4.0<br>
         + Added non-blocking incremental GUI rendering for large datasets on both GTK and Win32 interfaces<br>
         + Added "Skip files exceeding capacity" option to volume capacity warnings (Resize/Skip/Cancel choices)<br>

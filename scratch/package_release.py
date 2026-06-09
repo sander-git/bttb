@@ -6,7 +6,7 @@ import glob
 
 base_dir = "/home/sander/src/antigravity/project1/bttb_cpp"
 build_dir = os.path.join(base_dir, "build")
-version = "4.4.0"
+version = "4.4.1"
 
 os.makedirs(build_dir, exist_ok=True)
 

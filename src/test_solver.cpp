@@ -651,7 +651,7 @@ void run_test7() {
 }
 
 void run_test8() {
-    std::cout << "\n--- STARTING TEST 8: MULTI-THREADED VS SINGLE-THREADED SOLVER COMPETING PERFORMANCE (BTTB v4.4.0) ---" << std::endl;
+    std::cout << "\n--- STARTING TEST 8: MULTI-THREADED VS SINGLE-THREADED SOLVER COMPETING PERFORMANCE (BTTB v4.4.1) ---" << std::endl;
     
     std::string test_src = "./mock_multithread_src";
     std::string test_dest = "./mock_multithread_dest";

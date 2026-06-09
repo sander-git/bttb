@@ -325,6 +325,24 @@
 
         <div class="timeline">
 
+            <!-- v4.4.1 -->
+            <div class="timeline-card major">
+                <div class="version-title">
+                    <span>v4.4.1 &mdash; Win32 Stack Overflow &amp; Log Truncation Fixes</span>
+                    <span class="version-date">June 9, 2026</span>
+                </div>
+                <ul class="changes-list">
+                    <li class="change-item">
+                        <span class="change-type minus">-</span>
+                        <div><strong>Win32 Stack Overflow Fix:</strong> Solved Windows native GUI crash (0xC00000FD) during deep backtracking recursive solver runs by minimizing recursive stack frame sizes and configuring a default 16MB thread stack limit.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type minus">-</span>
+                        <div><strong>Log Truncation Fix:</strong> Solved log output truncation by increasing the multi-line edit control text buffer limit to 10MB using the <code>EM_SETLIMITTEXT</code> API.</div>
+                    </li>
+                </ul>
+            </div>
+
             <!-- v4.4.0 -->
             <div class="timeline-card major">
                 <div class="version-title">

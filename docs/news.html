@@ -322,6 +322,21 @@
 
         <div class="news-container">
 
+            <!-- News Item 4.4.1 -->
+            <div class="news-card">
+                <div class="news-date">June 9, 2026</div>
+                <h2>Version 4.4.1 Released: Win32 Stack Overflow &amp; Log Truncation Fixes</h2>
+                <p>
+                    Today we are pleased to announce **Burn to the Brim 4.4.1**, a stability and bug-fix release resolving issues with deep backtracking recursions and preventing trace log truncation.
+                </p>
+                <p>
+                    <strong>Recursive Solver Stack Overflow Fix:</strong> Solving large datasets with deep folder structures and split level 2 previously triggered stack overflow exceptions (<code>0xC00000FD</code>) on Windows due to the default 1MB thread stack limit. BTTB v4.4.1 refactors the recursive backtracking solver to pull timing, logging, and selection calculations out of recursive stack frames, minimizing frame memory usage under 64 bytes. In addition, the executable has been configured to request a default 16MB thread stack from the Windows system.
+                </p>
+                <p>
+                    <strong>Trace Log Truncation Fix:</strong> The standard multi-line edit controls used for solver log outputs on Windows have a default text buffer limit of 32KB. When detailed trace logs were enabled, the text quickly truncated. BTTB v4.4.1 increases the buffer limit to 10MB using the Win32 <code>EM_SETLIMITTEXT</code> API, ensuring all solver diagnostic details print completely.
+                </p>
+            </div>
+
             <!-- News Item 4.4.0 -->
             <div class="news-card">
                 <div class="news-date">June 7, 2026</div>
