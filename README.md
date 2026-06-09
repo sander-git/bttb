@@ -28,7 +28,7 @@ It solves the subset-sum / bin packing problem instantly using an advanced recur
 ### 1. Download and Run
 
 #### Official release
-Use the Microsoft Store to download the latest version of the application [https://apps.microsoft.com/detail/9NCCJ2HSFBB4?hl=en-us&gl=NL&ocid=pdpshare|here].
+Use the Microsoft Store to download the latest version of the application [here](https://apps.microsoft.com/detail/9NCCJ2HSFBB4?hl=en-us&gl=NL&ocid=pdpshare).
 
 #### Manual installation
 Simply extract the release package `bttb-cpp-*-Win64-Native-GUI.zip` and run:
