@@ -95,7 +95,7 @@ Users can define their own custom disk formats so they can also use the program 
         <Application_Info_URL>http://bttb.sourceforge.net</Application_Info_URL>
         <Application_Order_URL />
         <Application_Screenshot_URL>http://bttb.sourceforge.net/BTTB.gif</Application_Screenshot_URL>
-        <Application_Icon_URL>http://bttb.sourceforge.net/BTTBIcon.gif</Application_Icon_URL>
+        <Application_Icon_URL>http://bttb.sourceforge.net/bttb.png</Application_Icon_URL>
         <Application_XML_File_URL>http://bttb.sourceforge.net/BTTB.xml</Application_XML_File_URL>
     </Application_URLs>
 <Download_URLs>

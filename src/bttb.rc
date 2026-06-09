@@ -3,10 +3,13 @@
 // Icon
 1 ICON "bttb.ico"
 
+// Manifest
+1 24 "bttb.manifest"
+
 // Version Information
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION 4,4,1,0
-PRODUCTVERSION 4,4,1,0
+FILEVERSION 4,5,0,0
+PRODUCTVERSION 4,5,0,0
 FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
 FILEFLAGS 0x1L
@@ -23,12 +26,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "BurnToTheBrim Team"
             VALUE "FileDescription", "Burn to the Brim C++ Win32 Native Desktop Application"
-            VALUE "FileVersion", "4.4.1"
+            VALUE "FileVersion", "4.5.0"
             VALUE "InternalName", "bttb_win32"
             VALUE "LegalCopyright", "Copyright (C) 2001-2026 Sander Raaijmakers, Elwin Oost and the Burn to the Brim team"
             VALUE "OriginalFilename", "bttb_win32.exe"
             VALUE "ProductName", "Burn to the Brim"
-            VALUE "ProductVersion", "4.4.1"
+            VALUE "ProductVersion", "4.5.0"
             VALUE "Comments", "Licensed under GNU GPLv2"
         END
     END

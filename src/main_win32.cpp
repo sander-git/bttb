@@ -925,12 +925,13 @@ LRESULT CALLBACK AboutWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             SendMessage(hIcon, STM_SETICON, (WPARAM)hIco, 0);
             
             CreateWindow("STATIC", _T("app_title", "Burn to the Brim").c_str(), WS_CHILD | WS_VISIBLE, 70, 20, 300, 20, hwnd, NULL, NULL, NULL);
-            CreateWindow("STATIC", _T("app_version", "Version 4.4.1").c_str(), WS_CHILD | WS_VISIBLE, 70, 40, 300, 20, hwnd, NULL, NULL, NULL);
+            CreateWindow("STATIC", _T("app_version", "Version 4.5.0").c_str(), WS_CHILD | WS_VISIBLE, 70, 40, 300, 20, hwnd, NULL, NULL, NULL);
             CreateWindow("STATIC", _T("app_copyright", "Copyright \u00a9 2001-2026 Sander Raaijmakers, Elwin Oost and the Burn to the Brim team").c_str(), WS_CHILD | WS_VISIBLE, 70, 60, 350, 40, hwnd, NULL, NULL, NULL);
             
             const char* default_comments = 
                 "Burn to the Brim (BTTB) is a modern C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums (CDs, DVDs, Blu-rays, or USBs).\n\n"
-                "Features in v4.4.1:\n"
+                "Features in v4.5.0:\n"
+                "- Brand new high-resolution application icon (bttb.ico) and unified website logo (bttb.png)\n"
                 "- Minimized search state stack frames & 16MB Win32 stack limit (fixing 0xC00000FD overflows)\n"
                 "- Expanded logging buffer limits to 10MB to avoid trace log truncation\n"
                 "- Non-blocking incremental GUI rendering & skip file capacity warnings\n"
