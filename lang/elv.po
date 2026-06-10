@@ -2,7 +2,7 @@ msgid "about_btn"
 msgstr "Giriath (About)..."
 
 msgid "about_comments"
-msgstr "Burn to the Brim (BTTB) is a modern C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums (CDs, DVDs, Blu-rays, or USBs).\n\nFeatures in v4.5.0:\n- New application icon (bttb.ico) and website logo (bttb.png)\n- Minimized search state stack frames & 16MB Win32 stack limit (fixing 0xC00000FD overflows)\n- Expanded logging limits to 10MB to avoid truncation\n- Non-blocking incremental GUI rendering\n- Offline JSON Index creation and parser\n- Optional PAR3 parity file generation and verification\n- Bit-perfect PAR3 copy-based restoration and repair\n- Theme support including standard dark theme options on Linux GTK4\n- Improved Estimated Time Left calculation immediately at startup\n- Named Custom Volume profiles & dynamic Auto Volume sizing\n- Settings memory restoring the last selected volume configuration\n- Rule conflict overrides allowing rule-based or semantic grouping to win\n- Transfer-rate estimated Time Left & status activity spinner\n- Entropy-Aware Semantic Packing based on MiniLM embeddings\n- Explorer Context Menu integration & long path support\n\nAuthors: Sander Raaijmakers, Elwin Oost and the Elves of Rivendell"
+msgstr "Burn to the Brim (BTTB) is a modern C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums (CDs, DVDs, Blu-rays, or USBs).\n\nFeatures in v4.6.0:\n- New application icon (bttb.ico) and website logo (bttb.png)\n- Minimized search state stack frames & 16MB Win32 stack limit (fixing 0xC00000FD overflows)\n- Expanded logging limits to 10MB to avoid truncation\n- Non-blocking incremental GUI rendering\n- Offline JSON Index creation and parser\n- Optional PAR3 parity file generation and verification\n- Bit-perfect PAR3 copy-based restoration and repair\n- Theme support including standard dark theme options on Linux GTK4\n- Improved Estimated Time Left calculation immediately at startup\n- Named Custom Volume profiles & dynamic Auto Volume sizing\n- Settings memory restoring the last selected volume configuration\n- Rule conflict overrides allowing rule-based or semantic grouping to win\n- Transfer-rate estimated Time Left & status activity spinner\n- Entropy-Aware Semantic Packing based on MiniLM embeddings\n- Explorer Context Menu integration & long path support\n\nAuthors: Sander Raaijmakers, Elwin Oost and the Elves of Rivendell"
 
 msgid "about_title"
 msgstr "Concerning Burn to the Brim"
@@ -23,7 +23,7 @@ msgid "app_title"
 msgstr "Burn to the Brim"
 
 msgid "app_version"
-msgstr "Version 4.5.0"
+msgstr "Version 4.6.0"
 
 msgid "auto_size"
 msgstr "Auto Size"

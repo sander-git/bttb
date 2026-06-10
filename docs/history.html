@@ -325,6 +325,40 @@
 
         <div class="timeline">
 
+            <!-- v4.6.0 -->
+            <div class="timeline-card major">
+                <div class="version-title">
+                    <span>v4.6.0 &mdash; Windows Unicode Display Polish, Original Path Outputs &amp; TreeView Restoration</span>
+                    <span class="version-date">June 11, 2026</span>
+                </div>
+                <ul class="changes-list">
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Windows Unicode Display Fix:</strong> Solved regional character display corruption (question marks) in language selection comboboxes and dialog screens under Windows for Chinese, Japanese, and Elvish locales by adopting Unicode window creations and SendMessageW string passing.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Original Absolute Paths Tracking:</strong> Outputs the original absolute file path of packed items in a flat <code>"originalPath"</code> field within the solved <code>index.json</code>.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>Skipped Items TreeView Nodes:</strong> Renders skipped files/folders under a dedicated <code>"Skipped Items"</code> node category in the Results TreeView (GTK4 and Win32).</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type plus">+</span>
+                        <div><strong>TreeView Copy-Restoration:</strong> Added a right-click context menu option (<em>"Restore to Original Location"</em>) inside Results TreeViews to copy/restore files/folders back to their original disk locations.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type minus">-</span>
+                        <div><strong>Search Time Bounds Check:</strong> Enforces a 30s backtracking limit fallback if the maximum search time parameter is set to <code>0</code> or less.</div>
+                    </li>
+                    <li class="change-item">
+                        <span class="change-type star">*</span>
+                        <div><strong>13-Language Website Translating:</strong> Full multi-language translation support extended to the <code>overview.html</code> pages with an integrated language selection bar.</div>
+                    </li>
+                </ul>
+            </div>
+
             <!-- v4.5.0 -->
             <div class="timeline-card major">
                 <div class="version-title">

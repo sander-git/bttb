@@ -8,7 +8,6 @@
 #include <chrono>
 #include <filesystem>
 #include <iostream>
-#include <fstream>
 #include <clocale>
 #include "bttb_logic.hpp"
 #include "bttb_locale.hpp"
@@ -360,113 +359,149 @@ inline int MessageBoxUTF8(HWND hWnd, const char* lpText, const char* lpCaption, 
 #undef DefWindowProc
 #define DefWindowProc DefWindowProcW
 
+std::wstring BrowseForFolderW(HWND hwnd, const std::wstring& title) {
+    BROWSEINFOW bi = {0};
+    bi.hwndOwner = hwnd;
+    bi.lpszTitle = title.c_str();
+    bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
+    
+    LPITEMIDLIST pidl = SHBrowseForFolderW(&bi);
+    if (pidl != nullptr) {
+        wchar_t path[MAX_PATH];
+        if (SHGetPathFromIDListW(pidl, path)) {
+            CoTaskMemFree(pidl);
+            return std::wstring(path);
+        }
+        CoTaskMemFree(pidl);
+    }
+    return L"";
+}
+
 void Win32RestoreItem(HWND hwndParent, TreeViewItemData* data) {
     if (!data) return;
     
-    std::filesystem::path baseDir = "";
-    if (!g_importedJsonDir.empty()) {
-        baseDir = std::filesystem::path(utf8Path(g_importedJsonDir));
-    } else if (!g_solver.targetDirectory.empty()) {
-        baseDir = std::filesystem::path(utf8Path(g_solver.targetDirectory));
-    } else {
-        MessageBoxW(hwndParent, utf8ToWstring(_T("msg_restore_not_avail", "Restore not available: files were not organized to a target directory.")).c_str(), L"Error", MB_ICONERROR);
+    const bttb::PackedVolume* pVol = nullptr;
+    int volIdx = data->volumeIndex;
+    if (volIdx >= 0) {
+        for (const auto& vol : g_solver.packedVolumes) {
+            if (vol.volumeIndex == volIdx) {
+                pVol = &vol;
+                break;
+            }
+        }
+    }
+    
+    if (!pVol) {
+        MessageBoxW(hwndParent, utf8ToWstring(_T("msg_restore_no_volume", "Volume information not found.")).c_str(), L"Error", MB_ICONERROR);
         return;
     }
     
-    if (g_solver.spanMultipleVolumes && data->volumeIndex >= 0) {
-        baseDir = baseDir / ("Volume_" + std::to_string(data->volumeIndex));
-    }
-    
-    std::vector<std::pair<std::filesystem::path, std::filesystem::path>> copyPairs;
+    std::vector<std::pair<std::string, std::string>> filesToRestore;
     
     if (data->type == 0) { // Volume parent
-        int volIdx = data->volumeIndex;
-        if (volIdx >= 0 && volIdx < (int)g_solver.packedVolumes.size()) {
-            const auto& vol = g_solver.packedVolumes[volIdx];
-            for (size_t fileIdx = 0; fileIdx < vol.itemPaths.size(); ++fileIdx) {
-                if (fileIdx < vol.itemGroupedPaths.size() && !vol.itemGroupedPaths[fileIdx].empty()) {
-                    const auto& gps = vol.itemGroupedPaths[fileIdx];
-                    const auto& ogs = vol.itemOriginalGroupedPaths[fileIdx];
-                    for (size_t i = 0; i < gps.size(); ++i) {
-                        std::filesystem::path from = baseDir / utf8Path(gps[i]);
-                        std::filesystem::path to = (i < ogs.size()) ? std::filesystem::path(utf8Path(ogs[i])) : std::filesystem::path();
-                        if (!to.empty()) {
-                            copyPairs.push_back({from, to});
-                        }
+        for (size_t fileIdx = 0; fileIdx < pVol->itemPaths.size(); ++fileIdx) {
+            if (fileIdx < pVol->itemGroupedPaths.size() && !pVol->itemGroupedPaths[fileIdx].empty()) {
+                const auto& gps = pVol->itemGroupedPaths[fileIdx];
+                const auto& ogs = pVol->itemOriginalGroupedPaths[fileIdx];
+                for (size_t i = 0; i < gps.size(); ++i) {
+                    std::string rel = gps[i];
+                    std::string orig = (i < ogs.size()) ? ogs[i] : "";
+                    if (!orig.empty()) {
+                        filesToRestore.push_back({rel, orig});
                     }
-                } else {
-                    std::filesystem::path from = baseDir / utf8Path(vol.itemPaths[fileIdx]);
-                    std::filesystem::path to = (fileIdx < (int)vol.itemOriginalPaths.size()) ? std::filesystem::path(utf8Path(vol.itemOriginalPaths[fileIdx])) : std::filesystem::path();
-                    if (!to.empty()) {
-                        copyPairs.push_back({from, to});
-                    }
+                }
+            } else {
+                std::string rel = pVol->itemPaths[fileIdx];
+                std::string orig = (fileIdx < (int)pVol->itemOriginalPaths.size()) ? pVol->itemOriginalPaths[fileIdx] : "";
+                if (!orig.empty()) {
+                    filesToRestore.push_back({rel, orig});
                 }
             }
         }
-    } else if (data->type == 1 || data->type == 4) { // File or remaining child (could be group)
-        int volIdx = data->volumeIndex;
+    } else if (data->type == 1) { // File child
         int fileIdx = data->fileIndex;
-        
-        if (volIdx >= 0 && volIdx < (int)g_solver.packedVolumes.size()) {
-            const auto& vol = g_solver.packedVolumes[volIdx];
-            if (fileIdx >= 0 && fileIdx < (int)vol.itemPaths.size()) {
-                if (fileIdx < (int)vol.itemGroupedPaths.size() && !vol.itemGroupedPaths[fileIdx].empty()) {
-                    const auto& gps = vol.itemGroupedPaths[fileIdx];
-                    const auto& ogs = vol.itemOriginalGroupedPaths[fileIdx];
-                    for (size_t i = 0; i < gps.size(); ++i) {
-                        std::filesystem::path from = baseDir / utf8Path(gps[i]);
-                        std::filesystem::path to = (i < ogs.size()) ? std::filesystem::path(utf8Path(ogs[i])) : std::filesystem::path();
-                        if (!to.empty()) {
-                            copyPairs.push_back({from, to});
-                        }
+        if (fileIdx >= 0 && fileIdx < (int)pVol->itemPaths.size()) {
+            if (fileIdx < (int)pVol->itemGroupedPaths.size() && !pVol->itemGroupedPaths[fileIdx].empty()) {
+                const auto& gps = pVol->itemGroupedPaths[fileIdx];
+                const auto& ogs = pVol->itemOriginalGroupedPaths[fileIdx];
+                for (size_t i = 0; i < gps.size(); ++i) {
+                    std::string rel = gps[i];
+                    std::string orig = (i < ogs.size()) ? ogs[i] : "";
+                    if (!orig.empty()) {
+                        filesToRestore.push_back({rel, orig});
                     }
-                } else {
-                    std::filesystem::path from = baseDir / utf8Path(vol.itemPaths[fileIdx]);
-                    std::filesystem::path to = (fileIdx < (int)vol.itemOriginalPaths.size()) ? std::filesystem::path(utf8Path(vol.itemOriginalPaths[fileIdx])) : std::filesystem::path();
-                    if (!to.empty()) {
-                        copyPairs.push_back({from, to});
-                    }
+                }
+            } else {
+                std::string rel = pVol->itemPaths[fileIdx];
+                std::string orig = (fileIdx < (int)pVol->itemOriginalPaths.size()) ? pVol->itemOriginalPaths[fileIdx] : "";
+                if (!orig.empty()) {
+                    filesToRestore.push_back({rel, orig});
                 }
             }
         }
-    } else if (data->type == 2 || data->type == 5) { // Grandchild under group or remaining group grandchild
-        int volIdx = data->volumeIndex;
+    } else if (data->type == 2) { // Grandchild under group
         int fileIdx = data->fileIndex;
         int gcIdx = data->grandchildIndex;
-        if (volIdx >= 0 && volIdx < (int)g_solver.packedVolumes.size()) {
-            const auto& vol = g_solver.packedVolumes[volIdx];
-            if (fileIdx >= 0 && fileIdx < (int)vol.itemGroupedPaths.size() && gcIdx >= 0 && gcIdx < (int)vol.itemGroupedPaths[fileIdx].size()) {
-                std::filesystem::path from = baseDir / utf8Path(vol.itemGroupedPaths[fileIdx][gcIdx]);
-                std::filesystem::path to = (fileIdx < (int)vol.itemOriginalGroupedPaths.size() && gcIdx < (int)vol.itemOriginalGroupedPaths[fileIdx].size()) ?
-                    std::filesystem::path(utf8Path(vol.itemOriginalGroupedPaths[fileIdx][gcIdx])) : std::filesystem::path();
-                if (!to.empty()) {
-                    copyPairs.push_back({from, to});
-                }
+        if (fileIdx >= 0 && fileIdx < (int)pVol->itemGroupedPaths.size() && gcIdx >= 0 && gcIdx < (int)pVol->itemGroupedPaths[fileIdx].size()) {
+            std::string rel = pVol->itemGroupedPaths[fileIdx][gcIdx];
+            std::string orig = (fileIdx < (int)pVol->itemOriginalGroupedPaths.size() && gcIdx < (int)pVol->itemOriginalGroupedPaths[fileIdx].size()) ?
+                pVol->itemOriginalGroupedPaths[fileIdx][gcIdx] : "";
+            if (!orig.empty()) {
+                filesToRestore.push_back({rel, orig});
             }
         }
     }
     
-    if (copyPairs.empty()) {
-        MessageBoxW(hwndParent, utf8ToWstring(_T("msg_restore_no_files", "No files found to restore.")).c_str(), L"Information", MB_ICONINFORMATION);
+    // Filter out files that already exist at their original paths
+    std::vector<std::pair<std::string, std::string>> activeFiles;
+    for (const auto& pair : filesToRestore) {
+        std::filesystem::path targetPath = utf8Path(pair.second);
+        std::error_code ec;
+        if (std::filesystem::exists(targetPath, ec)) {
+            continue;
+        }
+        activeFiles.push_back(pair);
+    }
+    
+    if (activeFiles.empty()) {
+        std::wstring msg = utf8ToWstring(_T("msg_restore_all_exist", "All target files already exist. No files were restored."));
+        MessageBoxW(hwndParent, msg.c_str(), L"Information", MB_ICONINFORMATION);
         return;
     }
     
-    std::wstring confirmMsg = utf8ToWstring(_T("msg_restore_confirm", "Are you sure you want to restore the selected file(s) to their original location?"));
-    if (MessageBoxW(hwndParent, confirmMsg.c_str(), utf8ToWstring(_T("msg_restore_confirm_title", "Restore Confirmation")).c_str(), MB_YESNO | MB_ICONQUESTION) != IDYES) {
-        return;
+    // Ask user for volume folder location
+    std::wstring title = L"Select Location for Volume_" + std::to_wstring(volIdx);
+    std::wstring selectedFolderW = BrowseForFolderW(hwndParent, title);
+    if (selectedFolderW.empty()) {
+        return; // User cancelled
+    }
+    std::string selectedFolder = wstringToUtf8(selectedFolderW);
+    
+    std::filesystem::path volRoot = utf8Path(selectedFolder);
+    std::filesystem::path subDir = volRoot / ("Volume_" + std::to_string(volIdx));
+    std::error_code ec;
+    if (std::filesystem::is_directory(subDir, ec)) {
+        volRoot = subDir;
     }
     
     int successCount = 0;
     int failCount = 0;
     std::string lastError = "";
     
-    for (const auto& pair : copyPairs) {
+    for (const auto& pair : activeFiles) {
         try {
-            std::filesystem::create_directories(pair.second.parent_path());
-            if (std::filesystem::is_directory(pair.first)) {
-                std::filesystem::copy(pair.first, pair.second, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+            std::filesystem::path src = volRoot / utf8Path(pair.first);
+            std::filesystem::path dest = utf8Path(pair.second);
+            
+            if (std::filesystem::exists(dest)) {
+                continue; // skip
+            }
+            
+            std::filesystem::create_directories(dest.parent_path());
+            if (std::filesystem::is_directory(src)) {
+                std::filesystem::copy(src, dest, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
             } else {
-                std::filesystem::copy_file(pair.first, pair.second, std::filesystem::copy_options::overwrite_existing);
+                std::filesystem::copy_file(src, dest, std::filesystem::copy_options::overwrite_existing);
             }
             successCount++;
         } catch (const std::exception& e) {
@@ -1165,12 +1200,12 @@ LRESULT CALLBACK AboutWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             SendMessage(hIcon, STM_SETICON, (WPARAM)hIco, 0);
             
             CreateWindow("STATIC", _T("app_title", "Burn to the Brim").c_str(), WS_CHILD | WS_VISIBLE, 70, 20, 300, 20, hwnd, NULL, NULL, NULL);
-            CreateWindow("STATIC", _T("app_version", "Version 4.5.0").c_str(), WS_CHILD | WS_VISIBLE, 70, 40, 300, 20, hwnd, NULL, NULL, NULL);
+            CreateWindow("STATIC", _T("app_version", "Version 4.6.0").c_str(), WS_CHILD | WS_VISIBLE, 70, 40, 300, 20, hwnd, NULL, NULL, NULL);
             CreateWindow("STATIC", _T("app_copyright", "Copyright \u00a9 2001-2026 Sander Raaijmakers, Elwin Oost and the Burn to the Brim team").c_str(), WS_CHILD | WS_VISIBLE, 70, 60, 350, 40, hwnd, NULL, NULL, NULL);
             
             const char* default_comments = 
                 "Burn to the Brim (BTTB) is a modern C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums (CDs, DVDs, Blu-rays, or USBs).\n\n"
-                "Features in v4.5.0:\n"
+                "Features in v4.6.0:\n"
                 "- Brand new high-resolution application icon (bttb.ico) and unified website logo (bttb.png)\n"
                 "- Minimized search state stack frames & 16MB Win32 stack limit (fixing 0xC00000FD overflows)\n"
                 "- Expanded logging buffer limits to 10MB to avoid trace log truncation\n"
@@ -1334,12 +1369,6 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             SendMessageW(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)L"हिन्दी");
             SendMessageW(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)L"Vuhlkansu (Vulkan)");
             SendMessageW(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)L"Eldarin (Elvish)");
-            {
-                std::ofstream df("build/debug_unicode.txt");
-                df << "IsWindowUnicode: " << IsWindowUnicode(g_comboPrefLang) << "\n";
-                df.close();
-            }
-            MessageBoxW(NULL, IsWindowUnicode(g_comboPrefLang) ? L"Unicode" : L"ANSI", L"Debug", MB_OK);
             
             int langSel = 0;
             if (g_solver.language == "auto") langSel = 0;
@@ -1964,7 +1993,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                         tvi.mask = TVIF_PARAM;
                         if (SendMessageW(pnmh->hwndFrom, TVM_GETITEMW, 0, (LPARAM)&tvi)) {
                             TreeViewItemData* data = reinterpret_cast<TreeViewItemData*>(tvi.lParam);
-                            if (data && (data->type == 0 || data->type == 1 || data->type == 2 || data->type == 4 || data->type == 5)) {
+                            if (data && (data->type == 0 || data->type == 1 || data->type == 2)) {
                                 HMENU hMenu = CreatePopupMenu();
                                 std::wstring menuText = utf8ToWstring(_T("menu_restore", "Restore to Original Location"));
                                 AppendMenuW(hMenu, MF_STRING, 1, menuText.c_str());

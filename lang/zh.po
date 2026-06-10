@@ -2,7 +2,7 @@ msgid "about_btn"
 msgstr "关于..."
 
 msgid "about_comments"
-msgstr "Burn to the Brim (BTTB) 是经典 Delphi 应用程序的现代 C++20 移植版本，旨在将文件和文件夹优化装配到目标存储介质（CD、DVD、蓝光或 USB 闪存盘）上。\n\nv4.5.0 中的功能:\n- 全新的高分辨率应用程序图标 (bttb.ico) 和统一的网站标志 (bttb.png)\n- 最小化搜索状态栈帧和 16MB Win32 栈限制（修复了 0xC00000FD 栈溢出）\n- 将日志缓冲区限制扩大到 10MB，以避免跟踪日志被截断\n- 非阻塞渐进式 GUI 渲染和跳过文件容量警告\n- 离线 JSON 索引创建和交互式解析器\n- 可选的 PAR3 冗余校验文件生成和验证\n- 基于 PAR3 复制的完全位元级数据恢复和修复\n- 主题支持，包括 Linux GTK4 上的标准深色主题选项\n- 启动时立即改进的预计剩余时间计算\n- 命名的自定义卷配置文件和动态自动卷大小调整\n- 设置记忆，恢复上次选择的卷配置\n- 规则冲突覆盖，允许基于规则的分组或语义分组优先\n- 基于传输速率估计的剩余时间与状态活动旋转指示器\n- 基于 MiniLM 嵌入的熵感知语义打包\n- Windows 资源管理器右键菜单集成和长路径支持\n\nBTTB 已完全本地化，基于德语、荷兰语、法语和西班牙语中的标准 gettext .po 模板动态翻译整个用户界面。\n\n所使用的库和归属:\n- libpar3（由 Yutaka Sawada 开发，LGPL v2.1+）: https://github.com/Parchive/par3cmdline\n- BLAKE3（由 BLAKE3 团队开发，CC0/Apache-2.0）: https://github.com/BLAKE3-team/BLAKE3\n- Leopard-RS（由 Christopher A. Taylor 开发，BSD 3-Clause）: https://github.com/catid/leopard\n- Galois Field 库（由 James S. Plank 开发）: http://web.eecs.utk.edu/~jplank/plank/www/software.html\n\n作者: Sander Raaijmakers, Elwin Oost 和 Burn to the Brim 团队"
+msgstr "Burn to the Brim (BTTB) 是经典 Delphi 应用程序的现代 C++20 移植版本，旨在将文件和文件夹优化装配到目标存储介质（CD、DVD、蓝光或 USB 闪存盘）上。\n\nv4.6.0 中的功能:\n- 全新的高分辨率应用程序图标 (bttb.ico) 和统一的网站标志 (bttb.png)\n- 最小化搜索状态栈帧和 16MB Win32 栈限制（修复了 0xC00000FD 栈溢出）\n- 将日志缓冲区限制扩大到 10MB，以避免跟踪日志被截断\n- 非阻塞渐进式 GUI 渲染和跳过文件容量警告\n- 离线 JSON 索引创建和交互式解析器\n- 可选的 PAR3 冗余校验文件生成和验证\n- 基于 PAR3 复制的完全位元级数据恢复和修复\n- 主题支持，包括 Linux GTK4 上的标准深色主题选项\n- 启动时立即改进的预计剩余时间计算\n- 命名的自定义卷配置文件和动态自动卷大小调整\n- 设置记忆，恢复上次选择的卷配置\n- 规则冲突覆盖，允许基于规则的分组或语义分组优先\n- 基于传输速率估计的剩余时间与状态活动旋转指示器\n- 基于 MiniLM 嵌入的熵感知语义打包\n- Windows 资源管理器右键菜单集成和长路径支持\n\nBTTB 已完全本地化，基于德语、荷兰语、法语和西班牙语中的标准 gettext .po 模板动态翻译整个用户界面。\n\n所使用的库和归属:\n- libpar3（由 Yutaka Sawada 开发，LGPL v2.1+）: https://github.com/Parchive/par3cmdline\n- BLAKE3（由 BLAKE3 团队开发，CC0/Apache-2.0）: https://github.com/BLAKE3-team/BLAKE3\n- Leopard-RS（由 Christopher A. Taylor 开发，BSD 3-Clause）: https://github.com/catid/leopard\n- Galois Field 库（由 James S. Plank 开发）: http://web.eecs.utk.edu/~jplank/plank/www/software.html\n\n作者: Sander Raaijmakers, Elwin Oost 和 Burn to the Brim 团队"
 
 msgid "about_title"
 msgstr "关于 Burn to the Brim"
@@ -23,7 +23,7 @@ msgid "app_title"
 msgstr "Burn to the Brim"
 
 msgid "app_version"
-msgstr "版本 4.5.0"
+msgstr "版本 4.6.0"
 
 msgid "auto_size"
 msgstr "自动大小"

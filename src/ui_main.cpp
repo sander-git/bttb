@@ -309,14 +309,14 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
         gtk_window_set_transient_for(GTK_WINDOW(about), GTK_WINDOW(self->window));
         
         gtk_about_dialog_set_program_name(GTK_ABOUT_DIALOG(about), "Burn to the Brim");
-        gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(about), "4.5.0");
+        gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(about), "4.6.0");
         gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(about), "Copyright \u00a9 2001-2026 Sander Raaijmakers, Elwin Oost and the Burn to the Brim team");
         gtk_about_dialog_set_license_type(GTK_ABOUT_DIALOG(about), GTK_LICENSE_GPL_2_0);
         gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(about), "https://sourceforge.net/projects/bttb/");
         
         const char* default_comments = 
             "Burn to the Brim (BTTB) is a modern C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums (CDs, DVDs, Blu-rays, or USBs).\n\n"
-            "Features in v4.5.0:\n"
+            "Features in v4.6.0:\n"
             "- Brand new high-resolution application icon (bttb.ico) and unified website logo (bttb.png)\n"
             "- Minimized search state stack frames & 16MB Win32 stack limit (fixing 0xC00000FD overflows)\n"
             "- Expanded logging buffer limits to 10MB to avoid trace log truncation\n"
@@ -1263,124 +1263,150 @@ void MainWindow::solver_finished() {
 }
 
 void MainWindow::restore_item(int type, int volIdx, int fileIdx, int gcIdx) {
-    std::filesystem::path baseDir = "";
-    if (!importedJsonDir.empty()) {
-        baseDir = std::filesystem::path(utf8Path(importedJsonDir));
-    } else if (!solver.targetDirectory.empty()) {
-        baseDir = std::filesystem::path(utf8Path(solver.targetDirectory));
-    } else {
+    const PackedVolume* pVol = nullptr;
+    if (volIdx >= 0) {
+        for (const auto& vol : solver.packedVolumes) {
+            if (vol.volumeIndex == volIdx) {
+                pVol = &vol;
+                break;
+            }
+        }
+    }
+    
+    if (!pVol) {
         GtkWidget* dlg = gtk_message_dialog_new(GTK_WINDOW(window),
                                                GTK_DIALOG_MODAL,
                                                GTK_MESSAGE_ERROR,
                                                GTK_BUTTONS_OK,
-                                               "%s", _T("msg_restore_not_avail", "Restore not available: files were not organized to a target directory.").c_str());
+                                               "%s", _T("msg_restore_no_volume", "Volume information not found.").c_str());
         g_signal_connect(dlg, "response", G_CALLBACK(+[](GtkWidget* d, int, gpointer) { gtk_window_destroy(GTK_WINDOW(d)); }), nullptr);
         gtk_window_present(GTK_WINDOW(dlg));
         return;
     }
     
-    if (solver.spanMultipleVolumes && volIdx >= 0) {
-        baseDir = baseDir / ("Volume_" + std::to_string(volIdx));
-    }
-    
-    std::vector<std::pair<std::filesystem::path, std::filesystem::path>> copyPairs;
+    std::vector<std::pair<std::string, std::string>> filesToRestore;
     
     if (type == 0) { // Volume Parent
-        if (volIdx >= 0 && volIdx < (int)solver.packedVolumes.size()) {
-            const auto& vol = solver.packedVolumes[volIdx];
-            for (size_t f = 0; f < vol.itemPaths.size(); ++f) {
-                if (f < vol.itemGroupedPaths.size() && !vol.itemGroupedPaths[f].empty()) {
-                    const auto& gps = vol.itemGroupedPaths[f];
-                    const auto& ogs = vol.itemOriginalGroupedPaths[f];
-                    for (size_t i = 0; i < gps.size(); ++i) {
-                        std::filesystem::path from = baseDir / utf8Path(gps[i]);
-                        std::filesystem::path to = (i < ogs.size()) ? std::filesystem::path(utf8Path(ogs[i])) : std::filesystem::path();
-                        if (!to.empty()) {
-                            copyPairs.push_back({from, to});
-                        }
+        for (size_t f = 0; f < pVol->itemPaths.size(); ++f) {
+            if (f < pVol->itemGroupedPaths.size() && !pVol->itemGroupedPaths[f].empty()) {
+                const auto& gps = pVol->itemGroupedPaths[f];
+                const auto& ogs = pVol->itemOriginalGroupedPaths[f];
+                for (size_t i = 0; i < gps.size(); ++i) {
+                    std::string rel = gps[i];
+                    std::string orig = (i < ogs.size()) ? ogs[i] : "";
+                    if (!orig.empty()) {
+                        filesToRestore.push_back({rel, orig});
                     }
-                } else {
-                    std::filesystem::path from = baseDir / utf8Path(vol.itemPaths[f]);
-                    std::filesystem::path to = (f < vol.itemOriginalPaths.size()) ? std::filesystem::path(utf8Path(vol.itemOriginalPaths[f])) : std::filesystem::path();
-                    if (!to.empty()) {
-                        copyPairs.push_back({from, to});
-                    }
+                }
+            } else {
+                std::string rel = pVol->itemPaths[f];
+                std::string orig = (f < pVol->itemOriginalPaths.size()) ? pVol->itemOriginalPaths[f] : "";
+                if (!orig.empty()) {
+                    filesToRestore.push_back({rel, orig});
                 }
             }
         }
     } else if (type == 1) { // File child
-        if (volIdx >= 0 && volIdx < (int)solver.packedVolumes.size()) {
-            const auto& vol = solver.packedVolumes[volIdx];
-            if (fileIdx >= 0 && fileIdx < (int)vol.itemPaths.size()) {
-                if (fileIdx < (int)vol.itemGroupedPaths.size() && !vol.itemGroupedPaths[fileIdx].empty()) {
-                    const auto& gps = vol.itemGroupedPaths[fileIdx];
-                    const auto& ogs = vol.itemOriginalGroupedPaths[fileIdx];
-                    for (size_t i = 0; i < gps.size(); ++i) {
-                        std::filesystem::path from = baseDir / utf8Path(gps[i]);
-                        std::filesystem::path to = (i < ogs.size()) ? std::filesystem::path(utf8Path(ogs[i])) : std::filesystem::path();
-                        if (!to.empty()) {
-                            copyPairs.push_back({from, to});
-                        }
+        if (fileIdx >= 0 && fileIdx < (int)pVol->itemPaths.size()) {
+            if (fileIdx < (int)pVol->itemGroupedPaths.size() && !pVol->itemGroupedPaths[fileIdx].empty()) {
+                const auto& gps = pVol->itemGroupedPaths[fileIdx];
+                const auto& ogs = pVol->itemOriginalGroupedPaths[fileIdx];
+                for (size_t i = 0; i < gps.size(); ++i) {
+                    std::string rel = gps[i];
+                    std::string orig = (i < ogs.size()) ? ogs[i] : "";
+                    if (!orig.empty()) {
+                        filesToRestore.push_back({rel, orig});
                     }
-                } else {
-                    std::filesystem::path from = baseDir / utf8Path(vol.itemPaths[fileIdx]);
-                    std::filesystem::path to = (fileIdx < (int)vol.itemOriginalPaths.size()) ? std::filesystem::path(utf8Path(vol.itemOriginalPaths[fileIdx])) : std::filesystem::path();
-                    if (!to.empty()) {
-                        copyPairs.push_back({from, to});
-                    }
+                }
+            } else {
+                std::string rel = pVol->itemPaths[fileIdx];
+                std::string orig = (fileIdx < (int)pVol->itemOriginalPaths.size()) ? pVol->itemOriginalPaths[fileIdx] : "";
+                if (!orig.empty()) {
+                    filesToRestore.push_back({rel, orig});
                 }
             }
         }
     } else if (type == 2) { // Grandchild under group
-        if (volIdx >= 0 && volIdx < (int)solver.packedVolumes.size()) {
-            const auto& vol = solver.packedVolumes[volIdx];
-            if (fileIdx >= 0 && fileIdx < (int)vol.itemGroupedPaths.size() && gcIdx >= 0 && gcIdx < (int)vol.itemGroupedPaths[fileIdx].size()) {
-                std::filesystem::path from = baseDir / utf8Path(vol.itemGroupedPaths[fileIdx][gcIdx]);
-                std::filesystem::path to = (fileIdx < (int)vol.itemOriginalGroupedPaths.size() && gcIdx < (int)vol.itemOriginalGroupedPaths[fileIdx].size()) ?
-                    std::filesystem::path(utf8Path(vol.itemOriginalGroupedPaths[fileIdx][gcIdx])) : std::filesystem::path();
-                if (!to.empty()) {
-                    copyPairs.push_back({from, to});
-                }
+        if (fileIdx >= 0 && fileIdx < (int)pVol->itemGroupedPaths.size() && gcIdx >= 0 && gcIdx < (int)pVol->itemGroupedPaths[fileIdx].size()) {
+            std::string rel = pVol->itemGroupedPaths[fileIdx][gcIdx];
+            std::string orig = (fileIdx < (int)pVol->itemOriginalGroupedPaths.size() && gcIdx < (int)pVol->itemOriginalGroupedPaths[fileIdx].size()) ?
+                pVol->itemOriginalGroupedPaths[fileIdx][gcIdx] : "";
+            if (!orig.empty()) {
+                filesToRestore.push_back({rel, orig});
             }
         }
     }
     
-    if (copyPairs.empty()) {
+    // Filter out files that already exist at their original paths
+    std::vector<std::pair<std::string, std::string>> activeFiles;
+    for (const auto& pair : filesToRestore) {
+        std::filesystem::path targetPath = utf8Path(pair.second);
+        std::error_code ec;
+        if (std::filesystem::exists(targetPath, ec)) {
+            continue;
+        }
+        activeFiles.push_back(pair);
+    }
+    
+    if (activeFiles.empty()) {
         GtkWidget* dlg = gtk_message_dialog_new(GTK_WINDOW(window),
                                                GTK_DIALOG_MODAL,
                                                GTK_MESSAGE_INFO,
                                                GTK_BUTTONS_OK,
-                                               "%s", _T("msg_restore_no_files", "No files found to restore.").c_str());
+                                               "%s", _T("msg_restore_all_exist", "All target files already exist. No files were restored.").c_str());
         g_signal_connect(dlg, "response", G_CALLBACK(+[](GtkWidget* d, int, gpointer) { gtk_window_destroy(GTK_WINDOW(d)); }), nullptr);
         gtk_window_present(GTK_WINDOW(dlg));
         return;
     }
     
-    GtkWidget* dlg = gtk_message_dialog_new(GTK_WINDOW(window),
-                                           GTK_DIALOG_MODAL,
-                                           GTK_MESSAGE_QUESTION,
-                                           GTK_BUTTONS_YES_NO,
-                                           "%s", _T("msg_restore_confirm", "Are you sure you want to restore the selected file(s) to their original location?").c_str());
-                                           
+    // Ask the user for the location of the respective volume folder
+    std::string title = _T("select_volume_loc_title", "Select Location for Volume_") + std::to_string(volIdx);
+    GtkFileDialog* file_dialog = gtk_file_dialog_new();
+    gtk_file_dialog_set_title(file_dialog, title.c_str());
+    
     struct RestoreContext {
         MainWindow* self;
-        std::vector<std::pair<std::filesystem::path, std::filesystem::path>> copyPairs;
+        int volIdx;
+        std::vector<std::pair<std::string, std::string>> activeFiles;
     };
-    RestoreContext* ctx = new RestoreContext{this, std::move(copyPairs)};
+    RestoreContext* ctx = new RestoreContext{this, volIdx, std::move(activeFiles)};
     
-    g_signal_connect(dlg, "response", G_CALLBACK(+[](GtkWidget* d, int response, gpointer user_data) {
+    gtk_file_dialog_select_folder(file_dialog, GTK_WINDOW(window), nullptr, +[](GObject* source, GAsyncResult* res, gpointer user_data) {
         auto* ctx = static_cast<RestoreContext*>(user_data);
-        if (response == GTK_RESPONSE_YES) {
+        GError* error = nullptr;
+        GFile* file = gtk_file_dialog_select_folder_finish(GTK_FILE_DIALOG(source), res, &error);
+        
+        if (file) {
+            char* path = g_file_get_path(file);
+            std::string selectedFolder = path;
+            g_free(path);
+            g_object_unref(file);
+            
+            std::filesystem::path volRoot = utf8Path(selectedFolder);
+            std::filesystem::path subDir = volRoot / ("Volume_" + std::to_string(ctx->volIdx));
+            std::error_code ec;
+            if (std::filesystem::is_directory(subDir, ec)) {
+                volRoot = subDir;
+            }
+            
             int successCount = 0;
             int failCount = 0;
             std::string lastError = "";
-            for (const auto& pair : ctx->copyPairs) {
+            
+            for (const auto& pair : ctx->activeFiles) {
                 try {
-                    std::filesystem::create_directories(pair.second.parent_path());
-                    if (std::filesystem::is_directory(pair.first)) {
-                        std::filesystem::copy(pair.first, pair.second, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+                    std::filesystem::path src = volRoot / utf8Path(pair.first);
+                    std::filesystem::path dest = utf8Path(pair.second);
+                    
+                    if (std::filesystem::exists(dest)) {
+                        continue; // skip
+                    }
+                    
+                    std::filesystem::create_directories(dest.parent_path());
+                    if (std::filesystem::is_directory(src)) {
+                        std::filesystem::copy(src, dest, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
                     } else {
-                        std::filesystem::copy_file(pair.first, pair.second, std::filesystem::copy_options::overwrite_existing);
+                        std::filesystem::copy_file(src, dest, std::filesystem::copy_options::overwrite_existing);
                     }
                     successCount++;
                 } catch (const std::exception& e) {
@@ -1388,6 +1414,7 @@ void MainWindow::restore_item(int type, int volIdx, int fileIdx, int gcIdx) {
                     lastError = e.what();
                 }
             }
+            
             if (failCount == 0) {
                 std::string successText = _T("msg_restore_success_1", "Successfully restored ") + std::to_string(successCount) + _T("msg_restore_success_2", " item(s).");
                 GtkWidget* res_dlg = gtk_message_dialog_new(GTK_WINDOW(ctx->self->window),
@@ -1410,11 +1437,12 @@ void MainWindow::restore_item(int type, int volIdx, int fileIdx, int gcIdx) {
                 ctx->self->append_log("Failed to restore items: " + lastError + "\n", 3);
             }
         }
+        
+        if (error) {
+            g_error_free(error);
+        }
         delete ctx;
-        gtk_window_destroy(GTK_WINDOW(d));
-    }), ctx);
-    
-    gtk_window_present(GTK_WINDOW(dlg));
+    }, ctx);
 }
 
 } // namespace bttb

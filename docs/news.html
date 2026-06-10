@@ -322,6 +322,30 @@
 
         <div class="news-container">
 
+            <!-- News Item 4.6.0 -->
+            <div class="news-card">
+                <div class="news-date">June 11, 2026</div>
+                <h2>Version 4.6.0 Released: Unicode Windows Fixes, Skipped Items, Context Action &amp; Translations</h2>
+                <p>
+                    Today we are thrilled to announce **Burn to the Brim 4.6.0**, a major minor release introducing significant internationalization improvements, Windows Unicode fix, skipped items representation, original path logging, and right-click restore action in both Win32 and GTK4 interfaces.
+                </p>
+                <p>
+                    <strong>Windows Unicode Display Fix:</strong> Resolved long-standing regional encoding issues under Windows where unicode characters such as <code>&ccedil;</code> in Fran&ccedil;ais or Japanese/Chinese locale characters would render as <code>?</code> in the dynamic settings language dropdown. The application now uses wide APIs (<code>CreateWindowW</code>) for the combobox and uses native wide string messages (<code>SendMessageW</code>) for language population, ensuring character parity on any locale setup.
+                </p>
+                <p>
+                    <strong>Skipped Items Category &amp; Context Restore Action:</strong> Skipped files are now clearly displayed under a "Skipped Items" category in the Results TreeView across both platforms (Win32 and GTK4). In addition, a right-click context menu option <i>"Restore to Original Location"</i> has been added, allowing you to copy/restore files back to their original disk locations.
+                </p>
+                <p>
+                    <strong>Original Paths in index.json:</strong> The packed output <code>index.json</code> file now records the absolute <code>originalPath</code> for each individually resolved file, allowing robust tracking and offline catalog management.
+                </p>
+                <p>
+                    <strong>Help Documentation Translations:</strong> The central <code>overview.html</code> documentation is now fully translated into 13 languages, featuring an inline language selection bar linking English, German, Dutch, French, Spanish, Chinese, Japanese, Italian, Greek, Latin, Portuguese, Hindi, Vulkan, and Elvish.
+                </p>
+                <p>
+                    <strong>Installer Language Multi-Mapping:</strong> The MSI installer packages have been configured with complete multi-language metadata, listing supported LCIDs in the package manifest to allow modern MSIX conversion tools to automatically capture and carry over localized language assets during deployment repackaging.
+                </p>
+            </div>
+
             <!-- News Item 4.5.0 -->
             <div class="news-card">
                 <div class="news-date">June 9, 2026</div>

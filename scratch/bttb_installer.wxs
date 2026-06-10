@@ -4,7 +4,8 @@
            Language="1033" Codepage="1252" Version="$(var.VERSION)" Manufacturer="BurnToTheBrim Team">
     
     <Package Id="*" Keywords="Installer" Description="$(var.APP_NAME) $(var.VERSION) Installer" 
-             Manufacturer="BurnToTheBrim Team" InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+             Manufacturer="BurnToTheBrim Team" InstallerVersion="200" Compressed="yes" InstallScope="perMachine"
+             Languages="1033,1031,1043,1036,1034,2052,1041,1040,1032,1095,2070,1081" />
     
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     

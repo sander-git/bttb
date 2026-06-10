@@ -2,7 +2,7 @@ msgid "about_btn"
 msgstr "Fi' (About)..."
 
 msgid "about_comments"
-msgstr "Burn to the Brim (BTTB) is a logical C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums (CDs, DVDs, Blu-rays, or USBs).\n\nLogic Features in v4.5.0:\n- New high-resolution application icon (bttb.ico) and logo (bttb.png)\n- Minimized search state stack frames & 16MB Win32 stack limit (fixing 0xC00000FD overflows)\n- Expanded log limits to 10MB to avoid truncation\n- Non-blocking incremental GUI rendering\n- Offline JSON Index creation and parser\n- Optional PAR3 parity file generation\n- Bit-perfect PAR3 copy-based restoration\n- Theme support including dark theme options on Linux GTK4\n- Improved Estimated Time Left calculation\n- Custom Volume profiles & dynamic Auto Volume sizing\n- Settings memory restoring the last selected configuration\n- Conflict overrides allowing rules or semantic grouping to win\n- Transfer-rate estimated Time Left & spinner\n- Entropy-Aware Semantic Packing based on MiniLM embeddings\n- Context Menu integration & long path support\n\nAuthors: Sander Raaijmakers, Elwin Oost and the Vulkan Science Council"
+msgstr "Burn to the Brim (BTTB) is a logical C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums (CDs, DVDs, Blu-rays, or USBs).\n\nLogic Features in v4.6.0:\n- New high-resolution application icon (bttb.ico) and logo (bttb.png)\n- Minimized search state stack frames & 16MB Win32 stack limit (fixing 0xC00000FD overflows)\n- Expanded log limits to 10MB to avoid truncation\n- Non-blocking incremental GUI rendering\n- Offline JSON Index creation and parser\n- Optional PAR3 parity file generation\n- Bit-perfect PAR3 copy-based restoration\n- Theme support including dark theme options on Linux GTK4\n- Improved Estimated Time Left calculation\n- Custom Volume profiles & dynamic Auto Volume sizing\n- Settings memory restoring the last selected configuration\n- Conflict overrides allowing rules or semantic grouping to win\n- Transfer-rate estimated Time Left & spinner\n- Entropy-Aware Semantic Packing based on MiniLM embeddings\n- Context Menu integration & long path support\n\nAuthors: Sander Raaijmakers, Elwin Oost and the Vulkan Science Council"
 
 msgid "about_title"
 msgstr "Concerning Burn to the Brim"
@@ -23,7 +23,7 @@ msgid "app_title"
 msgstr "Burn to the Brim"
 
 msgid "app_version"
-msgstr "Version 4.5.0"
+msgstr "Version 4.6.0"
 
 msgid "auto_size"
 msgstr "Auto Size"

@@ -2,7 +2,7 @@ msgid "about_btn"
 msgstr "情報..."
 
 msgid "about_comments"
-msgstr "Burn to the Brim (BTTB) は、ファイルやフォルダーを対象の記憶媒体（CD、DVD、Blu-ray、またはUSB）に最適に配置するために設計された、クラシックなDelphiアプリケーションの最新のC++20移植版です。\n\nv4.5.0の機能:\n- まったく新しい高解像度アプリケーションアイコン（bttb.ico）と統一されたウェブサイトロゴ（bttb.png）\n- 検索状態スタックフレームの最小化と16MBのWin32スタック制限（0xC00000FDオーバーフローの修正）\n- トレースログの切り捨てを回避するためのログバッファ制限を10MBに拡張\n- 非ブロッキングのインクリメンタルGUIレンダリングとファイル容量警告のスキップ\n- オフラインJSONインデックスの作成とインタラクティブなパーサー\n- オプションのPAR3パリティファイルの生成と検証\n- ビットパーフェクトなPAR3コピーベースの復元と修復\n- Linux GTK4での標準のダークテーマオプションを含むテーマサポート\n- 起動時に即座に行われる改善された残り時間推定計算\n- 名前付きカスタムボリュームプロファイルと動的な自動ボリュームサイズ調整\n- 最後に選択したボリューム構成を復元する設定メモリ\n- ルールベースまたはセマンティックのグループ化が優先されるルール競合のオーバーライド\n- 転送速度推定による残り時間表示とステータスアクティビティスピナー\n- MiniLM埋め込みに基づくエントロピー認識セマンティックパッキング\n- エクスプローラーのコンテキストメニューの統合と長いパスのサポート\n\nBTTBは完全にローカライズされており、ドイツ語、オランダ語、フランス語、スペイン語の標準のgettext .poテンプレートに基づいて、ユーザーインターフェース全体を動的に翻訳します。\n\n使用されているライブラリと謝辞:\n- libpar3 (澤田豊氏作, LGPL v2.1+): https://github.com/Parchive/par3cmdline\n- BLAKE3 (BLAKE3チーム作, CC0/Apache-2.0): https://github.com/BLAKE3-team/BLAKE3\n- Leopard-RS (Christopher A. Taylor氏作, BSD 3-Clause): https://github.com/catid/leopard\n- Galois Fieldライブラリ (James S. Plank氏作): http://web.eecs.utk.edu/~jplank/plank/www/software.html\n\n著者: Sander Raaijmakers, Elwin Oost と Burn to the Brim チーム"
+msgstr "Burn to the Brim (BTTB) は、ファイルやフォルダーを対象の記憶媒体（CD、DVD、Blu-ray、またはUSB）に最適に配置するために設計された、クラシックなDelphiアプリケーションの最新のC++20移植版です。\n\nv4.6.0の機能:\n- まったく新しい高解像度アプリケーションアイコン（bttb.ico）と統一されたウェブサイトロゴ（bttb.png）\n- 検索状態スタックフレームの最小化と16MBのWin32スタック制限（0xC00000FDオーバーフローの修正）\n- トレースログの切り捨てを回避するためのログバッファ制限を10MBに拡張\n- 非ブロッキングのインクリメンタルGUIレンダリングとファイル容量警告のスキップ\n- オフラインJSONインデックスの作成とインタラクティブなパーサー\n- オプションのPAR3パリティファイルの生成と検証\n- ビットパーフェクトなPAR3コピーベースの復元と修復\n- Linux GTK4での標準のダークテーマオプションを含むテーマサポート\n- 起動時に即座に行われる改善された残り時間推定計算\n- 名前付きカスタムボリュームプロファイルと動的な自動ボリュームサイズ調整\n- 最後に選択したボリューム構成を復元する設定メモリ\n- ルールベースまたはセマンティックのグループ化が優先されるルール競合のオーバーライド\n- 転送速度推定による残り時間表示とステータスアクティビティスピナー\n- MiniLM埋め込みに基づくエントロピー認識セマンティックパッキング\n- エクスプローラーのコンテキストメニューの統合と長いパスのサポート\n\nBTTBは完全にローカライズされており、ドイツ語、オランダ語、フランス語、スペイン語の標準のgettext .poテンプレートに基づいて、ユーザーインターフェース全体を動的に翻訳します。\n\n使用されているライブラリと謝辞:\n- libpar3 (澤田豊氏作, LGPL v2.1+): https://github.com/Parchive/par3cmdline\n- BLAKE3 (BLAKE3チーム作, CC0/Apache-2.0): https://github.com/BLAKE3-team/BLAKE3\n- Leopard-RS (Christopher A. Taylor氏作, BSD 3-Clause): https://github.com/catid/leopard\n- Galois Fieldライブラリ (James S. Plank氏作): http://web.eecs.utk.edu/~jplank/plank/www/software.html\n\n著者: Sander Raaijmakers, Elwin Oost と Burn to the Brim チーム"
 
 msgid "about_title"
 msgstr "Burn to the Brim について"
@@ -23,7 +23,7 @@ msgid "app_title"
 msgstr "Burn to the Brim"
 
 msgid "app_version"
-msgstr "バージョン 4.5.0"
+msgstr "バージョン 4.6.0"
 
 msgid "auto_size"
 msgstr "自動サイズ"
