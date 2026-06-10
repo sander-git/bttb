@@ -11,6 +11,10 @@
 #include <limits.h>
 #endif
 
+#ifndef LANG_LATIN
+#define LANG_LATIN 0x47
+#endif
+
 std::string BttbLocale::detectSystemLanguage() {
 #ifdef _WIN32
     LANGID langId = GetUserDefaultUILanguage();
@@ -19,6 +23,13 @@ std::string BttbLocale::detectSystemLanguage() {
     if (lang == LANG_DUTCH) return "nl";
     if (lang == LANG_FRENCH) return "fr";
     if (lang == LANG_SPANISH) return "es";
+    if (lang == LANG_CHINESE) return "zh";
+    if (lang == LANG_JAPANESE) return "ja";
+    if (lang == LANG_ITALIAN) return "it";
+    if (lang == LANG_GREEK) return "el";
+    if (lang == LANG_LATIN) return "la";
+    if (lang == LANG_PORTUGUESE) return "pt";
+    if (lang == LANG_HINDI) return "hi";
 #else
     const char* langEnv = std::getenv("LANG");
     if (!langEnv) langEnv = std::getenv("LC_ALL");
@@ -27,7 +38,10 @@ std::string BttbLocale::detectSystemLanguage() {
         std::string l(langEnv);
         if (l.length() >= 2) {
             std::string code = l.substr(0, 2);
-            if (code == "de" || code == "nl" || code == "fr" || code == "es") {
+            if (code == "de" || code == "nl" || code == "fr" || code == "es" ||
+                code == "zh" || code == "ja" || code == "it" || code == "el" ||
+                code == "la" || code == "pt" || code == "hi" || code == "vul" ||
+                code == "elv") {
                 return code;
             }
         }
@@ -152,11 +166,7 @@ void BttbLocale::load(const std::string& langCode) {
 
         if (trimmed.rfind("msgid", 0) == 0) {
             if (!currentMsgId.empty()) {
-#ifdef _WIN32
-                translations[currentMsgId] = utf8ToAnsi(currentMsgStr);
-#else
                 translations[currentMsgId] = currentMsgStr;
-#endif
             }
             currentMsgId.clear();
             currentMsgStr.clear();
@@ -184,11 +194,7 @@ void BttbLocale::load(const std::string& langCode) {
         }
     }
     if (!currentMsgId.empty()) {
-#ifdef _WIN32
-        translations[currentMsgId] = utf8ToAnsi(currentMsgStr);
-#else
         translations[currentMsgId] = currentMsgStr;
-#endif
     }
 }
 
@@ -215,9 +221,5 @@ std::string BttbLocale::get(const std::string& key, const std::string& fallback)
     if (it != translations.end()) {
         return it->second;
     }
-#ifdef _WIN32
-    return utf8ToAnsi(fallback);
-#else
     return fallback;
-#endif
 }

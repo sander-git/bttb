@@ -52,8 +52,10 @@ struct PackedVolume {
     int volumeIndex = 0;
     int64_t totalBytes = 0;
     std::vector<std::string> itemPaths;
+    std::vector<std::string> itemOriginalPaths;
     std::vector<int64_t> itemSizes;
     std::vector<std::vector<std::string>> itemGroupedPaths;
+    std::vector<std::vector<std::string>> itemOriginalGroupedPaths;
     std::vector<std::string> itemDates;
 };
 
@@ -196,6 +198,6 @@ std::filesystem::path makeLongPath(const std::filesystem::path& p);
 bool createVolumePar3(const std::string& volumePath, const std::string& parBaseName, int64_t blockSize, int redundancyPercent, std::string& errorMsg);
 int verifyVolumePar3(const std::string& volumePath, const std::string& parBaseName, std::vector<std::string>& damagedFiles, std::string& logOutput);
 bool restoreVolumePar3(const std::string& volumePath, const std::string& destPath, const std::string& parBaseName, std::string& logOutput);
-bool parseIndexJson(const std::string& jsonFilePath, std::vector<PackedVolume>& volumes, std::string& errorMsg);
+bool parseIndexJson(const std::string& jsonFilePath, std::vector<PackedVolume>& volumes, std::string& errorMsg, std::set<std::string>* outSkippedFiles = nullptr);
 
 } // namespace bttb

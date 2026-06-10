@@ -1,0 +1,611 @@
+msgid "about_btn"
+msgstr "Sobre..."
+
+msgid "about_comments"
+msgstr "O Burn to the Brim (BTTB) é uma conversão moderna em C++20 da clássica aplicação Delphi, projetada para ajustar de forma ideal arquivos e pastas em mídias de armazenamento de destino (CDs, DVDs, Blu-rays ou USBs).\n\nRecursos na v4.5.0:\n- Ícone da aplicação de alta resolução totalmente novo (bttb.ico) e logotipo unificado do site (bttb.png)\n- Minimização dos stack frames do estado de pesquisa & limite de stack Win32 de 16MB (corrigindo estouros 0xC00000FD)\n- Limites de buffer de log estendidos para 10MB para evitar a exclusão do log de rastreamento\n- Renderização de GUI incremental não bloqueante & exclusão de avisos de capacidade de arquivos\n- Criação de índice JSON offline e analisador interativo\n- Geração e verificação opcional de arquivos de paridade PAR3\n- Restauração e reparo baseados em cópia PAR3 bit-perfect\n- Suporte a temas, incluindo opções padrão de tema escuro no Linux GTK4\n- Cálculo aprimorado do Tempo Restante Estimado imediatamente na inicialização\n- Perfis de volume personalizados nomeados & dimensionamento dinâmico de volume automático\n- Memória das configurações que restaura a última configuração de volume selecionada\n- Substituições de conflito de regras permitindo que o agrupamento baseado em regras ou semântico vença\n- Tempo restante estimado baseado na taxa de transferência & indicador spinner de atividade de status\n- Empacotamento semântico ciente da entropia baseado em embeddings MiniLM\n- Integração do menu de contexto do Windows Explorer & suporte a caminhos longos\n\nO BTTB está totalmente localizado e traduz dinamicamente toda a interface do usuário com base nos modelos gettext .po padrão em alemão, holandês, francês e espanhol.\n\nBibliotecas e Atribuições Utilizadas:\n- libpar3 (por Yutaka Sawada, LGPL v2.1+): https://github.com/Parchive/par3cmdline\n- BLAKE3 (pela equipe BLAKE3, CC0/Apache-2.0): https://github.com/BLAKE3-team/BLAKE3\n- Leopard-RS (por Christopher A. Taylor, BSD 3-Clause): https://github.com/catid/leopard\n- Biblioteca Galois Field (por James S. Plank): http://web.eecs.utk.edu/~jplank/plank/www/software.html\n\nAutores: Sander Raaijmakers, Elwin Oost e a equipe do Burn to the Brim"
+
+msgid "about_title"
+msgstr "Sobre o Burn to the Brim"
+
+msgid "add_btn"
+msgstr "Adicionar..."
+
+msgid "add_rule_btn"
+msgstr "Adicionar Regra"
+
+msgid "add_src_dir_title"
+msgstr "Adicionar diretório de origem"
+
+msgid "app_copyright"
+msgstr "Copyright © 2001-2026 Sander Raaijmakers, Elwin Oost e a equipe do Burn to the Brim"
+
+msgid "app_title"
+msgstr "Burn to the Brim"
+
+msgid "app_version"
+msgstr "Versão 4.5.0"
+
+msgid "auto_size"
+msgstr "Tamanho Automático"
+
+msgid "browse_btn"
+msgstr "Procurar..."
+
+msgid "browse_dest_tooltip"
+msgstr "Procurar diretório de destino"
+
+msgid "browse_src_tooltip"
+msgstr "Procurar diretório de origem"
+
+msgid "btn_cancel"
+msgstr "Cancelar"
+
+msgid "btn_resize"
+msgstr "Redimensionar"
+
+msgid "btn_skip"
+msgstr "Ignorar arquivos"
+
+msgid "cancel_btn"
+msgstr "Cancelar"
+
+msgid "capacity_label"
+msgstr "Capacidade:"
+
+msgid "capacity_recommend_prompt_gtk"
+msgstr "O maior item escaneado requer uma capacidade de volume de pelo menos %.2f MB.\n\nEscolha uma ação:"
+
+msgid "close_btn"
+msgstr "Fechar"
+
+msgid "cluster_label"
+msgstr "Tamanho Cluster (Bytes):"
+
+msgid "complete_list_src_folders"
+msgstr "Lista completa de pastas de origem:"
+
+msgid "create_iso_btn"
+msgstr "Criar ISO..."
+
+msgid "create_symlinks_chk"
+msgstr "Criar links simbólicos na pasta de destino (Padrão)"
+
+msgid "custom_size"
+msgstr "Tamanho Personalizado"
+
+msgid "custom_vol_name_placeholder"
+msgstr "Nome do volume personalizado"
+
+msgid "dark_theme_chk"
+msgstr "Habilitar Tema Escuro:"
+
+msgid "dir_setup_group"
+msgstr "Configuração de Diretórios"
+
+msgid "edit_btn"
+msgstr "Editar..."
+
+msgid "edit_src_dir_title"
+msgstr "Editar diretório de origem"
+
+msgid "enable_par3_chk"
+msgstr "Habilitar proteção de paridade PAR3:"
+
+msgid "execution_log"
+msgstr "Log de Execução"
+
+msgid "files_col"
+msgstr "Arquivos"
+
+msgid "filled_label"
+msgstr "Preenchido: 0.00%"
+
+msgid "fitted_status_col"
+msgstr "Status do ajuste"
+
+msgid "folders_col"
+msgstr "Pastas"
+
+msgid "generate_btn"
+msgstr "Gerar"
+
+msgid "grouping_rules_frame"
+msgstr "Regras de agrupamento de arquivos / pastas"
+
+msgid "help_btn"
+msgstr "Ajuda"
+
+msgid "help_guide_text"
+msgstr "1. Profundidade de divisão de diretório\nDetermina o nível de aninhamento de pastas no qual os itens são divididos:\n - Profundidade 0 (Padrão): os arquivos e pastas de nível superior são tratados como itens separados.\n - Profundidade 1: a divisão ocorre um nível mais abaixo, mantendo intactas as pastas de nível superior, mas dividindo as suas subpastas imediatas.\n\n2. Tempo máximo de busca\nO máximo de segundos que o solucionador com backtracking tem permissão para rodar. Se atingido, a melhor seleção encontrada até o momento é usada.\n\n3. Spanning Slack\nPermite a terminação antecipada do solucionador quando um volume estiver empacotado dentro deste número de bytes a partir da capacidade máxima absoluta (ex: 2048 bytes).\n\n4. Regras de agrupamento de arquivos/pastas\nForça os itens correspondentes a permanecerem agrupados no mesmo volume (ex: correspondente a '*.mp3' ou regex '^album_.*').\n\n5. Pastas de Origem Múltiplas (+)\nClique em '+' para especificar várias pastas de origem. O BTTB age como se estivessem num único diretório raiz. Caminhos de origem aninhados são ignorados.\n\n6. Criar Links Simbólicos\nEm vez de copiar/mover os arquivos para a pasta de destino, o BTTB cria links simbólicos leves apontando para os seus arquivos originais.\n\n7. Empacotamento Semântico Neural & Guia de Configuração MiniLM\nAo especificar um prompt semântico, o BTTB agrupa arquivos com conteúdo semelhante usando embeddings de deep learning cientes do contexto.\nPara usar o modelo neural MiniLM preferido de alta precisão, deve instalar o Python 3 e sentence-transformers:\n - Passo 1: garanta que o Python 3 e o pip estejam instalados.\n   (Linux: execute 'sudo apt install python3 python3-pip python3-venv')\n   (Windows: instale a partir de https://www.python.org/ e marque 'Add Python to PATH')\n - Passo 2: instale sentence-transformers via terminal ou prompt de comando:\n   Opção A (Recomendado pela simplicidade):\n     pip install sentence-transformers\n   Opção B (Isolamento de ambiente virtual):\n     python3 -m venv bttb_env\n     source bttb_env/bin/activate  # (Windows: bttb_env\\Scripts\\activate)\n     pip install sentence-transformers\n - Passo 3: reinicie o Burn to the Brim para carregar o MiniLM automaticamente! Se não for encontrado, o BTTB recorrerá graciosamente a um projetor TF-IDF de caracteres localizado."
+
+msgid "help_guide_title"
+msgstr "Guia de Ajuda do Burn to the Brim (BTTB)"
+
+msgid "help_title"
+msgstr "Ajuda - Burn to the Brim"
+
+msgid "import_json_btn"
+msgstr "Importar JSON..."
+
+msgid "integrate_ctx_chk"
+msgstr "Integrar com o menu de contexto do Windows Explorer"
+
+msgid "iso_title"
+msgstr "Criar Imagem ISO"
+
+msgid "label_par3_base"
+msgstr "Nome Base PAR3:"
+
+msgid "label_rec_directory"
+msgstr "Diretório de Recuperação:"
+
+msgid "label_vol_directory"
+msgstr "Diretório do Volume:"
+
+msgid "language_label"
+msgstr "Idioma:"
+
+msgid "log_auto_volume_cap_set_1"
+msgstr "Capacidade de auto volume configurada para: "
+
+msgid "log_auto_volume_cap_set_2"
+msgstr " bytes ("
+
+msgid "log_backtracking_failed_fallback_greedy"
+msgstr "O solucionador com backtracking não encontrou um ajuste (ou expirou). Recorrendo à alocação gananciosa para garantir que todos os arquivos restantes sejam incluídos..."
+
+msgid "log_bytes_suffix"
+msgstr " bytes)"
+
+msgid "log_capacity_adapted_1"
+msgstr "Capacidade adaptada para "
+
+msgid "log_capacity_adapted_2"
+msgstr " bytes. Tentando solucionador novamente..."
+
+msgid "log_capacity_skip_larger"
+msgstr "Arquivos maiores ignorados. Tentando solucionador novamente..."
+
+msgid "log_completed_file_organization"
+msgstr "Organização de arquivos concluída."
+
+msgid "log_copying_repair"
+msgstr "Copiando conteúdos do volume e executando a reparação. Aguarde...\n"
+
+msgid "log_created_offline_json_index"
+msgstr "Arquivo de índice JSON offline criado: "
+
+msgid "log_damaged_files"
+msgstr "Arquivos danificados ou em falta encontrados:\n"
+
+msgid "log_errors"
+msgstr "Logs/Erros: "
+
+msgid "log_fail_restore"
+msgstr "\nFALHA: A restauração ou reparação falhou.\n"
+
+msgid "log_fail_verify_status"
+msgstr "\nA verificação detetou problemas (status "
+
+msgid "log_failed_create_json_index"
+msgstr "Falha ao criar arquivo de índice JSON: "
+
+msgid "log_failed_organize_item_1"
+msgstr "Falha ao organizar "
+
+msgid "log_failed_par3_creation"
+msgstr "A criação do PAR3 falhou: "
+
+msgid "log_failed_read_temp_embed_output"
+msgstr "Falha ao ler arquivo de saída de embedding temporário: "
+
+msgid "log_failed_symlink_retry_copy_1"
+msgstr "Falha ao criar link simbólico para "
+
+msgid "log_failed_symlink_retry_copy_2"
+msgstr " (tentando novamente com cópia)"
+
+msgid "log_failed_write_temp_embed_input"
+msgstr "Falha ao gravar arquivo de entrada de embedding temporário: "
+
+msgid "log_finished_solving_1"
+msgstr "Solução concluída. Tempo decorrido: "
+
+msgid "log_finished_solving_2"
+msgstr " ms"
+
+msgid "log_forcing_progress_exceeds_cap_1"
+msgstr "Forçando progresso: empacotando o item restante maior que a capacidade da mídia ("
+
+msgid "log_found_items"
+msgstr "Itens encontrados para ajuste: "
+
+msgid "log_frame_title"
+msgstr "Registros de status e solucionador"
+
+msgid "log_frame_title_verify"
+msgstr "Log de Verificação e Restauração"
+
+msgid "log_generating_par3_for_volume_1"
+msgstr "Gerando arquivos de paridade PAR3 para o Volume "
+
+msgid "log_generating_semantic_embeddings"
+msgstr "Gerando embeddings semânticos..."
+
+msgid "log_index_fail"
+msgstr "Nenhum arquivo danificado individual foi identificado, mas a verificação do índice falhou. O arquivo PAR3 pode estar danificado.\n"
+
+msgid "log_medium_capacity_1"
+msgstr "Capacidade do Meio: "
+
+msgid "log_medium_capacity_2"
+msgstr " setores ("
+
+msgid "log_new_best_space_utilization"
+msgstr "Nova melhor utilização de espaço: "
+
+msgid "log_no_files_written_on_disk"
+msgstr "Nenhum arquivo foi copiado, linkado simbolicamente ou movido no disco."
+
+msgid "log_no_items_to_fit"
+msgstr "Nenhum item para ajustar."
+
+msgid "log_optimal_selection_covers"
+msgstr "A seleção ideal cobre: "
+
+msgid "log_organizing_item"
+msgstr "Organizando item: "
+
+msgid "log_par3_base"
+msgstr "Nome base PAR3: "
+
+msgid "log_recovery_path"
+msgstr "Caminho de recuperação: "
+
+msgid "log_running_semantic_clustering"
+msgstr "Executando agrupamento semântico aglomerativo (limite=0.6)..."
+
+msgid "log_scan_aborted_failed_iterate"
+msgstr "Varredura abortada pelo usuário devido a falha ao iterar o diretório."
+
+msgid "log_scan_aborted_unreadable_dir"
+msgstr "Varredura abortada pelo usuário devido a diretório ilegível."
+
+msgid "log_scan_aborted_unreadable_item"
+msgstr "Varredura abortada pelo usuário devido a item ilegível."
+
+msgid "log_scanning_folder"
+msgstr "Escaneando pasta: "
+
+msgid "log_search_time_limit_exceeded_1"
+msgstr "Limite de tempo de busca excedido ("
+
+msgid "log_search_time_limit_exceeded_2"
+msgstr " segundos)."
+
+msgid "log_selected_items"
+msgstr "Itens selecionados:"
+
+msgid "log_selected_items_for_volume_1"
+msgstr "Itens selecionados para o Volume "
+
+msgid "log_selection_within_slack_1"
+msgstr "Seleção dentro da tolerância de slack ("
+
+msgid "log_selection_within_slack_2"
+msgstr "%) encontrada. Terminando busca antecipadamente."
+
+msgid "log_semantic_clustering_completed"
+msgstr "Agrupamento semântico concluído. Total de grupos consolidados: "
+
+msgid "log_semantic_grouping_fallback"
+msgstr "-> O agrupamento semântico recorrerá a métricas de correspondência de strings locais."
+
+msgid "log_single_vol_sol_forcing"
+msgstr "Solução de volume único: forçando seleção de todos os arquivos para garantir 100% de inclusão..."
+
+msgid "log_solver_aborted_files_exceed_cap"
+msgstr "Solucionador abortado: o conjunto de dados contém arquivos que excedem a capacidade."
+
+msgid "log_solver_aborted_files_exceed_cap_adapt"
+msgstr "Solucionador abortado: o conjunto de dados contém arquivos que excedem a capacidade. Adapte a capacidade ou ative a tentativa interativa."
+
+msgid "log_solving_for_vol_header_1"
+msgstr "\r\n--- SOLUCIONANDO PARA O VOLUME "
+
+msgid "log_solving_for_vol_header_2"
+msgstr " ---"
+
+msgid "log_solving_optimal_bin"
+msgstr "Solucionando seleção ideal de bins..."
+
+msgid "log_start_restore"
+msgstr "Iniciando a restauração/reparação do volume...\n"
+
+msgid "log_start_verify"
+msgstr "Iniciando a verificação do volume...\n"
+
+msgid "log_success_par3_for_volume_1"
+msgstr "Criada com sucesso a proteção de paridade PAR3 para o Volume "
+
+msgid "log_success_restore"
+msgstr "\nSUCESSO: Volume copiado e reparado com sucesso numa pasta de recuperação separada!\n"
+
+msgid "log_success_verify"
+msgstr "\nSUCESSO: Todos os arquivos foram verificados e estão limpos/bit-perfect!\n"
+
+msgid "log_target_volume_cap_1"
+msgstr "Capacidade do volume de destino: "
+
+msgid "log_target_volume_cap_2"
+msgstr " bytes ("
+
+msgid "log_test_simulation_complete"
+msgstr "--- SIMULAÇÃO DE TESTE CONCLUÍDA ---"
+
+msgid "log_theoretical_min_vols"
+msgstr "Volumes mínimos teóricos necessários: "
+
+msgid "log_total_dataset_size_1"
+msgstr "Tamanho total do conjunto de dados: "
+
+msgid "log_total_dataset_size_2"
+msgstr " bytes ("
+
+msgid "log_volume_packing_estimation_header"
+msgstr "--- Estimação de Empacotamento de Volume ---"
+
+msgid "log_volume_path"
+msgstr "Caminho do volume: "
+
+msgid "log_warn_dir_unreadable_1"
+msgstr "Aviso: Diretório '"
+
+msgid "log_warn_dir_unreadable_2"
+msgstr "' não legível ("
+
+msgid "log_warn_embedded_output_empty"
+msgstr "Aviso: O output incorporado está vazio."
+
+msgid "log_warn_failed_iterate_dir_1"
+msgstr "Aviso: Falha ao iterar o diretório '"
+
+msgid "log_warn_failed_iterate_dir_2"
+msgstr "' ("
+
+msgid "log_warn_item_exceeds_cap_1"
+msgstr "Aviso: Item '"
+
+msgid "log_warn_item_exceeds_cap_2"
+msgstr "' ("
+
+msgid "log_warn_item_exceeds_cap_3"
+msgstr " bytes) é maior do que o tamanho do volume de destino ("
+
+msgid "log_warn_item_unreadable_1"
+msgstr "Aviso: Arquivo ou pasta em '"
+
+msgid "log_warn_item_unreadable_2"
+msgstr "' não legível ("
+
+msgid "log_warn_python_embed_engine_failed"
+msgstr "Aviso: O mecanismo de embedding python do subprocesso falhou ou o python3 não está instalado."
+
+msgid "manage_src_folders_title"
+msgstr "Gerenciar pastas de origem"
+
+msgid "match_files_chk"
+msgstr "Corresponder Arquivos"
+
+msgid "match_folders_chk"
+msgstr "Corresponder Pastas"
+
+msgid "media_size_label"
+msgstr "Tamanho da Mídia:"
+
+msgid "move_files_chk"
+msgstr "Mover pastas/arquivos ajustados para a pasta de destino"
+
+msgid "move_tooltip"
+msgstr "Mover arquivos para seus volumes de destino em vez de copiar ou criar links simbólicos"
+
+msgid "ok_btn"
+msgstr "OK"
+
+msgid "par3_block_size"
+msgstr "Tamanho do bloco PAR3 (Bytes):"
+
+msgid "par3_redundancy"
+msgstr "Percentagem de redundância PAR3 (%):"
+
+msgid "pattern_col"
+msgstr "Padrão"
+
+msgid "pref_title"
+msgstr "Preferências"
+
+msgid "progress_frame_title"
+msgstr "Capacidade de mídia ajustada"
+
+msgid "regex_pattern_chk"
+msgstr "Padrão Regex"
+
+msgid "rel_path_col"
+msgstr "Caminho relativo / Categoria"
+
+msgid "remove_btn"
+msgstr "Remover"
+
+msgid "remove_selected_btn"
+msgstr "Remover Selecionados"
+
+msgid "restart_notice"
+msgstr "Preferências de idioma salvas. Reinicie o Burn to the Brim para aplicar as alterações."
+
+msgid "restart_title"
+msgstr "Idioma Alterado"
+
+msgid "restore_repair_btn"
+msgstr "Restaurar & Reparar"
+
+msgid "rule_pattern_placeholder"
+msgstr "Padrão da regra (*.mp3 ou ^[0-9].*\\..*$)"
+
+msgid "rule_wins_chk"
+msgstr "O agrupamento baseado em regras vence:"
+
+msgid "save_btn"
+msgstr "Salvar"
+
+msgid "save_cv_label"
+msgstr "Salvar Volume Pers.:"
+
+msgid "save_cv_tooltip"
+msgstr "Salvar capacidade, setor e slack atuais como um volume personalizado nomeado"
+
+msgid "search_time_label"
+msgstr "Tempo Max de Busca (seg):"
+
+msgid "select_dest_dir_title"
+msgstr "Selecionar diretório de destino"
+
+msgid "select_medium_label"
+msgstr "Selecionar Mídia:"
+
+msgid "select_rec_dir_title"
+msgstr "Selecionar Diretório de Recuperação"
+
+msgid "select_vol_dir_title"
+msgstr "Selecionar Diretório do Volume"
+
+msgid "semantic_placeholder"
+msgstr "ex. manter conteúdos semelhantes juntos"
+
+msgid "semantic_prompt"
+msgstr "Prompt semântico:"
+
+msgid "semantic_tooltip"
+msgstr "Especificar uma descrição semântica para agrupar arquivos semelhantes usando MiniLM AI"
+
+msgid "size_col"
+msgstr "Tamanho"
+
+msgid "skip_empty_chk"
+msgstr "Ignorar pastas / arquivos vazios"
+
+msgid "skip_empty_label"
+msgstr "Ignorar Arquivos/Pastas vazios:"
+
+msgid "skip_unreadable_chk"
+msgstr "Ignorar arquivos ilegíveis (Tolerante)"
+
+msgid "slack_label"
+msgstr "Bytes de Slack:"
+
+msgid "source_folder"
+msgstr "Pasta de Origem:"
+
+msgid "source_tooltip"
+msgstr "Diretório de origem contendo os arquivos a serem organizados"
+
+msgid "span_chk"
+msgstr "Dividir em múltiplos volumes (Volume_1, Volume_2, etc.)"
+
+msgid "span_tooltip"
+msgstr "Ajustar arquivos restantes em múltiplos volumes sequencialmente em vez de apenas no primeiro volume"
+
+msgid "split_depth_label"
+msgstr "Profundidade de divisão dir:"
+
+msgid "start_btn"
+msgstr "Iniciar"
+
+msgid "start_tooltip"
+msgstr "Iniciar a organização dos arquivos em volumes ideais"
+
+msgid "stop_btn"
+msgstr "Parar"
+
+msgid "stop_tooltip"
+msgstr "Parar o solucionador atual ou operação de cópia"
+
+msgid "symlink_tooltip"
+msgstr "Criar links simbólicos dos arquivos no destino em vez de os copiar"
+
+msgid "target_folder"
+msgstr "Pasta de Destino:"
+
+msgid "target_iso_file"
+msgstr "Arquivo ISO de Destino:"
+
+msgid "target_tooltip"
+msgstr "Diretório de destino onde os volumes organizados serão criados"
+
+msgid "test_btn"
+msgstr "Testar"
+
+msgid "test_tooltip"
+msgstr "Simular a organização dos arquivos e calcular métricas sem modificar arquivos no disco"
+
+msgid "time_left_label"
+msgstr "Tempo Restante: --:--"
+
+msgid "tooltip_create_iso"
+msgstr "Criar imagens do sistema de arquivos ISO a partir dos volumes resolvidos."
+
+msgid "tooltip_import_json"
+msgstr "Importar e analisar arquivos de índice JSON offline para visualizar detalhes do volume resolvido."
+
+msgid "tooltip_move"
+msgstr "Mover/cortar os arquivos/pastas originais diretamente para as pastas de destino do volume."
+
+msgid "tooltip_semantic"
+msgstr "Introduza um prompt como 'keep audio together' para analisar arquivos através do MiniLM."
+
+msgid "tooltip_source"
+msgstr "Caminhos das pastas a serem empacotadas e consolidadas, separados por ponto e vírgula."
+
+msgid "tooltip_span"
+msgstr "Permitir a divisão de conteúdos em múltiplas pastas nomeadas sequencialmente."
+
+msgid "tooltip_start"
+msgstr "Executar o solucionador e organizar arquivos/pastas de acordo com as preferências."
+
+msgid "tooltip_stop"
+msgstr "Abortar o processo atual de empacotamento ou organização de arquivos."
+
+msgid "tooltip_symlink"
+msgstr "Criar links simbólicos do sistema de arquivos nas pastas de destino do volume (não destrutivo)."
+
+msgid "tooltip_target"
+msgstr "Caminho de destino onde os volumes serão organizados e escritos."
+
+msgid "tooltip_test"
+msgstr "Simular o empacotamento sem realizar operações nos arquivos no disco para testar a utilização."
+
+msgid "tooltip_trace"
+msgstr "Exibir diagnósticos detalhados e métricas de desempenho nos registros."
+
+msgid "tooltip_verify_restore"
+msgstr "Verificar volumes resolvidos ou copiar e restaurar arquivos danificados usando arquivos PAR3."
+
+msgid "trace_chk"
+msgstr "Habilitar registro detalhado de diagnóstico do solucionador (Trace)"
+
+msgid "trace_tooltip"
+msgstr "Exibir diagnósticos detalhados e métricas de desempenho nos registros"
+
+msgid "type_col"
+msgstr "Tipo"
+
+msgid "verify_only_btn"
+msgstr "Apenas Verificar"
+
+msgid "verify_restore_btn"
+msgstr "Verificar & Restaurar..."
+
+msgid "verify_title"
+msgstr "Verificar & Restaurar Volumes..."
+
+msgid "volume_label"
+msgstr "Etiqueta do Volume:"

@@ -53,10 +53,14 @@ public:
             CREATE_SUBPATH_GRANDCHILD,
             CREATE_REMAINING_PARENT,
             CREATE_REMAINING_CHILD,
-            CREATE_REMAINING_SUBPATH_GRANDCHILD
+            CREATE_REMAINING_SUBPATH_GRANDCHILD,
+            CREATE_SKIPPED_PARENT,
+            CREATE_SKIPPED_CHILD
         };
         Type type;
         int volumeIndex = 0;
+        int fileIndex = -1;
+        int grandchildIndex = -1;
         int64_t totalBytes = 0;
         std::string path;
         int64_t sizeBytes = 0;
@@ -69,10 +73,14 @@ public:
     GtkTreeIter current_file_child_iter;
     GtkTreeIter current_remaining_parent_iter;
     GtkTreeIter current_remaining_child_iter;
+    GtkTreeIter current_skipped_parent_iter;
+    GtkTreeIter current_skipped_child_iter;
+    std::string importedJsonDir;
 
     void start_rendering(bool includeUnfitted, const std::string& statusTag = "Fitted");
     bool process_render_batch();
     void set_ui_sensitive(gboolean sensitive);
+    void restore_item(int type, int volIdx, int fileIdx, int gcIdx);
 };
 
 } // namespace bttb

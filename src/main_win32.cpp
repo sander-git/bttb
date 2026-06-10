@@ -8,12 +8,16 @@
 #include <chrono>
 #include <filesystem>
 #include <iostream>
+#include <fstream>
 #include <clocale>
 #include "bttb_logic.hpp"
 #include "bttb_locale.hpp"
 #include "cli_engine.hpp"
 #include <dwmapi.h>
 #include <uxtheme.h>
+
+using bttb::utf8Path;
+using bttb::toUtf8Str;
 
 #ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
 #define DWMWA_USE_IMMERSIVE_DARK_MODE 20
@@ -227,6 +231,8 @@ std::jthread g_iso_thread;
 // v3.3.0 Explorer Integration & Single Instance Globals
 std::wstring g_folderToAdd = L"";
 HANDLE g_hMutex = NULL;
+static std::string g_importedJsonDir = "";
+static HTREEITEM g_current_skipped_parent = NULL;
 
 // Unicode helper functions
 #ifndef wstringToUtf8_defined
@@ -245,6 +251,240 @@ inline std::wstring utf8ToWstring(const std::string& str) {
     return wstrTo;
 }
 #endif
+
+struct TreeViewItemData {
+    int type = -1; // 0 = volume parent, 1 = file child, 2 = grandchild, 3 = remaining parent, 4 = remaining child, 5 = remaining grandchild, 6 = skipped parent, 7 = skipped child
+    int volumeIndex = -1;
+    int fileIndex = -1;
+    int grandchildIndex = -1;
+    std::string relativePath;
+    std::string originalPath;
+};
+
+// Function prototypes to avoid order declaration issues
+void Win32RestoreItem(HWND hwndParent, TreeViewItemData* data);
+void AppendTextToLog(HWND hEdit, const std::string& text);
+
+inline HWND CreateWindowExUTF8(DWORD dwExStyle, const char* lpClassName, const char* lpWindowName, DWORD dwStyle, int X, int Y, int nWidth, int nHeight, HWND hWndParent, HMENU hMenu, HINSTANCE hInstance, LPVOID lpParam) {
+    std::wstring wClassName = utf8ToWstring(lpClassName ? lpClassName : "");
+    std::wstring wWindowName = utf8ToWstring(lpWindowName ? lpWindowName : "");
+    return CreateWindowExW(dwExStyle, wClassName.c_str(), wWindowName.c_str(), dwStyle, X, Y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
+}
+
+inline void SetControlTextUTF8(HWND hwnd, const std::string& text) {
+    SetWindowTextW(hwnd, utf8ToWstring(text).c_str());
+}
+
+inline int GetWindowTextUTF8(HWND hwnd, char* lpString, int nMaxCount) {
+    int len = GetWindowTextLengthW(hwnd);
+    if (len <= 0) {
+        if (nMaxCount > 0) lpString[0] = '\0';
+        return 0;
+    }
+    std::wstring wstr(len + 1, 0);
+    GetWindowTextW(hwnd, &wstr[0], len + 1);
+    if (wstr.back() == L'\0') wstr.pop_back();
+    while (!wstr.empty() && wstr.back() == L'\0') wstr.pop_back();
+    std::string s = wstringToUtf8(wstr);
+    size_t copyLen = (s.length() < (size_t)nMaxCount - 1) ? s.length() : ((size_t)nMaxCount - 1);
+    if (copyLen > 0) {
+        memcpy(lpString, s.c_str(), copyLen);
+    }
+    lpString[copyLen] = '\0';
+    return (int)copyLen;
+}
+
+inline LRESULT SendMessageUTF8(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam) {
+    if (Msg == LB_ADDSTRING || Msg == LB_INSERTSTRING || Msg == CB_ADDSTRING) {
+        const char* str = reinterpret_cast<const char*>(lParam);
+        if (str) {
+            std::wstring wstr = utf8ToWstring(str);
+            return SendMessageW(hWnd, Msg, wParam, reinterpret_cast<LPARAM>(wstr.c_str()));
+        }
+    } else if (Msg == EM_REPLACESEL) {
+        const char* str = reinterpret_cast<const char*>(lParam);
+        if (str) {
+            std::wstring wstr = utf8ToWstring(str);
+            return SendMessageW(hWnd, Msg, wParam, reinterpret_cast<LPARAM>(wstr.c_str()));
+        }
+    } else if (Msg == LB_GETTEXT) {
+        int len = SendMessageW(hWnd, LB_GETTEXTLEN, wParam, 0);
+        if (len < 0) return len;
+        std::wstring wbuf(len + 1, 0);
+        LRESULT res = SendMessageW(hWnd, LB_GETTEXT, wParam, reinterpret_cast<LPARAM>(&wbuf[0]));
+        if (res >= 0) {
+            if (wbuf.back() == L'\0') wbuf.pop_back();
+            std::string utf8 = wstringToUtf8(wbuf);
+            char* dest = reinterpret_cast<char*>(lParam);
+            strcpy(dest, utf8.c_str());
+        }
+        return res;
+    } else if (Msg == CB_GETLBTEXT) {
+        int len = SendMessageW(hWnd, CB_GETLBTEXTLEN, wParam, 0);
+        if (len < 0) return len;
+        std::wstring wbuf(len + 1, 0);
+        LRESULT res = SendMessageW(hWnd, CB_GETLBTEXT, wParam, reinterpret_cast<LPARAM>(&wbuf[0]));
+        if (res >= 0) {
+            if (wbuf.back() == L'\0') wbuf.pop_back();
+            std::string utf8 = wstringToUtf8(wbuf);
+            char* dest = reinterpret_cast<char*>(lParam);
+            strcpy(dest, utf8.c_str());
+        }
+        return res;
+    }
+    return SendMessageW(hWnd, Msg, wParam, lParam);
+}
+
+inline int MessageBoxUTF8(HWND hWnd, const char* lpText, const char* lpCaption, UINT uType) {
+    return MessageBoxW(hWnd, utf8ToWstring(lpText ? lpText : "").c_str(), utf8ToWstring(lpCaption ? lpCaption : "").c_str(), uType);
+}
+
+#undef CreateWindowEx
+#define CreateWindowEx CreateWindowExUTF8
+#undef CreateWindow
+#define CreateWindow(lpClassName, lpWindowName, dwStyle, x, y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam) \
+    CreateWindowExUTF8(0, lpClassName, lpWindowName, dwStyle, x, y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam)
+
+#undef SetWindowText
+#define SetWindowText(hwnd, text) SetControlTextUTF8(hwnd, text)
+
+#undef GetWindowText
+#define GetWindowText GetWindowTextUTF8
+
+#undef SendMessage
+#define SendMessage SendMessageUTF8
+
+#undef MessageBox
+#define MessageBox MessageBoxUTF8
+
+#undef DefWindowProc
+#define DefWindowProc DefWindowProcW
+
+void Win32RestoreItem(HWND hwndParent, TreeViewItemData* data) {
+    if (!data) return;
+    
+    std::filesystem::path baseDir = "";
+    if (!g_importedJsonDir.empty()) {
+        baseDir = std::filesystem::path(utf8Path(g_importedJsonDir));
+    } else if (!g_solver.targetDirectory.empty()) {
+        baseDir = std::filesystem::path(utf8Path(g_solver.targetDirectory));
+    } else {
+        MessageBoxW(hwndParent, utf8ToWstring(_T("msg_restore_not_avail", "Restore not available: files were not organized to a target directory.")).c_str(), L"Error", MB_ICONERROR);
+        return;
+    }
+    
+    if (g_solver.spanMultipleVolumes && data->volumeIndex >= 0) {
+        baseDir = baseDir / ("Volume_" + std::to_string(data->volumeIndex));
+    }
+    
+    std::vector<std::pair<std::filesystem::path, std::filesystem::path>> copyPairs;
+    
+    if (data->type == 0) { // Volume parent
+        int volIdx = data->volumeIndex;
+        if (volIdx >= 0 && volIdx < (int)g_solver.packedVolumes.size()) {
+            const auto& vol = g_solver.packedVolumes[volIdx];
+            for (size_t fileIdx = 0; fileIdx < vol.itemPaths.size(); ++fileIdx) {
+                if (fileIdx < vol.itemGroupedPaths.size() && !vol.itemGroupedPaths[fileIdx].empty()) {
+                    const auto& gps = vol.itemGroupedPaths[fileIdx];
+                    const auto& ogs = vol.itemOriginalGroupedPaths[fileIdx];
+                    for (size_t i = 0; i < gps.size(); ++i) {
+                        std::filesystem::path from = baseDir / utf8Path(gps[i]);
+                        std::filesystem::path to = (i < ogs.size()) ? std::filesystem::path(utf8Path(ogs[i])) : std::filesystem::path();
+                        if (!to.empty()) {
+                            copyPairs.push_back({from, to});
+                        }
+                    }
+                } else {
+                    std::filesystem::path from = baseDir / utf8Path(vol.itemPaths[fileIdx]);
+                    std::filesystem::path to = (fileIdx < (int)vol.itemOriginalPaths.size()) ? std::filesystem::path(utf8Path(vol.itemOriginalPaths[fileIdx])) : std::filesystem::path();
+                    if (!to.empty()) {
+                        copyPairs.push_back({from, to});
+                    }
+                }
+            }
+        }
+    } else if (data->type == 1 || data->type == 4) { // File or remaining child (could be group)
+        int volIdx = data->volumeIndex;
+        int fileIdx = data->fileIndex;
+        
+        if (volIdx >= 0 && volIdx < (int)g_solver.packedVolumes.size()) {
+            const auto& vol = g_solver.packedVolumes[volIdx];
+            if (fileIdx >= 0 && fileIdx < (int)vol.itemPaths.size()) {
+                if (fileIdx < (int)vol.itemGroupedPaths.size() && !vol.itemGroupedPaths[fileIdx].empty()) {
+                    const auto& gps = vol.itemGroupedPaths[fileIdx];
+                    const auto& ogs = vol.itemOriginalGroupedPaths[fileIdx];
+                    for (size_t i = 0; i < gps.size(); ++i) {
+                        std::filesystem::path from = baseDir / utf8Path(gps[i]);
+                        std::filesystem::path to = (i < ogs.size()) ? std::filesystem::path(utf8Path(ogs[i])) : std::filesystem::path();
+                        if (!to.empty()) {
+                            copyPairs.push_back({from, to});
+                        }
+                    }
+                } else {
+                    std::filesystem::path from = baseDir / utf8Path(vol.itemPaths[fileIdx]);
+                    std::filesystem::path to = (fileIdx < (int)vol.itemOriginalPaths.size()) ? std::filesystem::path(utf8Path(vol.itemOriginalPaths[fileIdx])) : std::filesystem::path();
+                    if (!to.empty()) {
+                        copyPairs.push_back({from, to});
+                    }
+                }
+            }
+        }
+    } else if (data->type == 2 || data->type == 5) { // Grandchild under group or remaining group grandchild
+        int volIdx = data->volumeIndex;
+        int fileIdx = data->fileIndex;
+        int gcIdx = data->grandchildIndex;
+        if (volIdx >= 0 && volIdx < (int)g_solver.packedVolumes.size()) {
+            const auto& vol = g_solver.packedVolumes[volIdx];
+            if (fileIdx >= 0 && fileIdx < (int)vol.itemGroupedPaths.size() && gcIdx >= 0 && gcIdx < (int)vol.itemGroupedPaths[fileIdx].size()) {
+                std::filesystem::path from = baseDir / utf8Path(vol.itemGroupedPaths[fileIdx][gcIdx]);
+                std::filesystem::path to = (fileIdx < (int)vol.itemOriginalGroupedPaths.size() && gcIdx < (int)vol.itemOriginalGroupedPaths[fileIdx].size()) ?
+                    std::filesystem::path(utf8Path(vol.itemOriginalGroupedPaths[fileIdx][gcIdx])) : std::filesystem::path();
+                if (!to.empty()) {
+                    copyPairs.push_back({from, to});
+                }
+            }
+        }
+    }
+    
+    if (copyPairs.empty()) {
+        MessageBoxW(hwndParent, utf8ToWstring(_T("msg_restore_no_files", "No files found to restore.")).c_str(), L"Information", MB_ICONINFORMATION);
+        return;
+    }
+    
+    std::wstring confirmMsg = utf8ToWstring(_T("msg_restore_confirm", "Are you sure you want to restore the selected file(s) to their original location?"));
+    if (MessageBoxW(hwndParent, confirmMsg.c_str(), utf8ToWstring(_T("msg_restore_confirm_title", "Restore Confirmation")).c_str(), MB_YESNO | MB_ICONQUESTION) != IDYES) {
+        return;
+    }
+    
+    int successCount = 0;
+    int failCount = 0;
+    std::string lastError = "";
+    
+    for (const auto& pair : copyPairs) {
+        try {
+            std::filesystem::create_directories(pair.second.parent_path());
+            if (std::filesystem::is_directory(pair.first)) {
+                std::filesystem::copy(pair.first, pair.second, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+            } else {
+                std::filesystem::copy_file(pair.first, pair.second, std::filesystem::copy_options::overwrite_existing);
+            }
+            successCount++;
+        } catch (const std::exception& e) {
+            failCount++;
+            lastError = e.what();
+        }
+    }
+    
+    if (failCount == 0) {
+        std::wstring successText = utf8ToWstring(_T("msg_restore_success_1", "Successfully restored ")) + std::to_wstring(successCount) + utf8ToWstring(_T("msg_restore_success_2", " item(s)."));
+        MessageBoxW(hwndParent, successText.c_str(), L"Success", MB_ICONINFORMATION);
+        AppendTextToLog(g_editLog, "Restored " + std::to_string(successCount) + " item(s) to original location.");
+    } else {
+        std::wstring failText = utf8ToWstring(_T("msg_restore_failed_1", "Restored ")) + std::to_wstring(successCount) + utf8ToWstring(_T("msg_restore_failed_2", " items, but ")) + std::to_wstring(failCount) + utf8ToWstring(_T("msg_restore_failed_3", " failed.\nLast error: ")) + utf8ToWstring(lastError);
+        MessageBoxW(hwndParent, failText.c_str(), L"Error", MB_ICONERROR);
+        AppendTextToLog(g_editLog, "Failed to restore items: " + lastError);
+    }
+}
 
 inline std::string toWinNewlines(const std::string& str) {
     std::string res;
@@ -1079,12 +1319,27 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             // Language selection row
             CreateWindow("STATIC", _T("language_label", "Language:").c_str(), WS_CHILD | WS_VISIBLE, 20, y + 2, 160, 20, hwnd, NULL, NULL, NULL);
             g_comboPrefLang = CreateWindow("COMBOBOX", "", WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST, 190, y, 200, 250, hwnd, (HMENU)ID_PREF_COMBO_LANG, NULL, NULL);
-            SendMessage(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)BttbLocale::utf8ToAnsi("System Default (Auto)").c_str());
-            SendMessage(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)BttbLocale::utf8ToAnsi("English").c_str());
-            SendMessage(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)BttbLocale::utf8ToAnsi("Deutsch").c_str());
-            SendMessage(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)BttbLocale::utf8ToAnsi("Nederlands").c_str());
-            SendMessage(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)BttbLocale::utf8ToAnsi("Français").c_str());
-            SendMessage(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)BttbLocale::utf8ToAnsi("Español").c_str());
+            SendMessageW(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)L"System Default (Auto)");
+            SendMessageW(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)L"English");
+            SendMessageW(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)L"Deutsch");
+            SendMessageW(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)L"Nederlands");
+            SendMessageW(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)L"Français");
+            SendMessageW(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)L"Español");
+            SendMessageW(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)L"简体中文");
+            SendMessageW(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)L"日本語");
+            SendMessageW(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)L"Italiano");
+            SendMessageW(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)L"Ελληνικά");
+            SendMessageW(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)L"Latina");
+            SendMessageW(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)L"Português");
+            SendMessageW(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)L"हिन्दी");
+            SendMessageW(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)L"Vuhlkansu (Vulkan)");
+            SendMessageW(g_comboPrefLang, CB_ADDSTRING, 0, (LPARAM)L"Eldarin (Elvish)");
+            {
+                std::ofstream df("build/debug_unicode.txt");
+                df << "IsWindowUnicode: " << IsWindowUnicode(g_comboPrefLang) << "\n";
+                df.close();
+            }
+            MessageBoxW(NULL, IsWindowUnicode(g_comboPrefLang) ? L"Unicode" : L"ANSI", L"Debug", MB_OK);
             
             int langSel = 0;
             if (g_solver.language == "auto") langSel = 0;
@@ -1093,6 +1348,15 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             else if (g_solver.language == "nl") langSel = 3;
             else if (g_solver.language == "fr") langSel = 4;
             else if (g_solver.language == "es") langSel = 5;
+            else if (g_solver.language == "zh") langSel = 6;
+            else if (g_solver.language == "ja") langSel = 7;
+            else if (g_solver.language == "it") langSel = 8;
+            else if (g_solver.language == "el") langSel = 9;
+            else if (g_solver.language == "la") langSel = 10;
+            else if (g_solver.language == "pt") langSel = 11;
+            else if (g_solver.language == "hi") langSel = 12;
+            else if (g_solver.language == "vul") langSel = 13;
+            else if (g_solver.language == "elv") langSel = 14;
             SendMessage(g_comboPrefLang, CB_SETCURSEL, langSel, 0);
 
             y += 35;
@@ -1404,6 +1668,15 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
                 else if (langIdx == 3) new_lang = "nl";
                 else if (langIdx == 4) new_lang = "fr";
                 else if (langIdx == 5) new_lang = "es";
+                else if (langIdx == 6) new_lang = "zh";
+                else if (langIdx == 7) new_lang = "ja";
+                else if (langIdx == 8) new_lang = "it";
+                else if (langIdx == 9) new_lang = "el";
+                else if (langIdx == 10) new_lang = "la";
+                else if (langIdx == 11) new_lang = "pt";
+                else if (langIdx == 12) new_lang = "hi";
+                else if (langIdx == 13) new_lang = "vul";
+                else if (langIdx == 14) new_lang = "elv";
                 
                 bool lang_changed = (new_lang != g_solver.language);
                 if (lang_changed) {
@@ -1495,10 +1768,14 @@ struct Win32TreeInsertTask {
         CREATE_SUBPATH_GRANDCHILD,
         CREATE_REMAINING_PARENT,
         CREATE_REMAINING_CHILD,
-        CREATE_REMAINING_SUBPATH_GRANDCHILD
+        CREATE_REMAINING_SUBPATH_GRANDCHILD,
+        CREATE_SKIPPED_PARENT,
+        CREATE_SKIPPED_CHILD
     };
     Type type;
     int volumeIndex = 0;
+    int fileIndex = 0;
+    int grandchildIndex = 0;
     int64_t totalBytes = 0;
     std::string path;
     int64_t sizeBytes = 0;
@@ -1536,6 +1813,8 @@ void StartWin32TreeViewRendering(HWND hwndTV, bool includeUnfitted, const std::s
     g_current_remaining_parent = NULL;
     g_current_remaining_child = NULL;
 
+    g_current_skipped_parent = NULL;
+
     // 1. Walk through each solved volume in packedVolumes
     for (const auto& vol : g_solver.packedVolumes) {
         Win32TreeInsertTask task;
@@ -1551,14 +1830,19 @@ void StartWin32TreeViewRendering(HWND hwndTV, bool includeUnfitted, const std::s
             child.path = vol.itemPaths[i];
             child.sizeBytes = vol.itemSizes[i];
             child.statusTag = statusTag;
+            child.volumeIndex = vol.volumeIndex;
+            child.fileIndex = (int)i;
             g_render_tasks.push_back(child);
             
             if (i < vol.itemGroupedPaths.size() && !vol.itemGroupedPaths[i].empty()) {
-                for (const auto& subPath : vol.itemGroupedPaths[i]) {
+                for (size_t g = 0; g < vol.itemGroupedPaths[i].size(); ++g) {
                     Win32TreeInsertTask subChild;
                     subChild.type = Win32TreeInsertTask::Type::CREATE_SUBPATH_GRANDCHILD;
-                    subChild.path = subPath;
+                    subChild.path = vol.itemGroupedPaths[i][g];
                     subChild.statusTag = statusTag;
+                    subChild.volumeIndex = vol.volumeIndex;
+                    subChild.fileIndex = (int)i;
+                    subChild.grandchildIndex = (int)g;
                     g_render_tasks.push_back(subChild);
                 }
             }
@@ -1577,21 +1861,59 @@ void StartWin32TreeViewRendering(HWND hwndTV, bool includeUnfitted, const std::s
         task.totalBytes = unfitted_bytes;
         g_render_tasks.push_back(task);
         
-        for (const auto& item : g_solver.itemsToSplit) {
+        for (size_t i = 0; i < g_solver.itemsToSplit.size(); ++i) {
+            const auto& item = g_solver.itemsToSplit[i];
             Win32TreeInsertTask child;
             child.type = Win32TreeInsertTask::Type::CREATE_REMAINING_CHILD;
             child.path = item->relativePath;
             child.sizeBytes = item->sizeBytes;
+            child.fileIndex = (int)i;
             g_render_tasks.push_back(child);
             
             if (!item->groupedPaths.empty()) {
-                for (const auto& subPath : item->groupedPaths) {
+                for (size_t g = 0; g < item->groupedPaths.size(); ++g) {
                     Win32TreeInsertTask subChild;
                     subChild.type = Win32TreeInsertTask::Type::CREATE_REMAINING_SUBPATH_GRANDCHILD;
-                    subChild.path = subPath;
+                    subChild.path = item->groupedPaths[g];
+                    subChild.fileIndex = (int)i;
+                    subChild.grandchildIndex = (int)g;
                     g_render_tasks.push_back(subChild);
                 }
             }
+        }
+    }
+
+    // 3. Add skipped items
+    if (!g_solver.skippedFilePaths.empty()) {
+        int64_t skipped_bytes = 0;
+        for (const auto& absPath : g_solver.skippedFilePaths) {
+            try {
+                std::filesystem::path p(utf8Path(absPath));
+                if (std::filesystem::exists(p) && !std::filesystem::is_directory(p)) {
+                    skipped_bytes += std::filesystem::file_size(p);
+                }
+            } catch (...) {}
+        }
+        
+        Win32TreeInsertTask task;
+        task.type = Win32TreeInsertTask::Type::CREATE_SKIPPED_PARENT;
+        task.totalBytes = skipped_bytes;
+        g_render_tasks.push_back(task);
+        
+        for (const auto& absPath : g_solver.skippedFilePaths) {
+            int64_t sz = 0;
+            try {
+                std::filesystem::path p(utf8Path(absPath));
+                if (std::filesystem::exists(p) && !std::filesystem::is_directory(p)) {
+                    sz = std::filesystem::file_size(p);
+                }
+            } catch (...) {}
+            
+            Win32TreeInsertTask child;
+            child.type = Win32TreeInsertTask::Type::CREATE_SKIPPED_CHILD;
+            child.path = absPath;
+            child.sizeBytes = sz;
+            g_render_tasks.push_back(child);
         }
     }
 
@@ -1615,6 +1937,51 @@ void StartWin32TreeViewRendering(HWND hwndTV, bool includeUnfitted, const std::s
 // Window Procedure for Main Window
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
+        case WM_NOTIFY: {
+            LPNMHDR pnmh = (LPNMHDR)lParam;
+            if (pnmh->idFrom == ID_TREE_RESULTS) {
+                if (pnmh->code == TVN_DELETEITEMW || pnmh->code == TVN_DELETEITEMA) {
+                    LPNMTREEVIEWW pnmtv = (LPNMTREEVIEWW)lParam;
+                    if (pnmtv->itemOld.lParam) {
+                        TreeViewItemData* data = reinterpret_cast<TreeViewItemData*>(pnmtv->itemOld.lParam);
+                        delete data;
+                    }
+                } else if (pnmh->code == NM_RCLICK) {
+                    POINT pt;
+                    GetCursorPos(&pt);
+                    POINT ptClient = pt;
+                    ScreenToClient(pnmh->hwndFrom, &ptClient);
+                    
+                    TVHITTESTINFO tvht = {0};
+                    tvht.pt = ptClient;
+                    TreeView_HitTest(pnmh->hwndFrom, &tvht);
+                    
+                    if (tvht.hItem && (tvht.flags & TVHT_ONITEM)) {
+                        TreeView_SelectItem(pnmh->hwndFrom, tvht.hItem);
+                        
+                        TVITEMW tvi = {0};
+                        tvi.hItem = tvht.hItem;
+                        tvi.mask = TVIF_PARAM;
+                        if (SendMessageW(pnmh->hwndFrom, TVM_GETITEMW, 0, (LPARAM)&tvi)) {
+                            TreeViewItemData* data = reinterpret_cast<TreeViewItemData*>(tvi.lParam);
+                            if (data && (data->type == 0 || data->type == 1 || data->type == 2 || data->type == 4 || data->type == 5)) {
+                                HMENU hMenu = CreatePopupMenu();
+                                std::wstring menuText = utf8ToWstring(_T("menu_restore", "Restore to Original Location"));
+                                AppendMenuW(hMenu, MF_STRING, 1, menuText.c_str());
+                                
+                                int selection = TrackPopupMenu(hMenu, TPM_RETURNCMD | TPM_LEFTALIGN | TPM_RIGHTBUTTON, pt.x, pt.y, 0, hwnd, NULL);
+                                DestroyMenu(hMenu);
+                                
+                                if (selection == 1) {
+                                    Win32RestoreItem(hwnd, data);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            break;
+        }
 
         case WM_COPYDATA: {
             PCOPYDATASTRUCT pcds = (PCOPYDATASTRUCT)lParam;
@@ -1962,8 +2329,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 std::string path = OpenJsonFileDialog(hwnd, "Select JSON Index File");
                 if (!path.empty()) {
                     std::string err;
-                    if (bttb::parseIndexJson(path, g_solver.packedVolumes, err)) {
+                    if (bttb::parseIndexJson(path, g_solver.packedVolumes, err, &g_solver.skippedFilePaths)) {
                         g_solver.itemsToSplit.clear();
+                        std::filesystem::path jsonPath(utf8Path(path));
+                        g_importedJsonDir = toUtf8Str(jsonPath.parent_path());
                         StartWin32TreeViewRendering(g_hwndTreeView, false, "Imported");
                         AppendTextToLog(g_editLog, "Successfully imported JSON index file: " + path);
                     } else {
@@ -2151,13 +2520,19 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                         char vol_name[256];
                         snprintf(vol_name, sizeof(vol_name), "Volume %d (Total: %.2f MB)", task.volumeIndex, (double)task.totalBytes / (1024.0 * 1024.0));
                         
-                        TVINSERTSTRUCT tvis = {0};
+                        TVINSERTSTRUCTW tvis = {0};
                         tvis.hParent = TVI_ROOT;
                         tvis.hInsertAfter = TVI_LAST;
-                        tvis.item.mask = TVIF_TEXT;
-                        tvis.item.pszText = const_cast<LPSTR>(vol_name);
+                        tvis.item.mask = TVIF_TEXT | TVIF_PARAM;
+                        std::wstring wLabel = utf8ToWstring(vol_name);
+                        tvis.item.pszText = const_cast<LPWSTR>(wLabel.c_str());
                         
-                        g_current_volume_parent = TreeView_InsertItem(hwndTV, &tvis);
+                        TreeViewItemData* data = new TreeViewItemData();
+                        data->type = 0;
+                        data->volumeIndex = task.volumeIndex;
+                        tvis.item.lParam = reinterpret_cast<LPARAM>(data);
+                        
+                        g_current_volume_parent = (HTREEITEM)SendMessageW(hwndTV, TVM_INSERTITEMW, 0, (LPARAM)&tvis);
                         TreeView_Expand(hwndTV, g_current_volume_parent, TVE_EXPAND);
                         break;
                     }
@@ -2165,26 +2540,43 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                         char child_name[512];
                         snprintf(child_name, sizeof(child_name), "%s (%lld bytes)", task.path.c_str(), static_cast<long long>(task.sizeBytes));
                         
-                        TVINSERTSTRUCT tvisChild = {0};
+                        TVINSERTSTRUCTW tvisChild = {0};
                         tvisChild.hParent = g_current_volume_parent;
                         tvisChild.hInsertAfter = TVI_LAST;
-                        tvisChild.item.mask = TVIF_TEXT;
-                        tvisChild.item.pszText = const_cast<LPSTR>(child_name);
+                        tvisChild.item.mask = TVIF_TEXT | TVIF_PARAM;
+                        std::wstring wLabel = utf8ToWstring(child_name);
+                        tvisChild.item.pszText = const_cast<LPWSTR>(wLabel.c_str());
                         
-                        g_current_file_child = TreeView_InsertItem(hwndTV, &tvisChild);
+                        TreeViewItemData* data = new TreeViewItemData();
+                        data->type = 1;
+                        data->volumeIndex = task.volumeIndex;
+                        data->fileIndex = task.fileIndex;
+                        data->relativePath = task.path;
+                        tvisChild.item.lParam = reinterpret_cast<LPARAM>(data);
+                        
+                        g_current_file_child = (HTREEITEM)SendMessageW(hwndTV, TVM_INSERTITEMW, 0, (LPARAM)&tvisChild);
                         break;
                     }
                     case Win32TreeInsertTask::Type::CREATE_SUBPATH_GRANDCHILD: {
                         char sub_name[512];
                         snprintf(sub_name, sizeof(sub_name), "%s", task.path.c_str());
                         
-                        TVINSERTSTRUCT tvisSub = {0};
+                        TVINSERTSTRUCTW tvisSub = {0};
                         tvisSub.hParent = g_current_file_child;
                         tvisSub.hInsertAfter = TVI_LAST;
-                        tvisSub.item.mask = TVIF_TEXT;
-                        tvisSub.item.pszText = const_cast<LPSTR>(sub_name);
+                        tvisSub.item.mask = TVIF_TEXT | TVIF_PARAM;
+                        std::wstring wLabel = utf8ToWstring(sub_name);
+                        tvisSub.item.pszText = const_cast<LPWSTR>(wLabel.c_str());
                         
-                        TreeView_InsertItem(hwndTV, &tvisSub);
+                        TreeViewItemData* data = new TreeViewItemData();
+                        data->type = 2;
+                        data->volumeIndex = task.volumeIndex;
+                        data->fileIndex = task.fileIndex;
+                        data->grandchildIndex = task.grandchildIndex;
+                        data->relativePath = task.path;
+                        tvisSub.item.lParam = reinterpret_cast<LPARAM>(data);
+                        
+                        SendMessageW(hwndTV, TVM_INSERTITEMW, 0, (LPARAM)&tvisSub);
                         TreeView_Expand(hwndTV, g_current_file_child, TVE_EXPAND);
                         break;
                     }
@@ -2192,13 +2584,18 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                         char unfitted_label[256];
                         snprintf(unfitted_label, sizeof(unfitted_label), "Remaining Items (Total: %.2f MB)", (double)task.totalBytes / (1024.0 * 1024.0));
                         
-                        TVINSERTSTRUCT tvis = {0};
+                        TVINSERTSTRUCTW tvis = {0};
                         tvis.hParent = TVI_ROOT;
                         tvis.hInsertAfter = TVI_LAST;
-                        tvis.item.mask = TVIF_TEXT;
-                        tvis.item.pszText = const_cast<LPSTR>(unfitted_label);
+                        tvis.item.mask = TVIF_TEXT | TVIF_PARAM;
+                        std::wstring wLabel = utf8ToWstring(unfitted_label);
+                        tvis.item.pszText = const_cast<LPWSTR>(wLabel.c_str());
                         
-                        g_current_remaining_parent = TreeView_InsertItem(hwndTV, &tvis);
+                        TreeViewItemData* data = new TreeViewItemData();
+                        data->type = 3;
+                        tvis.item.lParam = reinterpret_cast<LPARAM>(data);
+                        
+                        g_current_remaining_parent = (HTREEITEM)SendMessageW(hwndTV, TVM_INSERTITEMW, 0, (LPARAM)&tvis);
                         TreeView_Expand(hwndTV, g_current_remaining_parent, TVE_EXPAND);
                         break;
                     }
@@ -2206,27 +2603,80 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                         char child_name[512];
                         snprintf(child_name, sizeof(child_name), "%s (%lld bytes)", task.path.c_str(), static_cast<long long>(task.sizeBytes));
                         
-                        TVINSERTSTRUCT tvisChild = {0};
+                        TVINSERTSTRUCTW tvisChild = {0};
                         tvisChild.hParent = g_current_remaining_parent;
                         tvisChild.hInsertAfter = TVI_LAST;
-                        tvisChild.item.mask = TVIF_TEXT;
-                        tvisChild.item.pszText = const_cast<LPSTR>(child_name);
+                        tvisChild.item.mask = TVIF_TEXT | TVIF_PARAM;
+                        std::wstring wLabel = utf8ToWstring(child_name);
+                        tvisChild.item.pszText = const_cast<LPWSTR>(wLabel.c_str());
                         
-                        g_current_remaining_child = TreeView_InsertItem(hwndTV, &tvisChild);
+                        TreeViewItemData* data = new TreeViewItemData();
+                        data->type = 4;
+                        data->relativePath = task.path;
+                        tvisChild.item.lParam = reinterpret_cast<LPARAM>(data);
+                        
+                        g_current_remaining_child = (HTREEITEM)SendMessageW(hwndTV, TVM_INSERTITEMW, 0, (LPARAM)&tvisChild);
                         break;
                     }
                     case Win32TreeInsertTask::Type::CREATE_REMAINING_SUBPATH_GRANDCHILD: {
                         char sub_name[512];
                         snprintf(sub_name, sizeof(sub_name), "%s", task.path.c_str());
                         
-                        TVINSERTSTRUCT tvisSub = {0};
+                        TVINSERTSTRUCTW tvisSub = {0};
                         tvisSub.hParent = g_current_remaining_child;
                         tvisSub.hInsertAfter = TVI_LAST;
-                        tvisSub.item.mask = TVIF_TEXT;
-                        tvisSub.item.pszText = const_cast<LPSTR>(sub_name);
+                        tvisSub.item.mask = TVIF_TEXT | TVIF_PARAM;
+                        std::wstring wLabel = utf8ToWstring(sub_name);
+                        tvisSub.item.pszText = const_cast<LPWSTR>(wLabel.c_str());
                         
-                        TreeView_InsertItem(hwndTV, &tvisSub);
+                        TreeViewItemData* data = new TreeViewItemData();
+                        data->type = 5;
+                        data->relativePath = task.path;
+                        tvisSub.item.lParam = reinterpret_cast<LPARAM>(data);
+                        
+                        SendMessageW(hwndTV, TVM_INSERTITEMW, 0, (LPARAM)&tvisSub);
                         TreeView_Expand(hwndTV, g_current_remaining_child, TVE_EXPAND);
+                        break;
+                    }
+                    case Win32TreeInsertTask::Type::CREATE_SKIPPED_PARENT: {
+                        char skipped_label[256];
+                        snprintf(skipped_label, sizeof(skipped_label), "Skipped Items (Total: %.2f MB)", (double)task.totalBytes / (1024.0 * 1024.0));
+                        
+                        TVINSERTSTRUCTW tvis = {0};
+                        tvis.hParent = TVI_ROOT;
+                        tvis.hInsertAfter = TVI_LAST;
+                        tvis.item.mask = TVIF_TEXT | TVIF_PARAM;
+                        std::wstring wLabel = utf8ToWstring(skipped_label);
+                        tvis.item.pszText = const_cast<LPWSTR>(wLabel.c_str());
+                        
+                        TreeViewItemData* data = new TreeViewItemData();
+                        data->type = 6;
+                        tvis.item.lParam = reinterpret_cast<LPARAM>(data);
+                        
+                        g_current_skipped_parent = (HTREEITEM)SendMessageW(hwndTV, TVM_INSERTITEMW, 0, (LPARAM)&tvis);
+                        TreeView_Expand(hwndTV, g_current_skipped_parent, TVE_EXPAND);
+                        break;
+                    }
+                    case Win32TreeInsertTask::Type::CREATE_SKIPPED_CHILD: {
+                        char child_name[512];
+                        std::filesystem::path p(utf8Path(task.path));
+                        std::string filename = toUtf8Str(p.filename());
+                        snprintf(child_name, sizeof(child_name), "%s (%lld bytes)", filename.c_str(), static_cast<long long>(task.sizeBytes));
+                        
+                        TVINSERTSTRUCTW tvisChild = {0};
+                        tvisChild.hParent = g_current_skipped_parent;
+                        tvisChild.hInsertAfter = TVI_LAST;
+                        tvisChild.item.mask = TVIF_TEXT | TVIF_PARAM;
+                        std::wstring wLabel = utf8ToWstring(child_name);
+                        tvisChild.item.pszText = const_cast<LPWSTR>(wLabel.c_str());
+                        
+                        TreeViewItemData* data = new TreeViewItemData();
+                        data->type = 7;
+                        data->relativePath = task.path;
+                        data->originalPath = task.path;
+                        tvisChild.item.lParam = reinterpret_cast<LPARAM>(data);
+                        
+                        SendMessageW(hwndTV, TVM_INSERTITEMW, 0, (LPARAM)&tvisChild);
                         break;
                     }
                 }
@@ -2291,6 +2741,19 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
 // Windows entry point
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+    // Enable GDI Scaling dynamically on Windows 10/11 to ensure high-DPI scaling
+    // is applied to the hardcoded pixel layout without text blurriness.
+    typedef BOOL (WINAPI *SetProcessDpiAwarenessContextProto)(void*);
+    HMODULE hUser32 = GetModuleHandleW(L"user32.dll");
+    if (hUser32) {
+        SetProcessDpiAwarenessContextProto pSetProcessDpiAwarenessContext = 
+            (SetProcessDpiAwarenessContextProto)GetProcAddress(hUser32, "SetProcessDpiAwarenessContext");
+        if (pSetProcessDpiAwarenessContext) {
+            // DPI_AWARENESS_CONTEXT_UNAWARE_GDI_SCALED is ((DPI_AWARENESS_CONTEXT)-5)
+            pSetProcessDpiAwarenessContext((void*)-5);
+        }
+    }
+
     std::setlocale(LC_ALL, "");
     std::setlocale(LC_NUMERIC, "C");
     g_hbrDarkBackground = CreateSolidBrush(RGB(24, 24, 24));
@@ -2348,7 +2811,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     g_hMutex = CreateMutexW(NULL, FALSE, L"Local\\BTTB_SingleInstanceMutex");
     if (g_hMutex != NULL && GetLastError() == ERROR_ALREADY_EXISTS) {
         // Find existing instance window
-        HWND hwndExisting = FindWindow("BttbWin32GUI", NULL);
+        HWND hwndExisting = FindWindowW(L"BttbWin32GUI", NULL);
         if (hwndExisting) {
             if (!g_folderToAdd.empty()) {
                 COPYDATASTRUCT cds;
@@ -2366,103 +2829,103 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
 
     // Register Main Window Class
-    WNDCLASSEX wc = {0};
-    wc.cbSize = sizeof(WNDCLASSEX);
+    WNDCLASSEXW wc = {0};
+    wc.cbSize = sizeof(WNDCLASSEXW);
     wc.style = CS_HREDRAW | CS_VREDRAW;
     wc.lpfnWndProc = WndProc;
     wc.hInstance = hInstance;
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
-    wc.lpszClassName = "BttbWin32GUI";
+    wc.lpszClassName = L"BttbWin32GUI";
     wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(1));
     wc.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
     
-    if (!RegisterClassEx(&wc)) {
-        MessageBox(NULL, "Window Registration Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
+    if (!RegisterClassExW(&wc)) {
+        MessageBoxW(NULL, L"Window Registration Failed!", L"Error", MB_ICONEXCLAMATION | MB_OK);
         return 0;
     }
     
     // Register ISO Dialog Window Class
-    WNDCLASSEX wcIso = {0};
-    wcIso.cbSize = sizeof(WNDCLASSEX);
+    WNDCLASSEXW wcIso = {0};
+    wcIso.cbSize = sizeof(WNDCLASSEXW);
     wcIso.style = CS_HREDRAW | CS_VREDRAW;
     wcIso.lpfnWndProc = IsoWndProc;
     wcIso.hInstance = hInstance;
     wcIso.hCursor = LoadCursor(NULL, IDC_ARROW);
     wcIso.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
-    wcIso.lpszClassName = "BttbWin32ISODialog";
+    wcIso.lpszClassName = L"BttbWin32ISODialog";
     wcIso.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(1));
     wcIso.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
     
-    if (!RegisterClassEx(&wcIso)) {
-        MessageBox(NULL, "ISO Dialog Registration Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
+    if (!RegisterClassExW(&wcIso)) {
+        MessageBoxW(NULL, L"ISO Dialog Registration Failed!", L"Error", MB_ICONEXCLAMATION | MB_OK);
         return 0;
     }
     
     // Register Preferences Dialog Window Class
-    WNDCLASSEX wcPref = {0};
-    wcPref.cbSize = sizeof(WNDCLASSEX);
+    WNDCLASSEXW wcPref = {0};
+    wcPref.cbSize = sizeof(WNDCLASSEXW);
     wcPref.style = CS_HREDRAW | CS_VREDRAW;
     wcPref.lpfnWndProc = PrefWndProc;
     wcPref.hInstance = hInstance;
     wcPref.hCursor = LoadCursor(NULL, IDC_ARROW);
     wcPref.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
-    wcPref.lpszClassName = "BttbWin32PrefDialog";
+    wcPref.lpszClassName = L"BttbWin32PrefDialog";
     wcPref.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(1));
     wcPref.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-    if (!RegisterClassEx(&wcPref)) {
-        MessageBox(NULL, "Preferences Dialog Registration Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
+    if (!RegisterClassExW(&wcPref)) {
+        MessageBoxW(NULL, L"Preferences Dialog Registration Failed!", L"Error", MB_ICONEXCLAMATION | MB_OK);
         return 0;
     }
     
     // Register About Dialog Window Class
-    WNDCLASSEX wcAbout = {0};
-    wcAbout.cbSize = sizeof(WNDCLASSEX);
+    WNDCLASSEXW wcAbout = {0};
+    wcAbout.cbSize = sizeof(WNDCLASSEXW);
     wcAbout.style = CS_HREDRAW | CS_VREDRAW;
     wcAbout.lpfnWndProc = AboutWndProc;
     wcAbout.hInstance = hInstance;
     wcAbout.hCursor = LoadCursor(NULL, IDC_ARROW);
     wcAbout.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
-    wcAbout.lpszClassName = "BttbWin32AboutDialog";
+    wcAbout.lpszClassName = L"BttbWin32AboutDialog";
     wcAbout.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(1));
     wcAbout.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
     
-    if (!RegisterClassEx(&wcAbout)) {
-        MessageBox(NULL, "About Dialog Registration Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
+    if (!RegisterClassExW(&wcAbout)) {
+        MessageBoxW(NULL, L"About Dialog Registration Failed!", L"Error", MB_ICONEXCLAMATION | MB_OK);
         return 0;
     }
     
     // Register Folder List Dialog Window Class
-    WNDCLASSEX wcFolderList = {0};
-    wcFolderList.cbSize = sizeof(WNDCLASSEX);
+    WNDCLASSEXW wcFolderList = {0};
+    wcFolderList.cbSize = sizeof(WNDCLASSEXW);
     wcFolderList.style = CS_HREDRAW | CS_VREDRAW;
     wcFolderList.lpfnWndProc = FolderListWndProc;
     wcFolderList.hInstance = hInstance;
     wcFolderList.hCursor = LoadCursor(NULL, IDC_ARROW);
     wcFolderList.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
-    wcFolderList.lpszClassName = "BttbWin32FolderListDialog";
+    wcFolderList.lpszClassName = L"BttbWin32FolderListDialog";
     wcFolderList.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(1));
     wcFolderList.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
     
-    if (!RegisterClassEx(&wcFolderList)) {
-        MessageBox(NULL, "Folder List Dialog Registration Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
+    if (!RegisterClassExW(&wcFolderList)) {
+        MessageBoxW(NULL, L"Folder List Dialog Registration Failed!", L"Error", MB_ICONEXCLAMATION | MB_OK);
         return 0;
     }
     
     // Register Verify Dialog Window Class
-    WNDCLASSEX wcVerify = {0};
-    wcVerify.cbSize = sizeof(WNDCLASSEX);
+    WNDCLASSEXW wcVerify = {0};
+    wcVerify.cbSize = sizeof(WNDCLASSEXW);
     wcVerify.style = CS_HREDRAW | CS_VREDRAW;
     wcVerify.lpfnWndProc = VerifyWndProc;
     wcVerify.hInstance = hInstance;
     wcVerify.hCursor = LoadCursor(NULL, IDC_ARROW);
     wcVerify.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
-    wcVerify.lpszClassName = "BttbWin32VerifyDialog";
+    wcVerify.lpszClassName = L"BttbWin32VerifyDialog";
     wcVerify.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(1));
     wcVerify.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
     
-    if (!RegisterClassEx(&wcVerify)) {
-        MessageBox(NULL, "Verify Dialog Registration Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
+    if (!RegisterClassExW(&wcVerify)) {
+        MessageBoxW(NULL, L"Verify Dialog Registration Failed!", L"Error", MB_ICONEXCLAMATION | MB_OK);
         return 0;
     }
     
@@ -2477,7 +2940,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     );
     
     if (g_hwndMain == NULL) {
-        MessageBox(NULL, "Window Creation Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
+        MessageBoxW(NULL, L"Window Creation Failed!", L"Error", MB_ICONEXCLAMATION | MB_OK);
         return 0;
     }
     
@@ -2486,9 +2949,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     
     // Message Loop
     MSG Msg;
-    while (GetMessage(&Msg, NULL, 0, 0) > 0) {
+    while (GetMessageW(&Msg, NULL, 0, 0) > 0) {
         TranslateMessage(&Msg);
-        DispatchMessage(&Msg);
+        DispatchMessageW(&Msg);
     }
     if (g_hMutex) CloseHandle(g_hMutex);
     

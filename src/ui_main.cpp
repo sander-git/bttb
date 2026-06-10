@@ -262,7 +262,9 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
                 g_object_unref(file);
                 
                 std::string errMsg;
-                if (parseIndexJson(jsonPath, self->solver.packedVolumes, errMsg)) {
+                if (parseIndexJson(jsonPath, self->solver.packedVolumes, errMsg, &self->solver.skippedFilePaths)) {
+                    std::filesystem::path p(utf8Path(jsonPath));
+                    self->importedJsonDir = toUtf8Str(p.parent_path());
                     self->append_log("Successfully imported JSON index file: " + jsonPath, 1);
                     
                     self->start_rendering(false, "Imported");
@@ -584,7 +586,7 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
     gtk_widget_set_size_request(sidebar_scroll, 240, -1);
     gtk_paned_set_start_child(GTK_PANED(paned), sidebar_scroll);
     
-    tree_store = gtk_tree_store_new(3, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
+    tree_store = gtk_tree_store_new(7, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INT, G_TYPE_INT, G_TYPE_INT, G_TYPE_INT);
     tree_view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(tree_store));
     g_object_unref(tree_store);
     
@@ -597,6 +599,37 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
                                 gtk_tree_view_column_new_with_attributes(_T("fitted_status_col", "Fitted Status").c_str(), text_renderer, "text", 2, NULL));
     
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(sidebar_scroll), tree_view);
+    
+    GtkGesture* gesture = gtk_gesture_click_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(gesture), GDK_BUTTON_SECONDARY);
+    g_signal_connect(gesture, "pressed", G_CALLBACK(+[](GtkGestureClick* gesture, int n_press, double x, double y, gpointer user_data) {
+        auto* self = static_cast<MainWindow*>(user_data);
+        GtkTreePath* path = nullptr;
+        if (gtk_tree_view_get_path_at_pos(GTK_TREE_VIEW(self->tree_view), (int)x, (int)y, &path, nullptr, nullptr, nullptr)) {
+            GtkTreeSelection* selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(self->tree_view));
+            gtk_tree_selection_select_path(selection, path);
+            
+            GtkTreeIter iter;
+            if (gtk_tree_model_get_iter(GTK_TREE_MODEL(self->tree_store), &iter, path)) {
+                int type = -1;
+                int volIdx = -1;
+                int fileIdx = -1;
+                int gcIdx = -1;
+                gtk_tree_model_get(GTK_TREE_MODEL(self->tree_store), &iter,
+                                   3, &type,
+                                   4, &volIdx,
+                                   5, &fileIdx,
+                                   6, &gcIdx,
+                                   -1);
+                
+                if (type == 0 || type == 1 || type == 2) {
+                    self->restore_item(type, volIdx, fileIdx, gcIdx);
+                }
+            }
+            gtk_tree_path_free(path);
+        }
+    }), this);
+    gtk_widget_add_controller(tree_view, GTK_EVENT_CONTROLLER(gesture));
     
     // Main vertical box on the right
     GtkWidget* right_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
@@ -986,14 +1019,19 @@ void MainWindow::start_rendering(bool includeUnfitted, const std::string& status
             child.type = TreeInsertTask::Type::CREATE_FILE_CHILD;
             child.path = vol.itemPaths[i];
             child.sizeBytes = vol.itemSizes[i];
+            child.volumeIndex = vol.volumeIndex;
+            child.fileIndex = (int)i;
             child.statusTag = statusTag;
             render_tasks.push_back(child);
             
             if (i < vol.itemGroupedPaths.size() && !vol.itemGroupedPaths[i].empty()) {
-                for (const auto& subPath : vol.itemGroupedPaths[i]) {
+                for (size_t j = 0; j < vol.itemGroupedPaths[i].size(); ++j) {
                     TreeInsertTask subChild;
                     subChild.type = TreeInsertTask::Type::CREATE_SUBPATH_GRANDCHILD;
-                    subChild.path = subPath;
+                    subChild.path = vol.itemGroupedPaths[i][j];
+                    subChild.volumeIndex = vol.volumeIndex;
+                    subChild.fileIndex = (int)i;
+                    subChild.grandchildIndex = (int)j;
                     subChild.statusTag = statusTag;
                     render_tasks.push_back(subChild);
                 }
@@ -1028,6 +1066,32 @@ void MainWindow::start_rendering(bool includeUnfitted, const std::string& status
                     render_tasks.push_back(subChild);
                 }
             }
+        }
+    }
+
+    // 3. Add skipped items if they exist
+    if (!solver.skippedFilePaths.empty()) {
+        int64_t skipped_bytes = 0;
+        std::vector<std::pair<std::string, int64_t>> skipped_files;
+        for (const auto& absPath : solver.skippedFilePaths) {
+            std::error_code ec;
+            int64_t sz = std::filesystem::file_size(absPath, ec);
+            if (ec) sz = 0;
+            skipped_bytes += sz;
+            skipped_files.push_back({absPath, sz});
+        }
+
+        TreeInsertTask task;
+        task.type = TreeInsertTask::Type::CREATE_SKIPPED_PARENT;
+        task.totalBytes = skipped_bytes;
+        render_tasks.push_back(task);
+
+        for (const auto& sf : skipped_files) {
+            TreeInsertTask child;
+            child.type = TreeInsertTask::Type::CREATE_SKIPPED_CHILD;
+            child.path = sf.first;
+            child.sizeBytes = sf.second;
+            render_tasks.push_back(child);
         }
     }
 
@@ -1066,6 +1130,10 @@ bool MainWindow::process_render_batch() {
                                    0, vol_name,
                                    1, "",
                                    2, task.statusTag.c_str(),
+                                   3, (int)task.type,
+                                   4, task.volumeIndex,
+                                   5, -1,
+                                   6, -1,
                                    -1);
                 break;
             }
@@ -1075,6 +1143,10 @@ bool MainWindow::process_render_batch() {
                                    0, task.path.c_str(),
                                    1, std::to_string(task.sizeBytes).c_str(),
                                    2, task.statusTag.c_str(),
+                                   3, (int)task.type,
+                                   4, task.volumeIndex,
+                                   5, task.fileIndex,
+                                   6, -1,
                                    -1);
                 break;
             }
@@ -1085,6 +1157,10 @@ bool MainWindow::process_render_batch() {
                                    0, task.path.c_str(),
                                    1, "",
                                    2, task.statusTag.c_str(),
+                                   3, (int)task.type,
+                                   4, task.volumeIndex,
+                                   5, task.fileIndex,
+                                   6, task.grandchildIndex,
                                    -1);
                 break;
             }
@@ -1096,6 +1172,10 @@ bool MainWindow::process_render_batch() {
                                    0, unfitted_label,
                                    1, "",
                                    2, "Not Fitted",
+                                   3, (int)task.type,
+                                   4, -1,
+                                   5, -1,
+                                   6, -1,
                                    -1);
                 break;
             }
@@ -1105,6 +1185,10 @@ bool MainWindow::process_render_batch() {
                                    0, task.path.c_str(),
                                    1, std::to_string(task.sizeBytes).c_str(),
                                    2, "Not Fitted",
+                                   3, (int)task.type,
+                                   4, -1,
+                                   5, -1,
+                                   6, -1,
                                    -1);
                 break;
             }
@@ -1115,6 +1199,40 @@ bool MainWindow::process_render_batch() {
                                    0, task.path.c_str(),
                                    1, "",
                                    2, "Not Fitted",
+                                   3, (int)task.type,
+                                   4, -1,
+                                   5, -1,
+                                   6, -1,
+                                   -1);
+                break;
+            }
+            case TreeInsertTask::Type::CREATE_SKIPPED_PARENT: {
+                gtk_tree_store_append(tree_store, &current_skipped_parent_iter, nullptr);
+                char skipped_label[128];
+                snprintf(skipped_label, sizeof(skipped_label), "Skipped Items (Total: %.2f MB)", (double)task.totalBytes / (1024.0 * 1024.0));
+                gtk_tree_store_set(tree_store, &current_skipped_parent_iter,
+                                   0, skipped_label,
+                                   1, "",
+                                   2, "Skipped",
+                                   3, (int)task.type,
+                                   4, -1,
+                                   5, -1,
+                                   6, -1,
+                                   -1);
+                break;
+            }
+            case TreeInsertTask::Type::CREATE_SKIPPED_CHILD: {
+                gtk_tree_store_append(tree_store, &current_skipped_child_iter, &current_skipped_parent_iter);
+                std::filesystem::path p(utf8Path(task.path));
+                std::string filename = toUtf8Str(p.filename());
+                gtk_tree_store_set(tree_store, &current_skipped_child_iter,
+                                   0, filename.c_str(),
+                                   1, std::to_string(task.sizeBytes).c_str(),
+                                   2, "Skipped",
+                                   3, (int)task.type,
+                                   4, -1,
+                                   5, -1,
+                                   6, -1,
                                    -1);
                 break;
             }
@@ -1142,6 +1260,161 @@ void MainWindow::solver_finished() {
     }
     
     start_rendering(true, "Fitted");
+}
+
+void MainWindow::restore_item(int type, int volIdx, int fileIdx, int gcIdx) {
+    std::filesystem::path baseDir = "";
+    if (!importedJsonDir.empty()) {
+        baseDir = std::filesystem::path(utf8Path(importedJsonDir));
+    } else if (!solver.targetDirectory.empty()) {
+        baseDir = std::filesystem::path(utf8Path(solver.targetDirectory));
+    } else {
+        GtkWidget* dlg = gtk_message_dialog_new(GTK_WINDOW(window),
+                                               GTK_DIALOG_MODAL,
+                                               GTK_MESSAGE_ERROR,
+                                               GTK_BUTTONS_OK,
+                                               "%s", _T("msg_restore_not_avail", "Restore not available: files were not organized to a target directory.").c_str());
+        g_signal_connect(dlg, "response", G_CALLBACK(+[](GtkWidget* d, int, gpointer) { gtk_window_destroy(GTK_WINDOW(d)); }), nullptr);
+        gtk_window_present(GTK_WINDOW(dlg));
+        return;
+    }
+    
+    if (solver.spanMultipleVolumes && volIdx >= 0) {
+        baseDir = baseDir / ("Volume_" + std::to_string(volIdx));
+    }
+    
+    std::vector<std::pair<std::filesystem::path, std::filesystem::path>> copyPairs;
+    
+    if (type == 0) { // Volume Parent
+        if (volIdx >= 0 && volIdx < (int)solver.packedVolumes.size()) {
+            const auto& vol = solver.packedVolumes[volIdx];
+            for (size_t f = 0; f < vol.itemPaths.size(); ++f) {
+                if (f < vol.itemGroupedPaths.size() && !vol.itemGroupedPaths[f].empty()) {
+                    const auto& gps = vol.itemGroupedPaths[f];
+                    const auto& ogs = vol.itemOriginalGroupedPaths[f];
+                    for (size_t i = 0; i < gps.size(); ++i) {
+                        std::filesystem::path from = baseDir / utf8Path(gps[i]);
+                        std::filesystem::path to = (i < ogs.size()) ? std::filesystem::path(utf8Path(ogs[i])) : std::filesystem::path();
+                        if (!to.empty()) {
+                            copyPairs.push_back({from, to});
+                        }
+                    }
+                } else {
+                    std::filesystem::path from = baseDir / utf8Path(vol.itemPaths[f]);
+                    std::filesystem::path to = (f < vol.itemOriginalPaths.size()) ? std::filesystem::path(utf8Path(vol.itemOriginalPaths[f])) : std::filesystem::path();
+                    if (!to.empty()) {
+                        copyPairs.push_back({from, to});
+                    }
+                }
+            }
+        }
+    } else if (type == 1) { // File child
+        if (volIdx >= 0 && volIdx < (int)solver.packedVolumes.size()) {
+            const auto& vol = solver.packedVolumes[volIdx];
+            if (fileIdx >= 0 && fileIdx < (int)vol.itemPaths.size()) {
+                if (fileIdx < (int)vol.itemGroupedPaths.size() && !vol.itemGroupedPaths[fileIdx].empty()) {
+                    const auto& gps = vol.itemGroupedPaths[fileIdx];
+                    const auto& ogs = vol.itemOriginalGroupedPaths[fileIdx];
+                    for (size_t i = 0; i < gps.size(); ++i) {
+                        std::filesystem::path from = baseDir / utf8Path(gps[i]);
+                        std::filesystem::path to = (i < ogs.size()) ? std::filesystem::path(utf8Path(ogs[i])) : std::filesystem::path();
+                        if (!to.empty()) {
+                            copyPairs.push_back({from, to});
+                        }
+                    }
+                } else {
+                    std::filesystem::path from = baseDir / utf8Path(vol.itemPaths[fileIdx]);
+                    std::filesystem::path to = (fileIdx < (int)vol.itemOriginalPaths.size()) ? std::filesystem::path(utf8Path(vol.itemOriginalPaths[fileIdx])) : std::filesystem::path();
+                    if (!to.empty()) {
+                        copyPairs.push_back({from, to});
+                    }
+                }
+            }
+        }
+    } else if (type == 2) { // Grandchild under group
+        if (volIdx >= 0 && volIdx < (int)solver.packedVolumes.size()) {
+            const auto& vol = solver.packedVolumes[volIdx];
+            if (fileIdx >= 0 && fileIdx < (int)vol.itemGroupedPaths.size() && gcIdx >= 0 && gcIdx < (int)vol.itemGroupedPaths[fileIdx].size()) {
+                std::filesystem::path from = baseDir / utf8Path(vol.itemGroupedPaths[fileIdx][gcIdx]);
+                std::filesystem::path to = (fileIdx < (int)vol.itemOriginalGroupedPaths.size() && gcIdx < (int)vol.itemOriginalGroupedPaths[fileIdx].size()) ?
+                    std::filesystem::path(utf8Path(vol.itemOriginalGroupedPaths[fileIdx][gcIdx])) : std::filesystem::path();
+                if (!to.empty()) {
+                    copyPairs.push_back({from, to});
+                }
+            }
+        }
+    }
+    
+    if (copyPairs.empty()) {
+        GtkWidget* dlg = gtk_message_dialog_new(GTK_WINDOW(window),
+                                               GTK_DIALOG_MODAL,
+                                               GTK_MESSAGE_INFO,
+                                               GTK_BUTTONS_OK,
+                                               "%s", _T("msg_restore_no_files", "No files found to restore.").c_str());
+        g_signal_connect(dlg, "response", G_CALLBACK(+[](GtkWidget* d, int, gpointer) { gtk_window_destroy(GTK_WINDOW(d)); }), nullptr);
+        gtk_window_present(GTK_WINDOW(dlg));
+        return;
+    }
+    
+    GtkWidget* dlg = gtk_message_dialog_new(GTK_WINDOW(window),
+                                           GTK_DIALOG_MODAL,
+                                           GTK_MESSAGE_QUESTION,
+                                           GTK_BUTTONS_YES_NO,
+                                           "%s", _T("msg_restore_confirm", "Are you sure you want to restore the selected file(s) to their original location?").c_str());
+                                           
+    struct RestoreContext {
+        MainWindow* self;
+        std::vector<std::pair<std::filesystem::path, std::filesystem::path>> copyPairs;
+    };
+    RestoreContext* ctx = new RestoreContext{this, std::move(copyPairs)};
+    
+    g_signal_connect(dlg, "response", G_CALLBACK(+[](GtkWidget* d, int response, gpointer user_data) {
+        auto* ctx = static_cast<RestoreContext*>(user_data);
+        if (response == GTK_RESPONSE_YES) {
+            int successCount = 0;
+            int failCount = 0;
+            std::string lastError = "";
+            for (const auto& pair : ctx->copyPairs) {
+                try {
+                    std::filesystem::create_directories(pair.second.parent_path());
+                    if (std::filesystem::is_directory(pair.first)) {
+                        std::filesystem::copy(pair.first, pair.second, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+                    } else {
+                        std::filesystem::copy_file(pair.first, pair.second, std::filesystem::copy_options::overwrite_existing);
+                    }
+                    successCount++;
+                } catch (const std::exception& e) {
+                    failCount++;
+                    lastError = e.what();
+                }
+            }
+            if (failCount == 0) {
+                std::string successText = _T("msg_restore_success_1", "Successfully restored ") + std::to_string(successCount) + _T("msg_restore_success_2", " item(s).");
+                GtkWidget* res_dlg = gtk_message_dialog_new(GTK_WINDOW(ctx->self->window),
+                                                           GTK_DIALOG_MODAL,
+                                                           GTK_MESSAGE_INFO,
+                                                           GTK_BUTTONS_OK,
+                                                           "%s", successText.c_str());
+                g_signal_connect(res_dlg, "response", G_CALLBACK(+[](GtkWidget* rd, int, gpointer) { gtk_window_destroy(GTK_WINDOW(rd)); }), nullptr);
+                gtk_window_present(GTK_WINDOW(res_dlg));
+                ctx->self->append_log("Restored " + std::to_string(successCount) + " item(s) to original location.\n", 1);
+            } else {
+                std::string failText = _T("msg_restore_failed_1", "Restored ") + std::to_string(successCount) + _T("msg_restore_failed_2", " items, but ") + std::to_string(failCount) + _T("msg_restore_failed_3", " failed.\nLast error: ") + lastError;
+                GtkWidget* res_dlg = gtk_message_dialog_new(GTK_WINDOW(ctx->self->window),
+                                                           GTK_DIALOG_MODAL,
+                                                           GTK_MESSAGE_ERROR,
+                                                           GTK_BUTTONS_OK,
+                                                           "%s", failText.c_str());
+                g_signal_connect(res_dlg, "response", G_CALLBACK(+[](GtkWidget* rd, int, gpointer) { gtk_window_destroy(GTK_WINDOW(rd)); }), nullptr);
+                gtk_window_present(GTK_WINDOW(res_dlg));
+                ctx->self->append_log("Failed to restore items: " + lastError + "\n", 3);
+            }
+        }
+        delete ctx;
+        gtk_window_destroy(GTK_WINDOW(d));
+    }), ctx);
+    
+    gtk_window_present(GTK_WINDOW(dlg));
 }
 
 } // namespace bttb

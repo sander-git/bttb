@@ -1,0 +1,611 @@
+msgid "about_btn"
+msgstr "情報..."
+
+msgid "about_comments"
+msgstr "Burn to the Brim (BTTB) は、ファイルやフォルダーを対象の記憶媒体（CD、DVD、Blu-ray、またはUSB）に最適に配置するために設計された、クラシックなDelphiアプリケーションの最新のC++20移植版です。\n\nv4.5.0の機能:\n- まったく新しい高解像度アプリケーションアイコン（bttb.ico）と統一されたウェブサイトロゴ（bttb.png）\n- 検索状態スタックフレームの最小化と16MBのWin32スタック制限（0xC00000FDオーバーフローの修正）\n- トレースログの切り捨てを回避するためのログバッファ制限を10MBに拡張\n- 非ブロッキングのインクリメンタルGUIレンダリングとファイル容量警告のスキップ\n- オフラインJSONインデックスの作成とインタラクティブなパーサー\n- オプションのPAR3パリティファイルの生成と検証\n- ビットパーフェクトなPAR3コピーベースの復元と修復\n- Linux GTK4での標準のダークテーマオプションを含むテーマサポート\n- 起動時に即座に行われる改善された残り時間推定計算\n- 名前付きカスタムボリュームプロファイルと動的な自動ボリュームサイズ調整\n- 最後に選択したボリューム構成を復元する設定メモリ\n- ルールベースまたはセマンティックのグループ化が優先されるルール競合のオーバーライド\n- 転送速度推定による残り時間表示とステータスアクティビティスピナー\n- MiniLM埋め込みに基づくエントロピー認識セマンティックパッキング\n- エクスプローラーのコンテキストメニューの統合と長いパスのサポート\n\nBTTBは完全にローカライズされており、ドイツ語、オランダ語、フランス語、スペイン語の標準のgettext .poテンプレートに基づいて、ユーザーインターフェース全体を動的に翻訳します。\n\n使用されているライブラリと謝辞:\n- libpar3 (澤田豊氏作, LGPL v2.1+): https://github.com/Parchive/par3cmdline\n- BLAKE3 (BLAKE3チーム作, CC0/Apache-2.0): https://github.com/BLAKE3-team/BLAKE3\n- Leopard-RS (Christopher A. Taylor氏作, BSD 3-Clause): https://github.com/catid/leopard\n- Galois Fieldライブラリ (James S. Plank氏作): http://web.eecs.utk.edu/~jplank/plank/www/software.html\n\n著者: Sander Raaijmakers, Elwin Oost と Burn to the Brim チーム"
+
+msgid "about_title"
+msgstr "Burn to the Brim について"
+
+msgid "add_btn"
+msgstr "追加..."
+
+msgid "add_rule_btn"
+msgstr "ルールを追加"
+
+msgid "add_src_dir_title"
+msgstr "コピー元ディレクトリの追加"
+
+msgid "app_copyright"
+msgstr "Copyright © 2001-2026 Sander Raaijmakers, Elwin Oost and the Burn to the Brim team"
+
+msgid "app_title"
+msgstr "Burn to the Brim"
+
+msgid "app_version"
+msgstr "バージョン 4.5.0"
+
+msgid "auto_size"
+msgstr "自動サイズ"
+
+msgid "browse_btn"
+msgstr "参照..."
+
+msgid "browse_dest_tooltip"
+msgstr "コピー先ディレクトリを参照"
+
+msgid "browse_src_tooltip"
+msgstr "コピー元ディレクトリを参照"
+
+msgid "btn_cancel"
+msgstr "キャンセル"
+
+msgid "btn_resize"
+msgstr "サイズ変更"
+
+msgid "btn_skip"
+msgstr "ファイルをスキップ"
+
+msgid "cancel_btn"
+msgstr "キャンセル"
+
+msgid "capacity_label"
+msgstr "容量:"
+
+msgid "capacity_recommend_prompt_gtk"
+msgstr "スキャンされた最大のアイテムには、少なくとも %.2f MB のボリューム容量が必要です。\n\nアクションを選択してください:"
+
+msgid "close_btn"
+msgstr "閉じる"
+
+msgid "cluster_label"
+msgstr "クラスターサイズ (バイト):"
+
+msgid "complete_list_src_folders"
+msgstr "コピー元フォルダーの完全なリスト:"
+
+msgid "create_iso_btn"
+msgstr "ISOの作成..."
+
+msgid "create_symlinks_chk"
+msgstr "コピー先フォルダーにシンボリックリンクを作成する (デフォルト)"
+
+msgid "custom_size"
+msgstr "カスタムサイズ"
+
+msgid "custom_vol_name_placeholder"
+msgstr "カスタムボリューム名"
+
+msgid "dark_theme_chk"
+msgstr "ダークテーマを有効にする:"
+
+msgid "dir_setup_group"
+msgstr "ディレクトリ設定"
+
+msgid "edit_btn"
+msgstr "編集..."
+
+msgid "edit_src_dir_title"
+msgstr "コピー元ディレクトリの編集"
+
+msgid "enable_par3_chk"
+msgstr "PAR3パリティ保護を有効にする:"
+
+msgid "execution_log"
+msgstr "実行ログ"
+
+msgid "files_col"
+msgstr "ファイル"
+
+msgid "filled_label"
+msgstr "使用率: 0.00%"
+
+msgid "fitted_status_col"
+msgstr "配置ステータス"
+
+msgid "folders_col"
+msgstr "フォルダー"
+
+msgid "generate_btn"
+msgstr "生成"
+
+msgid "grouping_rules_frame"
+msgstr "ファイル/フォルダーのグループ化ルール"
+
+msgid "help_btn"
+msgstr "ヘルプ"
+
+msgid "help_guide_text"
+msgstr "1. ディレクトリ分割の深さ\nアイテムが分割されるフォルダーのネストレベルを決定します:\n - 深さ 0 (デフォルト): 最上位のファイルとフォルダーは個別のアイテムとして扱われます。\n - 深さ 1: 分割は1レベル深く実行され、最上位のフォルダーはそのまま維持されますが、その直接のサブフォルダーが分割されます。\n\n2. 最大検索時間\nバックトラッキングソルバーの実行が許可される最大秒数。制限に達した場合、その時点までに見つかった最良の選択が使用されます。\n\n3. スラックバイト数 (Spanning Slack)\nボリュームが絶対最大容量からこのバイト数以内（例：2048バイト）にパッキングされると、ソルバーの早期終了を許可します。\n\n4. ファイル/フォルダーのグループ化ルール\n一致するアイテムが同じボリューム上にグループ化されたままになるように強制します（例：'*.mp3' または正規表現 '^album_.*' に一致）。\n\n5. 複数のコピー元フォルダー (+)\n'+' をクリックして、複数のコピー元フォルダーを指定します。BTTB はそれらが単一のルートフォルダーにあるかのように動作します。ネストされたコピー元パスは無視されます。\n\n6. シンボリックリンクの作成\nファイルをコピー先フォルダーにコピー/移動する代わりに、BTTB は元のファイルを指す軽量なシンボリックリンクを作成します。\n\n7. ニューラルセマンティックパッキングと MiniLM セットアップガイド\nセマンティックプロンプトを指定することで、BTTB は文脈認識ディープラーニング埋め込みを使用して、類似したコンテンツを持つファイルをグループ化します。\n推奨される高精度 MiniLM ニューラルモデルを使用するには、Python 3 と sentence-transformers をインストールする必要があります:\n - ステップ 1: Python 3 と pip がインストールされていることを確認します。\n   (Linux: 'sudo apt install python3 python3-pip python3-venv' を実行)\n   (Windows: https://www.python.org/ からインストールし、「Add Python to PATH」にチェックを入れる)\n - ステップ 2: ターミナルまたはコマンドプロンプトを介して sentence-transformers をインストールします:\n   オプション A (簡単でおすすめ):\n     pip install sentence-transformers\n   オプション B (仮想環境による分離):\n     python3 -m venv bttb_env\n     source bttb_env/bin/activate  # (Windows: bttb_env\\Scripts\\activate)\n     pip install sentence-transformers\n - ステップ 3: Burn to the Brim を再起動して、MiniLM を自動的に読み込みます！見つからない場合、BTTB はローカライズされた文字 TF-IDF プロジェクターに適切にフォールバックします。"
+
+msgid "help_guide_title"
+msgstr "Burn to the Brim (BTTB) ヘルプガイド"
+
+msgid "help_title"
+msgstr "ヘルプ - Burn to the Brim"
+
+msgid "import_json_btn"
+msgstr "JSONのインポート..."
+
+msgid "integrate_ctx_chk"
+msgstr "Windows エクスプローラーのコンテキストメニューに統合する"
+
+msgid "iso_title"
+msgstr "ISOイメージの作成"
+
+msgid "label_par3_base"
+msgstr "PAR3ベース名:"
+
+msgid "label_rec_directory"
+msgstr "リカバリディレクトリ:"
+
+msgid "label_vol_directory"
+msgstr "ボリュームディレクトリ:"
+
+msgid "language_label"
+msgstr "言語:"
+
+msgid "log_auto_volume_cap_set_1"
+msgstr "自動ボリューム容量が設定されました: "
+
+msgid "log_auto_volume_cap_set_2"
+msgstr " バイト ("
+
+msgid "log_backtracking_failed_fallback_greedy"
+msgstr "バックトラッキングソルバーが適合を見つけられませんでした（またはタイムアウトしました）。残りのすべてのファイルが含まれるように、貪欲法のアロケーションにフォールバックしています..."
+
+msgid "log_bytes_suffix"
+msgstr " バイト)"
+
+msgid "log_capacity_adapted_1"
+msgstr "容量が "
+
+msgid "log_capacity_adapted_2"
+msgstr " バイトに適応されました。ソルバーを再試行しています..."
+
+msgid "log_capacity_skip_larger"
+msgstr "大きいファイルがスキップされました。ソルバーを再試行しています..."
+
+msgid "log_completed_file_organization"
+msgstr "ファイルの整理が完了しました。"
+
+msgid "log_copying_repair"
+msgstr "ボリュームの内容をコピーし、修復を実行しています。お待ちください...\n"
+
+msgid "log_created_offline_json_index"
+msgstr "オフラインの JSON インデックスファイルが作成されました: "
+
+msgid "log_damaged_files"
+msgstr "破損または不足しているファイルが見つかりました:\n"
+
+msgid "log_errors"
+msgstr "ログ/エラー: "
+
+msgid "log_fail_restore"
+msgstr "\n失敗: 復元または修復に失敗しました。\n"
+
+msgid "log_fail_verify_status"
+msgstr "\n検証中に問題が検出されました (ステータス "
+
+msgid "log_failed_create_json_index"
+msgstr "JSON インデックスファイルの作成に失敗しました: "
+
+msgid "log_failed_organize_item_1"
+msgstr "整理に失敗しました: "
+
+msgid "log_failed_par3_creation"
+msgstr "PAR3 の作成に失敗しました: "
+
+msgid "log_failed_read_temp_embed_output"
+msgstr "一時的な埋め込み出力ファイルの読み込みに失敗しました: "
+
+msgid "log_failed_symlink_retry_copy_1"
+msgstr "シンボリックリンクの作成に失敗しました: "
+
+msgid "log_failed_symlink_retry_copy_2"
+msgstr " (コピーで再試行中)"
+
+msgid "log_failed_write_temp_embed_input"
+msgstr "一時的な埋め込み入力ファイルの書き込みに失敗しました: "
+
+msgid "log_finished_solving_1"
+msgstr "解決が完了しました。経過時間: "
+
+msgid "log_finished_solving_2"
+msgstr " ms"
+
+msgid "log_forcing_progress_exceeds_cap_1"
+msgstr "強制進行: メディア容量より大きい残りのアイテムをパッキングしています ("
+
+msgid "log_found_items"
+msgstr "配置するアイテムが見つかりました: "
+
+msgid "log_frame_title"
+msgstr "ステータスおよびソルバーログ"
+
+msgid "log_frame_title_verify"
+msgstr "検証および復元ログ"
+
+msgid "log_generating_par3_for_volume_1"
+msgstr "ボリュームの PAR3 パリティファイルを生成中 "
+
+msgid "log_generating_semantic_embeddings"
+msgstr "セマンティック埋め込みを生成中..."
+
+msgid "log_index_fail"
+msgstr "個別の破損ファイルは特定されませんでしたが、インデックスの検証に失敗しました。PAR3アーカイブ自体が破損している可能性があります。\n"
+
+msgid "log_medium_capacity_1"
+msgstr "メディア容量: "
+
+msgid "log_medium_capacity_2"
+msgstr " セクター ("
+
+msgid "log_new_best_space_utilization"
+msgstr "新しい最適なスペース利用率: "
+
+msgid "log_no_files_written_on_disk"
+msgstr "ディスク上へのファイルのコピー、シンボリックリンク作成、または移動は行われませんでした。"
+
+msgid "log_no_items_to_fit"
+msgstr "配置するアイテムはありません。"
+
+msgid "log_optimal_selection_covers"
+msgstr "最適な選択の範囲: "
+
+msgid "log_organizing_item"
+msgstr "アイテムを整理中: "
+
+msgid "log_par3_base"
+msgstr "PAR3ベース名: "
+
+msgid "log_recovery_path"
+msgstr "リカバリパス: "
+
+msgid "log_running_semantic_clustering"
+msgstr "凝集型セマンティッククラスタリングを実行中 (しきい値=0.6)..."
+
+msgid "log_scan_aborted_failed_iterate"
+msgstr "ディレクトリ反復処理の失敗のため、ユーザーによってスキャンが中止されました。"
+
+msgid "log_scan_aborted_unreadable_dir"
+msgstr "読み取り不可能なディレクトリのため、ユーザーによってスキャンが中止されました。"
+
+msgid "log_scan_aborted_unreadable_item"
+msgstr "読み取り不可能なアイテムのため、ユーザーによってスキャンが中止されました。"
+
+msgid "log_scanning_folder"
+msgstr "フォルダーをスキャン中: "
+
+msgid "log_search_time_limit_exceeded_1"
+msgstr "検索時間制限を超過しました ("
+
+msgid "log_search_time_limit_exceeded_2"
+msgstr " 秒)。"
+
+msgid "log_selected_items"
+msgstr "選択されたアイテム:"
+
+msgid "log_selected_items_for_volume_1"
+msgstr "ボリュームに選択されたアイテム "
+
+msgid "log_selection_within_slack_1"
+msgstr "スラック許容範囲内の選択が見つかりました ("
+
+msgid "log_selection_within_slack_2"
+msgstr "%)。検索を早期終了します。"
+
+msgid "log_semantic_clustering_completed"
+msgstr "セマンティッククラスタリングが完了しました。統合されたグループの総数: "
+
+msgid "log_semantic_grouping_fallback"
+msgstr "-> セマンティックグループ化はローカルの文字列一致メトリックにフォールバックします。"
+
+msgid "log_single_vol_sol_forcing"
+msgstr "単一ボリュームのソリューション: 100% の包含を保証するためにすべてのファイルの選択を強制しています..."
+
+msgid "log_solver_aborted_files_exceed_cap"
+msgstr "ソルバーが中止されました: データセットに容量を超えるファイルが含まれています。"
+
+msgid "log_solver_aborted_files_exceed_cap_adapt"
+msgstr "ソルバーが中止されました: データセットに容量を超えるファイルが含まれています。容量を調整するか、インタラクティブな再試行を有効にしてください。"
+
+msgid "log_solving_for_vol_header_1"
+msgstr "\r\n--- ボリュームの解決中 "
+
+msgid "log_solving_for_vol_header_2"
+msgstr " ---"
+
+msgid "log_solving_optimal_bin"
+msgstr "最適なビン選択を解決しています..."
+
+msgid "log_start_restore"
+msgstr "ボリュームの復元/修復を開始しています...\n"
+
+msgid "log_start_verify"
+msgstr "ボリュームの検証を開始しています...\n"
+
+msgid "log_success_par3_for_volume_1"
+msgstr "ボリュームの PAR3 パリティ保護が正常に作成されました "
+
+msgid "log_success_restore"
+msgstr "\n成功: ボリュームのコピーと修復が別のリカバリフォルダーに正常に完了しました！\n"
+
+msgid "log_success_verify"
+msgstr "\n成功: すべてのファイルが検証され、正常（ビットパーフェクト）です！\n"
+
+msgid "log_target_volume_cap_1"
+msgstr "対象ボリューム容量: "
+
+msgid "log_target_volume_cap_2"
+msgstr " バイト ("
+
+msgid "log_test_simulation_complete"
+msgstr "--- テストシミュレーション完了 ---"
+
+msgid "log_theoretical_min_vols"
+msgstr "必要な理論上の最小ボリューム数: "
+
+msgid "log_total_dataset_size_1"
+msgstr "データセットの総サイズ: "
+
+msgid "log_total_dataset_size_2"
+msgstr " バイト ("
+
+msgid "log_volume_packing_estimation_header"
+msgstr "--- ボリュームパッキングの見積もり ---"
+
+msgid "log_volume_path"
+msgstr "ボリュームパス: "
+
+msgid "log_warn_dir_unreadable_1"
+msgstr "警告: ディレクトリ '"
+
+msgid "log_warn_dir_unreadable_2"
+msgstr "' は読み取り不可能です ("
+
+msgid "log_warn_embedded_output_empty"
+msgstr "警告: 埋め込み出力が空です。"
+
+msgid "log_warn_failed_iterate_dir_1"
+msgstr "警告: ディレクトリ '"
+
+msgid "log_warn_failed_iterate_dir_2"
+msgstr "' の反復処理に失敗しました ("
+
+msgid "log_warn_item_exceeds_cap_1"
+msgstr "警告: アイテム '"
+
+msgid "log_warn_item_exceeds_cap_2"
+msgstr "' ("
+
+msgid "log_warn_item_exceeds_cap_3"
+msgstr " バイト) は対象のボリュームサイズよりも大きいです ("
+
+msgid "log_warn_item_unreadable_1"
+msgstr "警告: '"
+
+msgid "log_warn_item_unreadable_2"
+msgstr "' のファイルまたはフォルダーは読み取り不可能です ("
+
+msgid "log_warn_python_embed_engine_failed"
+msgstr "警告: サブプロセスの python 埋め込みエンジンが失敗したか、python3 がインストールされていません。"
+
+msgid "manage_src_folders_title"
+msgstr "コピー元フォルダーの管理"
+
+msgid "match_files_chk"
+msgstr "ファイルを一致させる"
+
+msgid "match_folders_chk"
+msgstr "フォルダーを一致させる"
+
+msgid "media_size_label"
+msgstr "メディアサイズ:"
+
+msgid "move_files_chk"
+msgstr "配置されたフォルダー/ファイルをコピー先フォルダーに移動する"
+
+msgid "move_tooltip"
+msgstr "コピーやシンボリックリンクを作成する代わりに、ファイルをコピー先ボリュームに移動します"
+
+msgid "ok_btn"
+msgstr "OK"
+
+msgid "par3_block_size"
+msgstr "PAR3ブロックサイズ (バイト):"
+
+msgid "par3_redundancy"
+msgstr "PAR3冗長率 (%):"
+
+msgid "pattern_col"
+msgstr "パターン"
+
+msgid "pref_title"
+msgstr "設定"
+
+msgid "progress_frame_title"
+msgstr "配置されたメディアの容量"
+
+msgid "regex_pattern_chk"
+msgstr "正規表現パターン"
+
+msgid "rel_path_col"
+msgstr "相対パス / カテゴリ"
+
+msgid "remove_btn"
+msgstr "削除"
+
+msgid "remove_selected_btn"
+msgstr "選択した項目を削除"
+
+msgid "restart_notice"
+msgstr "言語設定が保存されました。変更を適用するには、Burn to the Brim を再起動してください。"
+
+msgid "restart_title"
+msgstr "言語の変更"
+
+msgid "restore_repair_btn"
+msgstr "復元と修復"
+
+msgid "rule_pattern_placeholder"
+msgstr "ルールパターン (*.mp3 または ^[0-9].*\\..*$)"
+
+msgid "rule_wins_chk"
+msgstr "ルールベースのグループ化を優先する:"
+
+msgid "save_btn"
+msgstr "保存"
+
+msgid "save_cv_label"
+msgstr "カスタムボリュームの保存:"
+
+msgid "save_cv_tooltip"
+msgstr "現在の容量、セクター、およびスラックを名前付きのカスタムボリュームとして保存します"
+
+msgid "search_time_label"
+msgstr "最大検索時間 (秒):"
+
+msgid "select_dest_dir_title"
+msgstr "コピー先ディレクトリの選択"
+
+msgid "select_medium_label"
+msgstr "メディアの選択:"
+
+msgid "select_rec_dir_title"
+msgstr "リカバリディレクトリの選択"
+
+msgid "select_vol_dir_title"
+msgstr "ボリュームディレクトリの選択"
+
+msgid "semantic_placeholder"
+msgstr "例: 似たコンテンツをまとめる"
+
+msgid "semantic_prompt"
+msgstr "セマンティックプロンプト:"
+
+msgid "semantic_tooltip"
+msgstr "MiniLM AI を使用して類似ファイルをクラスタリングするためのセマンティック説明を指定します"
+
+msgid "size_col"
+msgstr "サイズ"
+
+msgid "skip_empty_chk"
+msgstr "空のフォルダー/ファイルをスキップする"
+
+msgid "skip_empty_label"
+msgstr "空のファイル/ディレクトリをスキップ:"
+
+msgid "skip_unreadable_chk"
+msgstr "読み取り不可能なファイルをスキップする (緩やか)"
+
+msgid "slack_label"
+msgstr "スラックバイト数 (Slack):"
+
+msgid "source_folder"
+msgstr "コピー元フォルダー:"
+
+msgid "source_tooltip"
+msgstr "整理するファイルを含むコピー元ディレクトリ"
+
+msgid "span_chk"
+msgstr "複数のボリュームに分割する (Volume_1, Volume_2 など)"
+
+msgid "span_tooltip"
+msgstr "最初のボリュームだけでなく、残りのファイルを複数のボリュームに順次配置します"
+
+msgid "split_depth_label"
+msgstr "ディレクトリ分割の深さ:"
+
+msgid "start_btn"
+msgstr "開始"
+
+msgid "start_tooltip"
+msgstr "ファイルを最適なボリュームに整理し始めます"
+
+msgid "stop_btn"
+msgstr "停止"
+
+msgid "stop_tooltip"
+msgstr "現在のソルバーまたはコピー操作を停止します"
+
+msgid "symlink_tooltip"
+msgstr "ファイルをコピーする代わりに、コピー先にシンボリックリンクを作成します"
+
+msgid "target_folder"
+msgstr "コピー先フォルダー:"
+
+msgid "target_iso_file"
+msgstr "対象ISOファイル:"
+
+msgid "target_tooltip"
+msgstr "整理されたボリュームが作成されるコピー先ディレクトリ"
+
+msgid "test_btn"
+msgstr "テスト"
+
+msgid "test_tooltip"
+msgstr "ディスク上のファイルを変更せずにファイルの整理をシミュレートし、メトリックを計算します"
+
+msgid "time_left_label"
+msgstr "残り時間: --:--"
+
+msgid "tooltip_create_iso"
+msgstr "解決されたボリュームから ISO ファイルシステムイメージを作成します。"
+
+msgid "tooltip_import_json"
+msgstr "オフラインの JSON インデックスファイルをインポートして解析し、解決されたボリュームファイルのファイル詳細を表示します。"
+
+msgid "tooltip_move"
+msgstr "元のファイル/フォルダーをコピー先ボリュームフォルダーに直接移動/切り取りします。"
+
+msgid "tooltip_semantic"
+msgstr "MiniLM を使用してファイルを分析するために、「音楽をまとめる」などのプロンプトを入力します。"
+
+msgid "tooltip_source"
+msgstr "パックして統合するフォルダーのセミコロン区切りのパス。"
+
+msgid "tooltip_span"
+msgstr "連番で名前が付けられた複数のフォルダーにコンテンツを分割できるようにします。"
+
+msgid "tooltip_start"
+msgstr "ソルバーを実行し、設定に従ってファイル/フォルダーを整理します。"
+
+msgid "tooltip_stop"
+msgstr "現在実行中のパッキングまたはファイル整理プロセスを中止します。"
+
+msgid "tooltip_symlink"
+msgstr "コピー先ボリュームフォルダーにファイルシステムのシンボリックリンクを作成します（非破壊的）。"
+
+msgid "tooltip_target"
+msgstr "整理されたボリュームが作成されるコピー先パス。"
+
+msgid "tooltip_test"
+msgstr "ディスク上のファイルを変更せずにパッキングをシミュレートし、ボリュームの使用状況をテストします。"
+
+msgid "tooltip_trace"
+msgstr "フォルダー/ファイルがどのように選択および分割されるかを示す詳細な診断ログを表示します。"
+
+msgid "tooltip_verify_restore"
+msgstr "PAR3 アーカイブを使用して、解決されたボリュームを検証するか、破損したファイルをコピーして復元します。"
+
+msgid "trace_chk"
+msgstr "詳細なソルバー診断トレースを有効にする (Trace)"
+
+msgid "trace_tooltip"
+msgstr "ログに詳細な診断とパフォーマンス指標を表示します"
+
+msgid "type_col"
+msgstr "タイプ"
+
+msgid "verify_only_btn"
+msgstr "検証のみ"
+
+msgid "verify_restore_btn"
+msgstr "検証と復元..."
+
+msgid "verify_title"
+msgstr "ボリュームの検証と修復..."
+
+msgid "volume_label"
+msgstr "ボリュームラベル:"

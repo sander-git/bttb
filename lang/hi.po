@@ -1,0 +1,611 @@
+msgid "about_btn"
+msgstr "के बारे में..."
+
+msgid "about_comments"
+msgstr "Burn to the Brim (BTTB) क्लासिक डेल्फी एप्लिकेशन का एक आधुनिक C++20 पोर्ट है जिसे लक्षित भंडारण माध्यमों (CDs, DVDs, Blu-rays, या USBs) पर फ़ाइलों और फ़ोल्डरों को इष्टतम रूप से फ़िट करने के लिए डिज़ाइन किया गया है।\n\nv4.5.0 में विशेषताएं:\n- ब्रांड नया उच्च-रिज़ॉल्यूशन एप्लिकेशन आइकन (bttb.ico) और एकीकृत वेबसाइट लोगो (bttb.png)\n- न्यूनतम खोज स्थिति स्टैक फ्रेम और 16MB Win32 स्टैक सीमा (0xC00000FD ओवरफ़्लो ठीक करना)\n- अनुरेखण लॉग विच्छेदन से बचने के लिए लॉगिंग बफ़र सीमाओं को 10MB तक बढ़ाना\n- गैर-अवरोधक वृद्धिशील GUI रेंडरिंग और फ़ाइल क्षमता चेतावनियों को छोड़ना\n- ऑफ़लाइन JSON अनुक्रमणिका निर्माण और इंटरैक्टिव पार्सर\n- वैकल्पिक PAR3 पैरिटी फ़ाइल निर्माण और सत्यापन\n- बिट-परफेक्ट PAR3 कॉपी-आधारित बहाली और मरम्मत\n- Linux GTK4 पर मानक डार्क थीम विकल्पों सहित थीम समर्थन\n- स्टार्टअप पर तुरंत सुधारित अनुमानित समय शेष की गणना\n- नामित कस्टम वॉल्यूम प्रोफ़ाइल और गतिशील ऑटो वॉल्यूम आकार निर्धारण\n- सेटिंग्स मेमोरी जो अंतिम चयनित वॉल्यूम कॉन्फ़िगरेशन को पुनर्स्थापित करती है\n- नियम संघर्ष ओवरराइड नियम-आधारित या सिमेंटिक समूहीकरण को जीतने की अनुमति देता है\n- स्थानांतरण-दर अनुमानित समय शेष और स्थिति गतिविधि स्पिनर\n- MiniLM एम्बेडिंग पर आधारित एन्ट्रॉपी-अवेयर सिमेंटिक पैकिंग\n- Windows Explorer राइट-क्लिक मेनू एकीकरण और लंबे पथ समर्थन\n\nBTTB पूरी तरह से स्थानीयकृत है और जर्मन, डच, फ्रेंच और स्पेनिश में मानक gettext .po टेम्प्लेट के आधार पर पूरे यूजर इंटरफ़ेस का गतिशील रूप से अनुवाद करता है।\n\nप्रयुक्त पुस्तकालय और आभार:\n- libpar3 (Yutaka Sawada द्वारा, LGPL v2.1+): https://github.com/Parchive/par3cmdline\n- BLAKE3 (BLAKE3 टीम द्वारा, CC0/Apache-2.0): https://github.com/BLAKE3-team/BLAKE3\n- Leopard-RS (Christopher A. Taylor द्वारा, BSD 3-Clause): https://github.com/catid/leopard\n- Galois Field लाइब्रेरी (James S. Plank द्वारा): http://web.eecs.utk.edu/~jplank/plank/www/software.html\n\nलेखक: Sander Raaijmakers, Elwin Oost और Burn to the Brim टीम"
+
+msgid "about_title"
+msgstr "Burn to the Brim के बारे में"
+
+msgid "add_btn"
+msgstr "जोड़ें..."
+
+msgid "add_rule_btn"
+msgstr "नियम जोड़ें"
+
+msgid "add_src_dir_title"
+msgstr "स्रोत निर्देशिका जोड़ें"
+
+msgid "app_copyright"
+msgstr "कॉपीराइट © 2001-2026 Sander Raaijmakers, Elwin Oost और Burn to the Brim टीम"
+
+msgid "app_title"
+msgstr "Burn to the Brim"
+
+msgid "app_version"
+msgstr "संस्करण 4.5.0"
+
+msgid "auto_size"
+msgstr "स्वचालित आकार"
+
+msgid "browse_btn"
+msgstr "ब्राउज़ करें..."
+
+msgid "browse_dest_tooltip"
+msgstr "लक्षित निर्देशिका खोजें"
+
+msgid "browse_src_tooltip"
+msgstr "स्रोत निर्देशिका खोजें"
+
+msgid "btn_cancel"
+msgstr "रद्द करें"
+
+msgid "btn_resize"
+msgstr "आकार बदलें"
+
+msgid "btn_skip"
+msgstr "फ़ाइलें छोड़ें"
+
+msgid "cancel_btn"
+msgstr "रद्द करें"
+
+msgid "capacity_label"
+msgstr "क्षमता:"
+
+msgid "capacity_recommend_prompt_gtk"
+msgstr "सबसे बड़ी स्कैन की गई वस्तु के लिए कम से कम %.2f MB की वॉल्यूम क्षमता की आवश्यकता होती है।\n\nएक क्रिया चुनें:"
+
+msgid "close_btn"
+msgstr "बंद करें"
+
+msgid "cluster_label"
+msgstr "क्लस्टर आकार (बाइट्स):"
+
+msgid "complete_list_src_folders"
+msgstr "स्रोत फ़ोल्डर्स की पूरी सूची:"
+
+msgid "create_iso_btn"
+msgstr "ISO बनाएं..."
+
+msgid "create_symlinks_chk"
+msgstr "लक्षित फ़ोल्डर में सिम्बॉलिक लिंक बनाएं (डिफ़ॉल्ट)"
+
+msgid "custom_size"
+msgstr "कस्टम आकार"
+
+msgid "custom_vol_name_placeholder"
+msgstr "कस्टम वॉल्यूम नाम"
+
+msgid "dark_theme_chk"
+msgstr "डार्क थीम सक्षम करें:"
+
+msgid "dir_setup_group"
+msgstr "निर्देशिका सेटअप"
+
+msgid "edit_btn"
+msgstr "संपादित करें..."
+
+msgid "edit_src_dir_title"
+msgstr "स्रोत निर्देशिका संपादित करें"
+
+msgid "enable_par3_chk"
+msgstr "PAR3 पैरिटी सुरक्षा सक्षम करें:"
+
+msgid "execution_log"
+msgstr "निष्पादन लॉग"
+
+msgid "files_col"
+msgstr "फ़ाइलें"
+
+msgid "filled_label"
+msgstr "भरा हुआ: 0.00%"
+
+msgid "fitted_status_col"
+msgstr "फ़िट की गई स्थिति"
+
+msgid "folders_col"
+msgstr "फ़ोल्डर्स"
+
+msgid "generate_btn"
+msgstr "बनाएं"
+
+msgid "grouping_rules_frame"
+msgstr "फ़ाइल / फ़ोल्डर समूहीकरण नियम"
+
+msgid "help_btn"
+msgstr "सहायता"
+
+msgid "help_guide_text"
+msgstr "1. निर्देशिका विभाजन गहराई\nवह फ़ोल्डर नेस्टिंग स्तर निर्धारित करता है जिस पर वस्तुएं विभाजित होती हैं:\n - गहराई 0 (डिफ़ॉल्ट): शीर्ष-स्तरीय फ़ाइलों और फ़ोल्डरों को अलग वस्तुओं के रूप में माना जाता है।\n - गहराई 1: विभाजन एक स्तर गहरा होता है, जिससे शीर्ष-स्तरीय फ़ोल्डर बरकरार रहते हैं लेकिन उनके तत्काल उप-फ़ोल्डरों को विभाजित किया जाता है।\n\n2. अधिकतम खोज समय\nअधिकतम सेकंड जो बैकट्रैकिंग सॉल्वर को चलाने की अनुमति है। यदि यह सीमा पूरी हो जाती है, तो उस समय तक खोजा गया सबसे अच्छा चयन उपयोग किया जाता है।\n\n3. स्पैनिंग स्लैक\nएक बार वॉल्यूम पूर्ण अधिकतम क्षमता के इस बाइट्स के भीतर आ जाने पर सॉल्वर को समय से पहले समाप्त करने की अनुमति देता है (जैसे 2048 बाइट्स)।\n\n4. फ़ाइल/फ़ोल्डर समूहीकरण नियम\nमेल खाने वाली वस्तुओं को एक ही वॉल्यूम पर एक साथ समूहीकृत रखने के लिए बाध्य करें (जैसे, '*.mp3' या regex '^album_.*' से मिलान)।\n\n5. एकाधिक स्रोत फ़ोल्डर (+)\nएकाधिक स्रोत फ़ोल्डरों को निर्दिष्ट करने के लिए '+' पर क्लिक करें। BTTB ऐसे व्यवहार करता है जैसे वे एक ही रूट फ़ोल्डर में हों। नेस्टेड स्रोत पथों को अनदेखा कर दिया जाता है।\n\n6. सिम्बॉलिक लिंक बनाएं\nफ़ाइलों को लक्षित फ़ोल्डर में कॉपी/स्थानांतरित करने के बजाय, BTTB आपकी मूल फ़ाइलों की ओर इशारा करते हुए हल्के सिम्बॉलिक लिंक बनाता है।\n\n7. न्यूरल सिमेंटिक पैकिंग और MiniLM सेटअप गाइड\nएक सिमेंटिक प्रॉम्प्ट निर्दिष्ट करके, BTTB संदर्भ-जागरूक गहन शिक्षण एम्बेडिंग का उपयोग करके समान सामग्री वाली फ़ाइलों को समूहीकृत करता है।\nपसंदीदा, उच्च-सटीक MiniLM न्यूरल मॉडल का उपयोग करने के लिए, आपको Python 3 और sentence-transformers स्थापित करना होगा:\n - चरण 1: सुनिश्चित करें कि Python 3 और pip स्थापित हैं।\n   (Linux: 'sudo apt install python3 python3-pip python3-venv' चलाएं)\n   (Windows: https://www.python.org/ से स्थापित करें और 'Add Python to PATH' जांचें)\n - चरण 2: टर्मिनल या कमांड प्रॉम्प्ट के माध्यम से sentence-transformers स्थापित करें:\n   विकल्प A (सरलता के लिए अनुशंसित):\n     pip install sentence-transformers\n   विकल्प B (आभासी वातावरण अलगाव):\n     python3 -m venv bttb_env\n     source bttb_env/bin/activate  # (Windows: bttb_env\\Scripts\\activate)\n     pip install sentence-transformers\n - चरण 3: MiniLM को स्वचालित रूप से लोड करने के लिए Burn to the Brim को पुनरारंभ करें! यदि नहीं मिलता है, तो BTTB आसानी से एक स्थानीयकृत वर्ण TF-IDF प्रोजेक्टर पर वापस आ जाता है।"
+
+msgid "help_guide_title"
+msgstr "Burn to the Brim (BTTB) सहायता गाइड"
+
+msgid "help_title"
+msgstr "सहायता - Burn to the Brim"
+
+msgid "import_json_btn"
+msgstr "JSON आयात करें..."
+
+msgid "integrate_ctx_chk"
+msgstr "Windows Explorer राइट-क्लिक मेनू में एकीकृत करें"
+
+msgid "iso_title"
+msgstr "ISO छवि बनाएं"
+
+msgid "label_par3_base"
+msgstr "PAR3 मूल नाम:"
+
+msgid "label_rec_directory"
+msgstr "पुनर्प्राप्ति निर्देशिका:"
+
+msgid "label_vol_directory"
+msgstr "वॉल्यूम निर्देशिका:"
+
+msgid "language_label"
+msgstr "भाषा:"
+
+msgid "log_auto_volume_cap_set_1"
+msgstr "ऑटो वॉल्यूम क्षमता इस प्रकार निर्धारित की गई: "
+
+msgid "log_auto_volume_cap_set_2"
+msgstr " बाइट्स ("
+
+msgid "log_backtracking_failed_fallback_greedy"
+msgstr "बैकट्रैकिंग सॉल्वर को कोई उपयुक्तता नहीं मिली (या समय समाप्त हो गया)। यह सुनिश्चित करने के लिए कि सभी शेष फाइलें शामिल हों, लालची आवंटन का सहारा लिया जा रहा है..."
+
+msgid "log_bytes_suffix"
+msgstr " बाइट्स)"
+
+msgid "log_capacity_adapted_1"
+msgstr "क्षमता अनुकूलित की गई "
+
+msgid "log_capacity_adapted_2"
+msgstr " बाइट्स। सॉल्वर पुनः प्रयास कर रहा है..."
+
+msgid "log_capacity_skip_larger"
+msgstr "बड़ी फाइलें छोड़ दी गईं। सॉल्वर पुनः प्रयास कर रहा है..."
+
+msgid "log_completed_file_organization"
+msgstr "फ़ाइल संगठन पूरा हुआ।"
+
+msgid "log_copying_repair"
+msgstr "वॉल्यूम सामग्री की प्रतिलिपि बनाई जा रही है और मरम्मत शुरू की जा रही है। कृपया प्रतीक्षा करें...\n"
+
+msgid "log_created_offline_json_index"
+msgstr "ऑफ़लाइन JSON अनुक्रमणिका फ़ाइल बनाई गई: "
+
+msgid "log_damaged_files"
+msgstr "क्षतिग्रस्त या अनुपलब्ध फ़ाइलें मिलीं:\n"
+
+msgid "log_errors"
+msgstr "लॉग/त्रुटियां: "
+
+msgid "log_fail_restore"
+msgstr "\nविफलता: पुनर्प्राप्ति या मरम्मत विफल रही।\n"
+
+msgid "log_fail_verify_status"
+msgstr "\nसत्यापन में समस्याएं पाई गईं (स्थिति "
+
+msgid "log_failed_create_json_index"
+msgstr "JSON अनुक्रमणिका फ़ाइल बनाने में विफल: "
+
+msgid "log_failed_organize_item_1"
+msgstr "व्यवस्थित करने में विफल "
+
+msgid "log_failed_par3_creation"
+msgstr "PAR3 निर्माण विफल: "
+
+msgid "log_failed_read_temp_embed_output"
+msgstr "अस्थायी एम्बेडिंग आउटपुट फ़ाइल पढ़ने में विफल: "
+
+msgid "log_failed_symlink_retry_copy_1"
+msgstr "सिंबॉलिक लिंक बनाने में विफल "
+
+msgid "log_failed_symlink_retry_copy_2"
+msgstr " (कॉपी के साथ पुनः प्रयास कर रहे हैं)"
+
+msgid "log_failed_write_temp_embed_input"
+msgstr "अस्थायी एम्बेडिंग इनपुट फ़ाइल लिखने में विफल: "
+
+msgid "log_finished_solving_1"
+msgstr "समाधान खोजा गया। बीता समय: "
+
+msgid "log_finished_solving_2"
+msgstr " ms"
+
+msgid "log_forcing_progress_exceeds_cap_1"
+msgstr "प्रगति बाध्य करना: माध्यम क्षमता से बड़ी शेष वस्तु को पैक किया जा रहा है ("
+
+msgid "log_found_items"
+msgstr "फ़िट करने के लिए वस्तुएं मिलीं: "
+
+msgid "log_frame_title"
+msgstr "स्थिति और सॉल्वर लॉग"
+
+msgid "log_frame_title_verify"
+msgstr "सत्यापन और पुनर्प्राप्ति लॉग"
+
+msgid "log_generating_par3_for_volume_1"
+msgstr "वॉल्यूम के लिए PAR3 पैरिटी फाइलें उत्पन्न की जा रही हैं "
+
+msgid "log_generating_semantic_embeddings"
+msgstr "सिमेंटिक एम्बेडिंग उत्पन्न की जा रही है..."
+
+msgid "log_index_fail"
+msgstr "कोई व्यक्तिगत क्षतिग्रस्त फ़ाइल नहीं मिली, लेकिन अनुक्रमणिका सत्यापन विफल रहा। PAR3 संग्रह स्वयं क्षतिग्रस्त हो सकता है।\n"
+
+msgid "log_medium_capacity_1"
+msgstr "माध्यम क्षमता: "
+
+msgid "log_medium_capacity_2"
+msgstr " सेक्टर ("
+
+msgid "log_new_best_space_utilization"
+msgstr "नया सर्वोत्तम स्थान उपयोग: "
+
+msgid "log_no_files_written_on_disk"
+msgstr "डिस्क पर कोई फ़ाइल कॉपी, सिंबॉलिक लिंक या स्थानांतरित नहीं की गई थी।"
+
+msgid "log_no_items_to_fit"
+msgstr "फ़िट करने के लिए कोई वस्तु नहीं है।"
+
+msgid "log_optimal_selection_covers"
+msgstr "इष्टतम चयन कवर करता है: "
+
+msgid "log_organizing_item"
+msgstr "वस्तु को व्यवस्थित किया जा रहा है: "
+
+msgid "log_par3_base"
+msgstr "PAR3 मूल नाम: "
+
+msgid "log_recovery_path"
+msgstr "पुनर्प्राप्ति पथ: "
+
+msgid "log_running_semantic_clustering"
+msgstr "समूहीकृत सिमेंटिक क्लस्टरिंग चल रही है (सीमा=0.6)..."
+
+msgid "log_scan_aborted_failed_iterate"
+msgstr "निर्देशिका पुनरावृत्ति विफलता के कारण उपयोगकर्ता द्वारा स्कैनिंग रद्द कर दी गई।"
+
+msgid "log_scan_aborted_unreadable_dir"
+msgstr "अपठनीय निर्देशिका के कारण उपयोगकर्ता द्वारा स्कैनिंग रद्द कर दी गई।"
+
+msgid "log_scan_aborted_unreadable_item"
+msgstr "अपठनीय वस्तु के कारण उपयोगकर्ता द्वारा स्कैनिंग रद्द कर दी गई।"
+
+msgid "log_scanning_folder"
+msgstr "फ़ोल्डर स्कैन किया जा रहा है: "
+
+msgid "log_search_time_limit_exceeded_1"
+msgstr "खोज समय सीमा समाप्त ("
+
+msgid "log_search_time_limit_exceeded_2"
+msgstr " सेकंड)।"
+
+msgid "log_selected_items"
+msgstr "चयनित वस्तुएं:"
+
+msgid "log_selected_items_for_volume_1"
+msgstr "वॉल्यूम के लिए चयनित वस्तुएं "
+
+msgid "log_selection_within_slack_1"
+msgstr "स्लैक सहिष्णुता के भीतर चयन ("
+
+msgid "log_selection_within_slack_2"
+msgstr "%) मिला। खोज समय से पहले समाप्त कर दी गई।"
+
+msgid "log_semantic_clustering_completed"
+msgstr "सिमेंटिक क्लस्टरिंग पूरी हुई। कुल समेकित समूह: "
+
+msgid "log_semantic_grouping_fallback"
+msgstr "-> सिमेंटिक समूहीकरण स्थानीय स्ट्रिंग मिलान मीट्रिक्स पर वापस आ जाएगा।"
+
+msgid "log_single_vol_sol_forcing"
+msgstr "एकल वॉल्यूम समाधान: 100% समावेशन की गारंटी के लिए सभी फ़ाइलों के चयन को बाध्य करना..."
+
+msgid "log_solver_aborted_files_exceed_cap"
+msgstr "सॉल्वर निरस्त: डेटासेट में क्षमता से अधिक फाइलें हैं।"
+
+msgid "log_solver_aborted_files_exceed_cap_adapt"
+msgstr "सॉल्वर निरस्त: डेटासेट में क्षमता से अधिक फाइलें हैं। क्षमता को अनुकूलित करें या इंटरैक्टिव पुनः प्रयास सक्षम करें।"
+
+msgid "log_solving_for_vol_header_1"
+msgstr "\r\n--- वॉल्यूम के लिए समाधान खोज रहे हैं "
+
+msgid "log_solving_for_vol_header_2"
+msgstr " ---"
+
+msgid "log_solving_optimal_bin"
+msgstr "इष्टतम बिन चयन का समाधान खोज रहे हैं..."
+
+msgid "log_start_restore"
+msgstr "वॉल्यूम पुनर्प्राप्ति/मरम्मत शुरू हो रही है...\n"
+
+msgid "log_start_verify"
+msgstr "वॉल्यूम सत्यापन शुरू हो रहा है...\n"
+
+msgid "log_success_par3_for_volume_1"
+msgstr "वॉल्यूम के लिए सफलतापूर्वक PAR3 पैरिटी सुरक्षा बनाई गई "
+
+msgid "log_success_restore"
+msgstr "\nसफलता: वॉल्यूम सफलतापूर्वक कॉपी किया गया और अलग पुनर्प्राप्ति फ़ोल्डर में मरम्मत की गई!\n"
+
+msgid "log_success_verify"
+msgstr "\nसफलता: सभी फाइलें सत्यापित हैं और स्वच्छ/बिट-परफेक्ट हैं!\n"
+
+msgid "log_target_volume_cap_1"
+msgstr "लक्षित वॉल्यूम क्षमता: "
+
+msgid "log_target_volume_cap_2"
+msgstr " बाइट्स ("
+
+msgid "log_test_simulation_complete"
+msgstr "--- परीक्षण अनुकरण पूरा हुआ ---"
+
+msgid "log_theoretical_min_vols"
+msgstr "सैद्धांतिक न्यूनतम वॉल्यूम आवश्यक: "
+
+msgid "log_total_dataset_size_1"
+msgstr "कुल डेटासेट आकार: "
+
+msgid "log_total_dataset_size_2"
+msgstr " बाइट्स ("
+
+msgid "log_volume_packing_estimation_header"
+msgstr "--- वॉल्यूम पैकिंग अनुमान ---"
+
+msgid "log_volume_path"
+msgstr "वॉल्यूम पथ: "
+
+msgid "log_warn_dir_unreadable_1"
+msgstr "चेतावनी: निर्देशिका '"
+
+msgid "log_warn_dir_unreadable_2"
+msgstr "' अपठनीय है ("
+
+msgid "log_warn_embedded_output_empty"
+msgstr "चेतावनी: एम्बेडेड आउटपुट खाली है।"
+
+msgid "log_warn_failed_iterate_dir_1"
+msgstr "चेतावनी: निर्देशिका '"
+
+msgid "log_warn_failed_iterate_dir_2"
+msgstr "' को पुनरावृत्त करने में विफल ("
+
+msgid "log_warn_item_exceeds_cap_1"
+msgstr "चेतावनी: वस्तु '"
+
+msgid "log_warn_item_exceeds_cap_2"
+msgstr "' ("
+
+msgid "log_warn_item_exceeds_cap_3"
+msgstr " बाइट्स) लक्षित वॉल्यूम आकार से बड़ी है ("
+
+msgid "log_warn_item_unreadable_1"
+msgstr "चेतावनी: '"
+
+msgid "log_warn_item_unreadable_2"
+msgstr "' में फ़ाइल या फ़ोल्डर अपठनीय है ("
+
+msgid "log_warn_python_embed_engine_failed"
+msgstr "चेतावनी: सबप्रोसेस पायथन एम्बेडिंग इंजन विफल या पायथन3 स्थापित नहीं है।"
+
+msgid "manage_src_folders_title"
+msgstr "स्रोत फ़ोल्डर्स प्रबंधित करें"
+
+msgid "match_files_chk"
+msgstr "फ़ाइलें मिलान करें"
+
+msgid "match_folders_chk"
+msgstr "फ़ोल्डर्स मिलान करें"
+
+msgid "media_size_label"
+msgstr "माध्यम का आकार:"
+
+msgid "move_files_chk"
+msgstr "फ़िट किए गए फ़ोल्डर्स/फ़ाइलों को लक्षित फ़ोल्डर में ले जाएं"
+
+msgid "move_tooltip"
+msgstr "कॉपी करने या सिम्बॉलिक लिंक बनाने के बजाय फ़ाइलों को उनके लक्षित वॉल्यूम में ले जाएं"
+
+msgid "ok_btn"
+msgstr "ठीक है"
+
+msgid "par3_block_size"
+msgstr "PAR3 ब्लॉक आकार (बाइट्स):"
+
+msgid "par3_redundancy"
+msgstr "PAR3 अतिरेक प्रतिशत (%):"
+
+msgid "pattern_col"
+msgstr "पैटर्न"
+
+msgid "pref_title"
+msgstr "प्राथमिकताएं"
+
+msgid "progress_frame_title"
+msgstr "फ़िट की गई माध्यम क्षमता"
+
+msgid "regex_pattern_chk"
+msgstr "Regex पैटर्न"
+
+msgid "rel_path_col"
+msgstr "सापेक्ष पथ / श्रेणी"
+
+msgid "remove_btn"
+msgstr "हटाएं"
+
+msgid "remove_selected_btn"
+msgstr "चयनित हटाएं"
+
+msgid "restart_notice"
+msgstr "भाषा प्राथमिकताएं सहेजी गईं। परिवर्तनों को लागू करने के लिए कृपया Burn to the Brim को पुनरारंभ करें।"
+
+msgid "restart_title"
+msgstr "भाषा बदली गई"
+
+msgid "restore_repair_btn"
+msgstr "पुनर्प्राप्त और मरम्मत करें"
+
+msgid "rule_pattern_placeholder"
+msgstr "नियम पैटर्न (*.mp3 या ^[0-9].*\\..*$)"
+
+msgid "rule_wins_chk"
+msgstr "नियम-आधारित समूहीकरण की जीत होती है:"
+
+msgid "save_btn"
+msgstr "सहेजें"
+
+msgid "save_cv_label"
+msgstr "कस्टम वॉल्यूम सहेजें:"
+
+msgid "save_cv_tooltip"
+msgstr "वर्तमान क्षमता, सेक्टर और स्लैक को नाम देकर कस्टम वॉल्यूम के रूप में सहेजें"
+
+msgid "search_time_label"
+msgstr "अधिकतम खोज समय (सेकंड):"
+
+msgid "select_dest_dir_title"
+msgstr "लक्षित निर्देशिका चुनें"
+
+msgid "select_medium_label"
+msgstr "माध्यम चुनें:"
+
+msgid "select_rec_dir_title"
+msgstr "पुनर्प्राप्ति निर्देशिका चुनें"
+
+msgid "select_vol_dir_title"
+msgstr "वॉल्यूम निर्देशिका चुनें"
+
+msgid "semantic_placeholder"
+msgstr "जैसे समान सामग्री को एक साथ रखना"
+
+msgid "semantic_prompt"
+msgstr "सिमेंटिक प्रॉम्प्ट:"
+
+msgid "semantic_tooltip"
+msgstr "MiniLM AI का उपयोग करके समान फ़ाइलों को क्लस्टर करने के लिए एक सिमेंटिक विवरण निर्दिष्ट करें"
+
+msgid "size_col"
+msgstr "आकार"
+
+msgid "skip_empty_chk"
+msgstr "खाली फ़ोल्डर्स / फाइलें छोड़ें"
+
+msgid "skip_empty_label"
+msgstr "खाली फ़ाइलें/निर्देशिकाएं छोड़ें:"
+
+msgid "skip_unreadable_chk"
+msgstr "अपठनीय फाइलें छोड़ें (सहानुभूतिपूर्वक)"
+
+msgid "slack_label"
+msgstr "स्लैक बाइट्स:"
+
+msgid "source_folder"
+msgstr "स्रोत फ़ोल्डर:"
+
+msgid "source_tooltip"
+msgstr "व्यवस्थित की जाने वाली फ़ाइलों वाली स्रोत निर्देशिका"
+
+msgid "span_chk"
+msgstr "एकाधिक वॉल्यूमों में विभाजित करें (Volume_1, Volume_2, आदि)"
+
+msgid "span_tooltip"
+msgstr "केवल पहले वॉल्यूम के बजाय शेष फ़ाइलों को क्रमिक रूप से कई वॉल्यूमों में फ़िट करें"
+
+msgid "split_depth_label"
+msgstr "निर्देशिका विभाजन गहराई:"
+
+msgid "start_btn"
+msgstr "प्रारंभ"
+
+msgid "start_tooltip"
+msgstr "फ़ाइलों को इष्टतम वॉल्यूमों में व्यवस्थित करना शुरू करें"
+
+msgid "stop_btn"
+msgstr "रोकें"
+
+msgid "stop_tooltip"
+msgstr "वर्तमान सॉल्वर या कॉपी संचालन को रोकें"
+
+msgid "symlink_tooltip"
+msgstr "कॉपी करने के बजाय गंतव्य पर फ़ाइलों के सिम्बॉलिक लिंक बनाएं"
+
+msgid "target_folder"
+msgstr "लक्षित फ़ोल्डर:"
+
+msgid "target_iso_file"
+msgstr "लक्षित ISO फ़ाइल:"
+
+msgid "target_tooltip"
+msgstr "लक्षित निर्देशिका जहां व्यवस्थित वॉल्यूम बनाए जाएंगे"
+
+msgid "test_btn"
+msgstr "परीक्षण"
+
+msgid "test_tooltip"
+msgstr "डिस्क पर फ़ाइलों को संशोधित किए बिना फ़ाइलों के संगठन का अनुकरण करें और मीट्रिक की गणना करें"
+
+msgid "time_left_label"
+msgstr "शेष समय: --:--"
+
+msgid "tooltip_create_iso"
+msgstr "सुलझाए गए वॉल्यूम से ISO फ़ाइल सिस्टम छवियां बनाएं।"
+
+msgid "tooltip_import_json"
+msgstr "सुलझाए गए वॉल्यूम फ़ाइल विवरण देखने के लिए ऑफ़लाइन JSON अनुक्रमणिका फ़ाइलें आयात और पार्स करें।"
+
+msgid "tooltip_move"
+msgstr "मूल फ़ाइलों/फ़ोल्डरों को सीधे लक्षित वॉल्यूम फ़ोल्डरों में ले जाएं/काटें।"
+
+msgid "tooltip_semantic"
+msgstr "MiniLM के माध्यम से फ़ाइलों का विश्लेषण करने के लिए 'keep audio together' जैसा प्रॉम्प्ट दर्ज करें।"
+
+msgid "tooltip_source"
+msgstr "पैक और समेकित करने के लिए फ़ोल्डरों के अर्धविराम-अलग पथ।"
+
+msgid "tooltip_span"
+msgstr "सामग्री को क्रमिक रूप से नामित एकाधिक फ़ोल्डरों में विभाजित करने की अनुमति दें।"
+
+msgid "tooltip_start"
+msgstr "सॉल्वर चलाएं और प्राथमिकताओं के अनुसार फ़ाइलों/फ़ोल्डरों को व्यवस्थित करें।"
+
+msgid "tooltip_stop"
+msgstr "वर्तमान में चल रही पैकिंग या फ़ाइल संगठन प्रक्रिया को रोकें।"
+
+msgid "tooltip_symlink"
+msgstr "लक्षित वॉल्यूम फ़ोल्डरों में फ़ाइल सिस्टम सिम्बॉलिक लिंक बनाएं (गैर-विनाशकारी)।"
+
+msgid "tooltip_target"
+msgstr "लक्षित पथ जहाँ वॉल्यूम व्यवस्थित और लिखे जाएंगे।"
+
+msgid "tooltip_test"
+msgstr "वॉल्यूम उपयोग का परीक्षण करने के लिए डिस्क पर फ़ाइलों को संशोधित किए बिना पैकिंग का अनुकरण करें।"
+
+msgid "tooltip_trace"
+msgstr "लॉग में विस्तृत निदान और प्रदर्शन मीट्रिक दिखाएं।"
+
+msgid "tooltip_verify_restore"
+msgstr "सुलझाए गए वॉल्यूम सत्यापित करें या PAR3 संग्रहों का उपयोग करके क्षतिग्रस्त फ़ाइलों को कॉपी और पुनर्प्राप्त करें।"
+
+msgid "trace_chk"
+msgstr "विस्तृत सॉल्वर नैदानिक अनुरेखण सक्षम करें (Trace)"
+
+msgid "trace_tooltip"
+msgstr "लॉग में विस्तृत नैदानिक और प्रदर्शन मीट्रिक दिखाएं"
+
+msgid "type_col"
+msgstr "प्रकार"
+
+msgid "verify_only_btn"
+msgstr "केवल सत्यापित करें"
+
+msgid "verify_restore_btn"
+msgstr "सत्यापित और पुनर्प्राप्त करें..."
+
+msgid "verify_title"
+msgstr "वॉल्यूम सत्यापित और पुनर्प्राप्त करें..."
+
+msgid "volume_label"
+msgstr "वॉल्यूम लेबल:"

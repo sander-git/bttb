@@ -1,0 +1,611 @@
+msgid "about_btn"
+msgstr "Giriath (About)..."
+
+msgid "about_comments"
+msgstr "Burn to the Brim (BTTB) is a modern C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums (CDs, DVDs, Blu-rays, or USBs).\n\nFeatures in v4.5.0:\n- New application icon (bttb.ico) and website logo (bttb.png)\n- Minimized search state stack frames & 16MB Win32 stack limit (fixing 0xC00000FD overflows)\n- Expanded logging limits to 10MB to avoid truncation\n- Non-blocking incremental GUI rendering\n- Offline JSON Index creation and parser\n- Optional PAR3 parity file generation and verification\n- Bit-perfect PAR3 copy-based restoration and repair\n- Theme support including standard dark theme options on Linux GTK4\n- Improved Estimated Time Left calculation immediately at startup\n- Named Custom Volume profiles & dynamic Auto Volume sizing\n- Settings memory restoring the last selected volume configuration\n- Rule conflict overrides allowing rule-based or semantic grouping to win\n- Transfer-rate estimated Time Left & status activity spinner\n- Entropy-Aware Semantic Packing based on MiniLM embeddings\n- Explorer Context Menu integration & long path support\n\nAuthors: Sander Raaijmakers, Elwin Oost and the Elves of Rivendell"
+
+msgid "about_title"
+msgstr "Concerning Burn to the Brim"
+
+msgid "add_btn"
+msgstr "Add..."
+
+msgid "add_rule_btn"
+msgstr "Add Rule"
+
+msgid "add_src_dir_title"
+msgstr "Add Source"
+
+msgid "app_copyright"
+msgstr "Copyright © 2001-2026 Sander Raaijmakers, Elwin Oost and the Elves of Rivendell"
+
+msgid "app_title"
+msgstr "Burn to the Brim"
+
+msgid "app_version"
+msgstr "Version 4.5.0"
+
+msgid "auto_size"
+msgstr "Auto Size"
+
+msgid "browse_btn"
+msgstr "Browse..."
+
+msgid "browse_dest_tooltip"
+msgstr "Browse target destination"
+
+msgid "browse_src_tooltip"
+msgstr "Browse source folders"
+
+msgid "btn_cancel"
+msgstr "Cancel"
+
+msgid "btn_resize"
+msgstr "Resize"
+
+msgid "btn_skip"
+msgstr "Skip Files"
+
+msgid "cancel_btn"
+msgstr "Cancel"
+
+msgid "capacity_label"
+msgstr "Capacity:"
+
+msgid "capacity_recommend_prompt_gtk"
+msgstr "Largest item requires at least %.2f MB capacity.\n\nChoose:"
+
+msgid "close_btn"
+msgstr "Close"
+
+msgid "cluster_label"
+msgstr "Cluster Size (Bytes):"
+
+msgid "complete_list_src_folders"
+msgstr "Complete list of source folders:"
+
+msgid "create_iso_btn"
+msgstr "Create ISO..."
+
+msgid "create_symlinks_chk"
+msgstr "Create symbolic links (Default)"
+
+msgid "custom_size"
+msgstr "Custom Size"
+
+msgid "custom_vol_name_placeholder"
+msgstr "Custom Name"
+
+msgid "dark_theme_chk"
+msgstr "Dark Theme:"
+
+msgid "dir_setup_group"
+msgstr "Directories Setup"
+
+msgid "edit_btn"
+msgstr "Edit..."
+
+msgid "edit_src_dir_title"
+msgstr "Edit Source"
+
+msgid "enable_par3_chk"
+msgstr "Enable PAR3 Protection:"
+
+msgid "execution_log"
+msgstr "Execution Log"
+
+msgid "files_col"
+msgstr "Files"
+
+msgid "filled_label"
+msgstr "Filled: 0.00%"
+
+msgid "fitted_status_col"
+msgstr "Fit Status"
+
+msgid "folders_col"
+msgstr "Folders"
+
+msgid "generate_btn"
+msgstr "Generate"
+
+msgid "grouping_rules_frame"
+msgstr "File / Folder Grouping Rules"
+
+msgid "help_btn"
+msgstr "Tulu (Help)"
+
+msgid "help_guide_text"
+msgstr "1. Split Depth\nDetermines the folder nesting level at which items are split:\n - Depth 0 (Default): Top-level files and folders are treated as separate items.\n - Depth 1: Splitting occurs one level deeper, keeping top-level folders intact.\n\n2. Max Search Time\nThe maximum seconds the backtracking solver is allowed to run.\n\n3. Spanning Slack\nAllows early solver termination once a volume is packed within this number of bytes.\n\n4. File/Folder Grouping Rules\nForce matching items to remain grouped together on the same volume.\n\n5. Multiple Source Folders (+)\nSpecify multiple source folders. Nested source paths are ignored.\n\n6. Create Symbolic Links\nCreates lightweight symbolic links pointing back to original files.\n\n7. Neural Semantic Packing & MiniLM Setup Guide\nGroups files with similar content using context-aware deep learning embeddings."
+
+msgid "help_guide_title"
+msgstr "BTTB Help Manual"
+
+msgid "help_title"
+msgstr "Tulu - Burn to the Brim"
+
+msgid "import_json_btn"
+msgstr "Import JSON..."
+
+msgid "integrate_ctx_chk"
+msgstr "Integrate with Windows Context Menu"
+
+msgid "iso_title"
+msgstr "Create ISO Image"
+
+msgid "label_par3_base"
+msgstr "PAR3 Base Name:"
+
+msgid "label_rec_directory"
+msgstr "Recovery Directory:"
+
+msgid "label_vol_directory"
+msgstr "Volume Directory:"
+
+msgid "language_label"
+msgstr "Eldarin:"
+
+msgid "log_auto_volume_cap_set_1"
+msgstr "Auto capacity set to: "
+
+msgid "log_auto_volume_cap_set_2"
+msgstr " bytes ("
+
+msgid "log_backtracking_failed_fallback_greedy"
+msgstr "Backtracking solver timed out. Falling back to greedy allocation..."
+
+msgid "log_bytes_suffix"
+msgstr " bytes)"
+
+msgid "log_capacity_adapted_1"
+msgstr "Capacity adapted to "
+
+msgid "log_capacity_adapted_2"
+msgstr " bytes. Retrying solver..."
+
+msgid "log_capacity_skip_larger"
+msgstr "Larger files skipped. Retrying solver..."
+
+msgid "log_completed_file_organization"
+msgstr "File organization completed."
+
+msgid "log_copying_repair"
+msgstr "Copying volume contents and running repair. Please wait...\n"
+
+msgid "log_created_offline_json_index"
+msgstr "Created offline JSON index: "
+
+msgid "log_damaged_files"
+msgstr "Damaged or missing files found:\n"
+
+msgid "log_errors"
+msgstr "Logs/Errors: "
+
+msgid "log_fail_restore"
+msgstr "\nFailure: Restoration failed.\n"
+
+msgid "log_fail_verify_status"
+msgstr "\nIssues detected (status "
+
+msgid "log_failed_create_json_index"
+msgstr "Failed to create JSON index: "
+
+msgid "log_failed_organize_item_1"
+msgstr "Failed to organize "
+
+msgid "log_failed_par3_creation"
+msgstr "PAR3 creation failed: "
+
+msgid "log_failed_read_temp_embed_output"
+msgstr "Failed to read temp embedding output: "
+
+msgid "log_failed_symlink_retry_copy_1"
+msgstr "Failed to create link for "
+
+msgid "log_failed_symlink_retry_copy_2"
+msgstr " (retrying with copy)"
+
+msgid "log_failed_write_temp_embed_input"
+msgstr "Failed to write temp input: "
+
+msgid "log_finished_solving_1"
+msgstr "Finished solving. Elapsed time: "
+
+msgid "log_finished_solving_2"
+msgstr " ms"
+
+msgid "log_forcing_progress_exceeds_cap_1"
+msgstr "Packing item larger than capacity ("
+
+msgid "log_found_items"
+msgstr "Found items: "
+
+msgid "log_frame_title"
+msgstr "Status and Solver Logs"
+
+msgid "log_frame_title_verify"
+msgstr "Verification Log"
+
+msgid "log_generating_par3_for_volume_1"
+msgstr "Generating PAR3 protection for Volume "
+
+msgid "log_generating_semantic_embeddings"
+msgstr "Generating semantic embeddings..."
+
+msgid "log_index_fail"
+msgstr "Index verification failed. PAR3 archive is corrupted.\n"
+
+msgid "log_medium_capacity_1"
+msgstr "Medium Capacity: "
+
+msgid "log_medium_capacity_2"
+msgstr " sectors ("
+
+msgid "log_new_best_space_utilization"
+msgstr "New optimal space utilization: "
+
+msgid "log_no_files_written_on_disk"
+msgstr "No changes made on disk."
+
+msgid "log_no_items_to_fit"
+msgstr "No items to fit."
+
+msgid "log_optimal_selection_covers"
+msgstr "Optimal selection covers: "
+
+msgid "log_organizing_item"
+msgstr "Organizing item: "
+
+msgid "log_par3_base"
+msgstr "PAR3 name: "
+
+msgid "log_recovery_path"
+msgstr "Recovery path: "
+
+msgid "log_running_semantic_clustering"
+msgstr "Running agglomerative clustering..."
+
+msgid "log_scan_aborted_failed_iterate"
+msgstr "Scanning aborted due to iteration failure."
+
+msgid "log_scan_aborted_unreadable_dir"
+msgstr "Scanning aborted due to unreadable directory."
+
+msgid "log_scan_aborted_unreadable_item"
+msgstr "Scanning aborted due to unreadable item."
+
+msgid "log_scanning_folder"
+msgstr "Scanning folder: "
+
+msgid "log_search_time_limit_exceeded_1"
+msgstr "Search time limit exceeded ("
+
+msgid "log_search_time_limit_exceeded_2"
+msgstr " seconds)."
+
+msgid "log_selected_items"
+msgstr "Selected items:"
+
+msgid "log_selected_items_for_volume_1"
+msgstr "Selected items for Volume "
+
+msgid "log_selection_within_slack_1"
+msgstr "Selection within slack tolerance ("
+
+msgid "log_selection_within_slack_2"
+msgstr "%) found. Terminating early."
+
+msgid "log_semantic_clustering_completed"
+msgstr "Clustering completed: "
+
+msgid "log_semantic_grouping_fallback"
+msgstr "-> Semantic grouping falls back to string metrics."
+
+msgid "log_single_vol_sol_forcing"
+msgstr "Single volume solution: forcing all items..."
+
+msgid "log_solver_aborted_files_exceed_cap"
+msgstr "Solver aborted: items exceed capacity."
+
+msgid "log_solver_aborted_files_exceed_cap_adapt"
+msgstr "Solver aborted: items exceed capacity. Adapt capacity or retry."
+
+msgid "log_solving_for_vol_header_1"
+msgstr "\n--- SOLVING FOR VOLUME "
+
+msgid "log_solving_for_vol_header_2"
+msgstr " ---"
+
+msgid "log_solving_optimal_bin"
+msgstr "Solving optimal selection..."
+
+msgid "log_start_restore"
+msgstr "Aiya! Restoring and repairing volume...\n"
+
+msgid "log_start_verify"
+msgstr "Verifying volume structure...\n"
+
+msgid "log_success_par3_for_volume_1"
+msgstr "Created PAR3 protection for Volume "
+
+msgid "log_success_restore"
+msgstr "\nAlassë: Volume successfully copied and repaired!\n"
+
+msgid "log_success_verify"
+msgstr "\nAlassë: All files verified and are clean/bit-perfect!\n"
+
+msgid "log_target_volume_cap_1"
+msgstr "Target volume capacity: "
+
+msgid "log_target_volume_cap_2"
+msgstr " bytes ("
+
+msgid "log_test_simulation_complete"
+msgstr "--- SIMULATION COMPLETE ---"
+
+msgid "log_theoretical_min_vols"
+msgstr "Theoretical minimum volumes: "
+
+msgid "log_total_dataset_size_1"
+msgstr "Total dataset size: "
+
+msgid "log_total_dataset_size_2"
+msgstr " bytes ("
+
+msgid "log_volume_packing_estimation_header"
+msgstr "--- Volume Packing Estimation ---"
+
+msgid "log_volume_path"
+msgstr "Volume path: "
+
+msgid "log_warn_dir_unreadable_1"
+msgstr "Warning: Directory '"
+
+msgid "log_warn_dir_unreadable_2"
+msgstr "' is unreadable ("
+
+msgid "log_warn_embedded_output_empty"
+msgstr "Warning: Embedding output is empty."
+
+msgid "log_warn_failed_iterate_dir_1"
+msgstr "Warning: Iteration failed for '"
+
+msgid "log_warn_failed_iterate_dir_2"
+msgstr "' ("
+
+msgid "log_warn_item_exceeds_cap_1"
+msgstr "Warning: Item '"
+
+msgid "log_warn_item_exceeds_cap_2"
+msgstr "' ("
+
+msgid "log_warn_item_exceeds_cap_3"
+msgstr " bytes) exceeds volume capacity ("
+
+msgid "log_warn_item_unreadable_1"
+msgstr "Warning: Item in '"
+
+msgid "log_warn_item_unreadable_2"
+msgstr "' is unreadable ("
+
+msgid "log_warn_python_embed_engine_failed"
+msgstr "Warning: Python embedding engine failed."
+
+msgid "manage_src_folders_title"
+msgstr "Manage Folders"
+
+msgid "match_files_chk"
+msgstr "Match Files"
+
+msgid "match_folders_chk"
+msgstr "Match Folders"
+
+msgid "media_size_label"
+msgstr "Medium Size:"
+
+msgid "move_files_chk"
+msgstr "Move items to target folder"
+
+msgid "move_tooltip"
+msgstr "Move files instead of linking"
+
+msgid "ok_btn"
+msgstr "OK"
+
+msgid "par3_block_size"
+msgstr "PAR3 Block Size (Bytes):"
+
+msgid "par3_redundancy"
+msgstr "PAR3 Redundancy (%):"
+
+msgid "pattern_col"
+msgstr "Pattern"
+
+msgid "pref_title"
+msgstr "Indemi"
+
+msgid "progress_frame_title"
+msgstr "Fitted Medium Capacity"
+
+msgid "regex_pattern_chk"
+msgstr "Regex Pattern"
+
+msgid "rel_path_col"
+msgstr "Path / Category"
+
+msgid "remove_btn"
+msgstr "Remove"
+
+msgid "remove_selected_btn"
+msgstr "Remove Selected"
+
+msgid "restart_notice"
+msgstr "Settings saved. Restart Burn to the Brim to apply."
+
+msgid "restart_title"
+msgstr "Eldarin Activated"
+
+msgid "restore_repair_btn"
+msgstr "Restore & Repair"
+
+msgid "rule_pattern_placeholder"
+msgstr "Rule Pattern (*.mp3 or ^[0-9].*\\..*$)"
+
+msgid "rule_wins_chk"
+msgstr "Rule-based grouping wins:"
+
+msgid "save_btn"
+msgstr "Save"
+
+msgid "save_cv_label"
+msgstr "Save Custom:"
+
+msgid "save_cv_tooltip"
+msgstr "Save current capacity parameters"
+
+msgid "search_time_label"
+msgstr "Max Search Time (sec):"
+
+msgid "select_dest_dir_title"
+msgstr "Select Target"
+
+msgid "select_medium_label"
+msgstr "Select Medium:"
+
+msgid "select_rec_dir_title"
+msgstr "Select Recovery Directory"
+
+msgid "select_vol_dir_title"
+msgstr "Select Volume Directory"
+
+msgid "semantic_placeholder"
+msgstr "e.g. keep similar content together"
+
+msgid "semantic_prompt"
+msgstr "Semantic Prompt:"
+
+msgid "semantic_tooltip"
+msgstr "Cluster similar files via MiniLM AI"
+
+msgid "size_col"
+msgstr "Size"
+
+msgid "skip_empty_chk"
+msgstr "Skip Empty Folders"
+
+msgid "skip_empty_label"
+msgstr "Skip Empty Items:"
+
+msgid "skip_unreadable_chk"
+msgstr "Skip Unreadable Files"
+
+msgid "slack_label"
+msgstr "Slack Bytes:"
+
+msgid "source_folder"
+msgstr "Source Folder:"
+
+msgid "source_tooltip"
+msgstr "Source folders to organize"
+
+msgid "span_chk"
+msgstr "Span across multiple volumes"
+
+msgid "span_tooltip"
+msgstr "Span files into multiple volumes"
+
+msgid "split_depth_label"
+msgstr "Split Depth:"
+
+msgid "start_btn"
+msgstr "Hesta (Start)"
+
+msgid "start_tooltip"
+msgstr "Start organizing files"
+
+msgid "stop_btn"
+msgstr "Pusta (Stop)"
+
+msgid "stop_tooltip"
+msgstr "Stop current solver"
+
+msgid "symlink_tooltip"
+msgstr "Create links instead of copying"
+
+msgid "target_folder"
+msgstr "Target Folder:"
+
+msgid "target_iso_file"
+msgstr "Target ISO File:"
+
+msgid "target_tooltip"
+msgstr "Target volume destination"
+
+msgid "test_btn"
+msgstr "Tyasta (Test)"
+
+msgid "test_tooltip"
+msgstr "Simulate organizing files"
+
+msgid "time_left_label"
+msgstr "Time Left: --:--"
+
+msgid "tooltip_create_iso"
+msgstr "Create ISO filesystem images."
+
+msgid "tooltip_import_json"
+msgstr "Import and parse offline JSON indices."
+
+msgid "tooltip_move"
+msgstr "Move original files directly."
+
+msgid "tooltip_semantic"
+msgstr "Enter a prompt for MiniLM analysis."
+
+msgid "tooltip_source"
+msgstr "Semicolon-separated folder paths."
+
+msgid "tooltip_span"
+msgstr "Enable volume spanning."
+
+msgid "tooltip_start"
+msgstr "Run solver and organize files."
+
+msgid "tooltip_stop"
+msgstr "Abort current running packing."
+
+msgid "tooltip_symlink"
+msgstr "Create filesystem symbolic links."
+
+msgid "tooltip_target"
+msgstr "Destination path for volumes."
+
+msgid "tooltip_test"
+msgstr "Simulate packing without writing to disk."
+
+msgid "tooltip_trace"
+msgstr "Log detailed diagnostics."
+
+msgid "tooltip_verify_restore"
+msgstr "Verify solved volumes or restore damaged files via PAR3."
+
+msgid "trace_chk"
+msgstr "Enable detailed trace logs"
+
+msgid "trace_tooltip"
+msgstr "Log diagnostics in logs"
+
+msgid "type_col"
+msgstr "Type"
+
+msgid "verify_only_btn"
+msgstr "Verify Only"
+
+msgid "verify_restore_btn"
+msgstr "Verify & Restore..."
+
+msgid "verify_title"
+msgstr "Verify & Restore Volumes..."
+
+msgid "volume_label"
+msgstr "Volume Label:"

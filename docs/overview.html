@@ -288,25 +288,30 @@
         <div class="section-header">
             <h1>Application Overview</h1>
             <p>A high-performance storage space optimizer and directory packing utility.</p>
-            <div style="margin-top: 15px; font-size: 0.9rem; display: flex; gap: 10px; align-items: center;">
+            <div style="margin-top: 15px; font-size: 0.9rem; display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; line-height: 1.5;">
                 <span style="color: var(--text-secondary);">Languages:</span>
-                <a href="overview.html" style="color: var(--accent); text-decoration: none; font-weight: 600;">English</a> |
-                <a href="overview_es.html" style="color: var(--text-secondary); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Español</a> |
-                <a href="overview_fr.html" style="color: var(--text-secondary); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Français</a> |
-                <a href="overview_nl.html" style="color: var(--text-secondary); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Nederlands</a> |
-                <a href="overview_de.html" style="color: var(--text-secondary); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Deutsch</a>
+                <a id="lang_en" href="overview.html" style="color: var(--accent); text-decoration: none; font-weight: 600;">English</a> |
+                <a id="lang_es" href="overview_es.html" style="color: var(--text-secondary); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Español</a> |
+                <a id="lang_fr" href="overview_fr.html" style="color: var(--text-secondary); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Français</a> |
+                <a id="lang_nl" href="overview_nl.html" style="color: var(--text-secondary); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Nederlands</a> |
+                <a id="lang_de" href="overview_de.html" style="color: var(--text-secondary); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Deutsch</a> |
+                <a id="lang_zh" href="overview_zh.html" style="color: var(--text-secondary); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">简体中文</a> |
+                <a id="lang_ja" href="overview_ja.html" style="color: var(--text-secondary); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">日本語</a> |
+                <a id="lang_it" href="overview_it.html" style="color: var(--text-secondary); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Italiano</a> |
+                <a id="lang_el" href="overview_el.html" style="color: var(--text-secondary); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Ελληνικά</a> |
+                <a id="lang_la" href="overview_la.html" style="color: var(--text-secondary); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Latina</a> |
+                <a id="lang_pt" href="overview_pt.html" style="color: var(--text-secondary); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Português</a> |
+                <a id="lang_hi" href="overview_hi.html" style="color: var(--text-secondary); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">हिन्दी</a> |
+                <a id="lang_vul" href="overview_vul.html" style="color: var(--text-secondary); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Vuhlkansu</a> |
+                <a id="lang_elv" href="overview_elv.html" style="color: var(--text-secondary); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Eldarin</a>
             </div>
         </div>
 
         <!-- Store Description -->
         <div class="content-card">
             <h2>Product Description</h2>
-            <p>
-                <strong>Burn to the Brim</strong> is a professional file packaging and storage optimization utility. It solves the classic bin-packing and subset-sum optimization challenge, allowing you to fit files and folders perfectly onto target storage mediums—including recordable CDs, DVDs, Blu-rays, USB flash drives, or custom-capacity virtual drives—with virtually zero wasted space.
-            </p>
-            <p>
-                Employing a highly optimized recursive backtracking solver, the application analyzes directory structures and file sizes to calculate near-perfect layout configurations in milliseconds. With a non-blocking multithreaded engine, the user interface remains completely fluid and interactive even when calculating solutions for very large datasets.
-            </p>
+            <p><strong>Burn to the Brim</strong> is a professional file packaging and storage optimization utility. It solves the classic bin-packing and subset-sum optimization challenge, allowing you to fit files and folders perfectly onto target storage mediums—including recordable CDs, DVDs, Blu-rays, USB flash drives, or custom-capacity virtual drives—with virtually zero wasted space.</p>
+            <p>Employing a highly optimized recursive backtracking solver, the application analyzes directory structures and file sizes to calculate near-perfect layout configurations in milliseconds. With a non-blocking multithreaded engine, the user interface remains completely fluid and interactive even when calculating solutions for very large datasets.</p>
         </div>
 
         <!-- Key Features -->
@@ -359,9 +364,7 @@
         <!-- Privacy & Performance Commitments -->
         <div class="content-card">
             <h2>Privacy &amp; Performance Commitments</h2>
-            <p>
-                Burn to the Brim is built with user privacy, system performance, and clean software standards in mind:
-            </p>
+            <p>Burn to the Brim is built with user privacy, system performance, and clean software standards in mind:</p>
             <ul class="feature-bullets">
                 <li class="feature-bullet-item">
                     <span class="bullet-icon red">&#10007;</span>

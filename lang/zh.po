@@ -1,0 +1,611 @@
+msgid "about_btn"
+msgstr "关于..."
+
+msgid "about_comments"
+msgstr "Burn to the Brim (BTTB) 是经典 Delphi 应用程序的现代 C++20 移植版本，旨在将文件和文件夹优化装配到目标存储介质（CD、DVD、蓝光或 USB 闪存盘）上。\n\nv4.5.0 中的功能:\n- 全新的高分辨率应用程序图标 (bttb.ico) 和统一的网站标志 (bttb.png)\n- 最小化搜索状态栈帧和 16MB Win32 栈限制（修复了 0xC00000FD 栈溢出）\n- 将日志缓冲区限制扩大到 10MB，以避免跟踪日志被截断\n- 非阻塞渐进式 GUI 渲染和跳过文件容量警告\n- 离线 JSON 索引创建和交互式解析器\n- 可选的 PAR3 冗余校验文件生成和验证\n- 基于 PAR3 复制的完全位元级数据恢复和修复\n- 主题支持，包括 Linux GTK4 上的标准深色主题选项\n- 启动时立即改进的预计剩余时间计算\n- 命名的自定义卷配置文件和动态自动卷大小调整\n- 设置记忆，恢复上次选择的卷配置\n- 规则冲突覆盖，允许基于规则的分组或语义分组优先\n- 基于传输速率估计的剩余时间与状态活动旋转指示器\n- 基于 MiniLM 嵌入的熵感知语义打包\n- Windows 资源管理器右键菜单集成和长路径支持\n\nBTTB 已完全本地化，基于德语、荷兰语、法语和西班牙语中的标准 gettext .po 模板动态翻译整个用户界面。\n\n所使用的库和归属:\n- libpar3（由 Yutaka Sawada 开发，LGPL v2.1+）: https://github.com/Parchive/par3cmdline\n- BLAKE3（由 BLAKE3 团队开发，CC0/Apache-2.0）: https://github.com/BLAKE3-team/BLAKE3\n- Leopard-RS（由 Christopher A. Taylor 开发，BSD 3-Clause）: https://github.com/catid/leopard\n- Galois Field 库（由 James S. Plank 开发）: http://web.eecs.utk.edu/~jplank/plank/www/software.html\n\n作者: Sander Raaijmakers, Elwin Oost 和 Burn to the Brim 团队"
+
+msgid "about_title"
+msgstr "关于 Burn to the Brim"
+
+msgid "add_btn"
+msgstr "添加..."
+
+msgid "add_rule_btn"
+msgstr "添加规则"
+
+msgid "add_src_dir_title"
+msgstr "添加源目录"
+
+msgid "app_copyright"
+msgstr "版权所有 © 2001-2026 Sander Raaijmakers, Elwin Oost 和 Burn to the Brim 团队"
+
+msgid "app_title"
+msgstr "Burn to the Brim"
+
+msgid "app_version"
+msgstr "版本 4.5.0"
+
+msgid "auto_size"
+msgstr "自动大小"
+
+msgid "browse_btn"
+msgstr "浏览..."
+
+msgid "browse_dest_tooltip"
+msgstr "浏览目标目录"
+
+msgid "browse_src_tooltip"
+msgstr "浏览源目录"
+
+msgid "btn_cancel"
+msgstr "取消"
+
+msgid "btn_resize"
+msgstr "调整大小"
+
+msgid "btn_skip"
+msgstr "跳过文件"
+
+msgid "cancel_btn"
+msgstr "取消"
+
+msgid "capacity_label"
+msgstr "容量:"
+
+msgid "capacity_recommend_prompt_gtk"
+msgstr "最大扫描项需要至少 %.2f MB 的卷容量。\n\n选择一个操作:"
+
+msgid "close_btn"
+msgstr "关闭"
+
+msgid "cluster_label"
+msgstr "簇大小 (字节):"
+
+msgid "complete_list_src_folders"
+msgstr "源文件夹完整列表:"
+
+msgid "create_iso_btn"
+msgstr "创建 ISO..."
+
+msgid "create_symlinks_chk"
+msgstr "在目标文件夹中创建符号链接（默认）"
+
+msgid "custom_size"
+msgstr "自定义大小"
+
+msgid "custom_vol_name_placeholder"
+msgstr "自定义卷名称"
+
+msgid "dark_theme_chk"
+msgstr "启用深色主题:"
+
+msgid "dir_setup_group"
+msgstr "目录设置"
+
+msgid "edit_btn"
+msgstr "编辑..."
+
+msgid "edit_src_dir_title"
+msgstr "编辑源目录"
+
+msgid "enable_par3_chk"
+msgstr "启用 PAR3 冗余校验保护:"
+
+msgid "execution_log"
+msgstr "执行日志"
+
+msgid "files_col"
+msgstr "文件"
+
+msgid "filled_label"
+msgstr "已填充: 0.00%"
+
+msgid "fitted_status_col"
+msgstr "装配状态"
+
+msgid "folders_col"
+msgstr "文件夹"
+
+msgid "generate_btn"
+msgstr "生成"
+
+msgid "grouping_rules_frame"
+msgstr "文件/文件夹分组规则"
+
+msgid "help_btn"
+msgstr "帮助"
+
+msgid "help_guide_text"
+msgstr "1. 目录拆分深度\n确定拆分项的文件夹嵌套级别:\n - 深度 0（默认）: 顶级文件和文件夹被视为单独的项。\n - 深度 1: 拆分发生在深一级，保持顶级文件夹完好无损，但拆分其直接子文件夹。\n\n2. 最大搜索时间\n允许回溯求解器运行的最大秒数。如果达到此限制，将使用在此之前找到的最佳选择。\n\n3. 容差字节 (Spanning Slack)\n一旦卷填充到距离绝对最大容量此字节数以内（例如 2048 字节），允许求解器提前终止。\n\n4. 文件/文件夹分组规则\n强制匹配项在同一卷上保持分组在一起（例如，匹配 '*.mp3' 或正则表达式 '^album_.*'）。\n\n5. 多个源文件夹 (+)\n点击 '+' 指定多个源文件夹。BTTB 的行为就像它们在单个根文件夹中一样。嵌套的源路径将被忽略。\n\n6. 创建符号链接\nBTTB 不会将文件复制/移动到目标文件夹，而是创建指向原始文件的轻量级符号链接。\n\n7. 神经语义打包与 MiniLM 设置指南\n通过指定语义提示词，BTTB 使用上下文感知的深度学习嵌入对内容相似的文件进行分组。\n要使用首选的高精度 MiniLM 神经模型，您必须安装 Python 3 和 sentence-transformers:\n - 步骤 1: 确保安装了 Python 3 和 pip。\n   (Linux: 运行 'sudo apt install python3 python3-pip python3-venv')\n   (Windows: 从 https://www.python.org/ 安装并勾选 'Add Python to PATH')\n - 步骤 2: 通过终端或命令提示符安装 sentence-transformers:\n   选项 A (推荐，因简单易行):\n     pip install sentence-transformers\n   选项 B (使用虚拟环境隔离):\n     python3 -m venv bttb_env\n     source bttb_env/bin/activate  # (Windows: bttb_env\\Scripts\\activate)\n     pip install sentence-transformers\n - 步骤 3: 重新启动 Burn to the Brim 以自动加载 MiniLM！如果未找到，BTTB 将优雅地退回到本地化的字符 TF-IDF 项目器。"
+
+msgid "help_guide_title"
+msgstr "Burn to the Brim (BTTB) 帮助指南"
+
+msgid "help_title"
+msgstr "帮助 - Burn to the Brim"
+
+msgid "import_json_btn"
+msgstr "导入 JSON..."
+
+msgid "integrate_ctx_chk"
+msgstr "集成到 Windows 资源管理器上下文菜单"
+
+msgid "iso_title"
+msgstr "创建 ISO 镜像"
+
+msgid "label_par3_base"
+msgstr "PAR3 基本名称:"
+
+msgid "label_rec_directory"
+msgstr "恢复目录:"
+
+msgid "label_vol_directory"
+msgstr "卷目录:"
+
+msgid "language_label"
+msgstr "语言:"
+
+msgid "log_auto_volume_cap_set_1"
+msgstr "自动卷容量设置为: "
+
+msgid "log_auto_volume_cap_set_2"
+msgstr " 字节 ("
+
+msgid "log_backtracking_failed_fallback_greedy"
+msgstr "回溯求解器未找到装配（或超时）。正在退回到贪婪分配以确保包含所有剩余文件..."
+
+msgid "log_bytes_suffix"
+msgstr " 字节)"
+
+msgid "log_capacity_adapted_1"
+msgstr "容量已调整为 "
+
+msgid "log_capacity_adapted_2"
+msgstr " 字节。正在重试求解器..."
+
+msgid "log_capacity_skip_larger"
+msgstr "已跳过较大的文件。正在重试求解器..."
+
+msgid "log_completed_file_organization"
+msgstr "文件组织已完成。"
+
+msgid "log_copying_repair"
+msgstr "正在复制卷内容并运行修复。请稍候...\n"
+
+msgid "log_created_offline_json_index"
+msgstr "已创建离线 JSON 索引文件: "
+
+msgid "log_damaged_files"
+msgstr "发现损坏或丢失的文件:\n"
+
+msgid "log_errors"
+msgstr "日志/错误: "
+
+msgid "log_fail_restore"
+msgstr "\n失败: 恢复或修复失败。\n"
+
+msgid "log_fail_verify_status"
+msgstr "\n验证检测到问题 (状态 "
+
+msgid "log_failed_create_json_index"
+msgstr "无法创建 JSON 索引文件: "
+
+msgid "log_failed_organize_item_1"
+msgstr "无法组织 "
+
+msgid "log_failed_par3_creation"
+msgstr "PAR3 创建失败: "
+
+msgid "log_failed_read_temp_embed_output"
+msgstr "无法读取临时嵌入输出文件: "
+
+msgid "log_failed_symlink_retry_copy_1"
+msgstr "无法为 "
+
+msgid "log_failed_symlink_retry_copy_2"
+msgstr " 创建符号链接 (正在重试复制)"
+
+msgid "log_failed_write_temp_embed_input"
+msgstr "无法写入临时嵌入输入文件: "
+
+msgid "log_finished_solving_1"
+msgstr "求解完成。用时: "
+
+msgid "log_finished_solving_2"
+msgstr " 毫秒"
+
+msgid "log_forcing_progress_exceeds_cap_1"
+msgstr "强制进度: 正在装配大于介质容量的剩余项 ("
+
+msgid "log_found_items"
+msgstr "找到可装配的项目: "
+
+msgid "log_frame_title"
+msgstr "状态和求解器日志"
+
+msgid "log_frame_title_verify"
+msgstr "验证与恢复日志"
+
+msgid "log_generating_par3_for_volume_1"
+msgstr "正在为卷生成 PAR3 校验文件 "
+
+msgid "log_generating_semantic_embeddings"
+msgstr "正在生成语义嵌入..."
+
+msgid "log_index_fail"
+msgstr "未发现单个损坏文件，但索引验证失败。PAR3 归档本身可能已损坏。\n"
+
+msgid "log_medium_capacity_1"
+msgstr "介质容量: "
+
+msgid "log_medium_capacity_2"
+msgstr " 扇区 ("
+
+msgid "log_new_best_space_utilization"
+msgstr "新的最佳空间利用率: "
+
+msgid "log_no_files_written_on_disk"
+msgstr "磁盘上未写入、复制、移动或创建任何文件的符号链接。"
+
+msgid "log_no_items_to_fit"
+msgstr "没有要装配的项目。"
+
+msgid "log_optimal_selection_covers"
+msgstr "最佳选择覆盖: "
+
+msgid "log_organizing_item"
+msgstr "正在组织项目: "
+
+msgid "log_par3_base"
+msgstr "PAR3 基本名称: "
+
+msgid "log_recovery_path"
+msgstr "恢复路径: "
+
+msgid "log_running_semantic_clustering"
+msgstr "正在运行凝聚层语义聚类 (阈值=0.6)..."
+
+msgid "log_scan_aborted_failed_iterate"
+msgstr "由于目录遍历失败，用户中止了扫描。"
+
+msgid "log_scan_aborted_unreadable_dir"
+msgstr "由于目录无法读取，用户中止了扫描。"
+
+msgid "log_scan_aborted_unreadable_item"
+msgstr "由于项目无法读取，用户中止了扫描。"
+
+msgid "log_scanning_folder"
+msgstr "正在扫描文件夹: "
+
+msgid "log_search_time_limit_exceeded_1"
+msgstr "已超出搜索时间限制 ("
+
+msgid "log_search_time_limit_exceeded_2"
+msgstr " 秒)。"
+
+msgid "log_selected_items"
+msgstr "已选项目:"
+
+msgid "log_selected_items_for_volume_1"
+msgstr "卷已选项目 "
+
+msgid "log_selection_within_slack_1"
+msgstr "找到容差范围内的选择 ("
+
+msgid "log_selection_within_slack_2"
+msgstr "%)。提前终止搜索。"
+
+msgid "log_semantic_clustering_completed"
+msgstr "语义聚类完成。总合并组数: "
+
+msgid "log_semantic_grouping_fallback"
+msgstr "-> 语义分组将退回到本地字符串匹配度量。"
+
+msgid "log_single_vol_sol_forcing"
+msgstr "单卷解决方案: 强制选择所有文件以保证 100% 包含..."
+
+msgid "log_solver_aborted_files_exceed_cap"
+msgstr "求解器已中止: 数据集包含超出容量的文件。"
+
+msgid "log_solver_aborted_files_exceed_cap_adapt"
+msgstr "求解器已中止: 数据集包含超出容量的文件。请调整容量或启用交互式重试。"
+
+msgid "log_solving_for_vol_header_1"
+msgstr "\r\n--- 正在求解卷 "
+
+msgid "log_solving_for_vol_header_2"
+msgstr " ---"
+
+msgid "log_solving_optimal_bin"
+msgstr "正在求解最佳箱装配选择..."
+
+msgid "log_start_restore"
+msgstr "正在启动卷恢复/修复...\n"
+
+msgid "log_start_verify"
+msgstr "正在启动卷验证...\n"
+
+msgid "log_success_par3_for_volume_1"
+msgstr "成功为卷创建了 PAR3 冗余保护 "
+
+msgid "log_success_restore"
+msgstr "\n成功: 卷已成功复制并在单独的恢复文件夹中修复！\n"
+
+msgid "log_success_verify"
+msgstr "\n成功: 所有文件均已通过验证，完整无缺且完全一致！\n"
+
+msgid "log_target_volume_cap_1"
+msgstr "目标卷容量: "
+
+msgid "log_target_volume_cap_2"
+msgstr " 字节 ("
+
+msgid "log_test_simulation_complete"
+msgstr "--- 测试模拟完成 ---"
+
+msgid "log_theoretical_min_vols"
+msgstr "理论上所需的最小卷数: "
+
+msgid "log_total_dataset_size_1"
+msgstr "数据集总大小: "
+
+msgid "log_total_dataset_size_2"
+msgstr " 字节 ("
+
+msgid "log_volume_packing_estimation_header"
+msgstr "--- 卷装配预估 ---"
+
+msgid "log_volume_path"
+msgstr "卷路径: "
+
+msgid "log_warn_dir_unreadable_1"
+msgstr "警告: 目录 '"
+
+msgid "log_warn_dir_unreadable_2"
+msgstr "' 无法读取 ("
+
+msgid "log_warn_embedded_output_empty"
+msgstr "警告: 嵌入输出为空。"
+
+msgid "log_warn_failed_iterate_dir_1"
+msgstr "警告: 无法遍历目录 '"
+
+msgid "log_warn_failed_iterate_dir_2"
+msgstr "' ("
+
+msgid "log_warn_item_exceeds_cap_1"
+msgstr "警告: 项目 '"
+
+msgid "log_warn_item_exceeds_cap_2"
+msgstr "' ("
+
+msgid "log_warn_item_exceeds_cap_3"
+msgstr " 字节) 大于目标卷容量 ("
+
+msgid "log_warn_item_unreadable_1"
+msgstr "警告: 文件或文件夹于 '"
+
+msgid "log_warn_item_unreadable_2"
+msgstr "' 无法读取 ("
+
+msgid "log_warn_python_embed_engine_failed"
+msgstr "警告: 子进程 python 嵌入引擎失败或未安装 python3。"
+
+msgid "manage_src_folders_title"
+msgstr "管理源文件夹"
+
+msgid "match_files_chk"
+msgstr "匹配文件"
+
+msgid "match_folders_chk"
+msgstr "匹配文件夹"
+
+msgid "media_size_label"
+msgstr "介质大小:"
+
+msgid "move_files_chk"
+msgstr "将装配好的文件夹/文件移动到目标文件夹"
+
+msgid "move_tooltip"
+msgstr "将文件移动到其目标卷，而不是复制或创建符号链接"
+
+msgid "ok_btn"
+msgstr "确定"
+
+msgid "par3_block_size"
+msgstr "PAR3 块大小 (字节):"
+
+msgid "par3_redundancy"
+msgstr "PAR3 冗余百分比 (%):"
+
+msgid "pattern_col"
+msgstr "模式"
+
+msgid "pref_title"
+msgstr "首选项"
+
+msgid "progress_frame_title"
+msgstr "装配好的介质容量"
+
+msgid "regex_pattern_chk"
+msgstr "正则表达式模式"
+
+msgid "rel_path_col"
+msgstr "相对路径 / 类别"
+
+msgid "remove_btn"
+msgstr "删除"
+
+msgid "remove_selected_btn"
+msgstr "删除所选"
+
+msgid "restart_notice"
+msgstr "语言首选项已保存。请重新启动 Burn to the Brim 以应用更改。"
+
+msgid "restart_title"
+msgstr "语言已更改"
+
+msgid "restore_repair_btn"
+msgstr "恢复并修复"
+
+msgid "rule_pattern_placeholder"
+msgstr "规则模式 (*.mp3 或 ^[0-9].*\\..*$)"
+
+msgid "rule_wins_chk"
+msgstr "规则分组优先:"
+
+msgid "save_btn"
+msgstr "保存"
+
+msgid "save_cv_label"
+msgstr "保存自定义卷:"
+
+msgid "save_cv_tooltip"
+msgstr "将当前容量、扇区和容差保存为命名的自定义卷"
+
+msgid "search_time_label"
+msgstr "最大搜索时间 (秒):"
+
+msgid "select_dest_dir_title"
+msgstr "选择目标目录"
+
+msgid "select_medium_label"
+msgstr "选择介质:"
+
+msgid "select_rec_dir_title"
+msgstr "选择恢复目录"
+
+msgid "select_vol_dir_title"
+msgstr "选择卷目录"
+
+msgid "semantic_placeholder"
+msgstr "例如: 保持相似内容在一起"
+
+msgid "semantic_prompt"
+msgstr "语义提示:"
+
+msgid "semantic_tooltip"
+msgstr "指定语义描述，使用 MiniLM AI 对相似文件进行聚类"
+
+msgid "size_col"
+msgstr "大小"
+
+msgid "skip_empty_chk"
+msgstr "跳过空文件夹 / 文件"
+
+msgid "skip_empty_label"
+msgstr "跳过空文件/目录:"
+
+msgid "skip_unreadable_chk"
+msgstr "跳过无法读取的文件（容错）"
+
+msgid "slack_label"
+msgstr "容差字节 (Slack):"
+
+msgid "source_folder"
+msgstr "源文件夹:"
+
+msgid "source_tooltip"
+msgstr "包含要组织文件的源目录"
+
+msgid "span_chk"
+msgstr "跨多个卷进行划分 (Volume_1, Volume_2 等)"
+
+msgid "span_tooltip"
+msgstr "将剩余文件顺序装配到多个卷中，而不仅仅是第一个卷"
+
+msgid "split_depth_label"
+msgstr "目录拆分深度:"
+
+msgid "start_btn"
+msgstr "开始"
+
+msgid "start_tooltip"
+msgstr "开始将文件组织到最佳的卷中"
+
+msgid "stop_btn"
+msgstr "停止"
+
+msgid "stop_tooltip"
+msgstr "停止当前的求解器或复制操作"
+
+msgid "symlink_tooltip"
+msgstr "在目标位置创建文件的符号链接，而不是复制它们"
+
+msgid "target_folder"
+msgstr "目标文件夹:"
+
+msgid "target_iso_file"
+msgstr "目标 ISO 文件:"
+
+msgid "target_tooltip"
+msgstr "将创建已组织卷的目标目录"
+
+msgid "test_btn"
+msgstr "测试"
+
+msgid "test_tooltip"
+msgstr "在不修改磁盘文件的情况下模拟组织文件并计算指标"
+
+msgid "time_left_label"
+msgstr "剩余时间: --:--"
+
+msgid "tooltip_create_iso"
+msgstr "从求解好的卷中创建 ISO 文件系统镜像。"
+
+msgid "tooltip_import_json"
+msgstr "导入并解析离线 JSON 索引文件以查看求解好的卷文件详细信息。"
+
+msgid "tooltip_move"
+msgstr "直接将原始文件/文件夹移动/剪切到目标卷文件夹中。"
+
+msgid "tooltip_semantic"
+msgstr "输入提示词如 'keep audio together'，以通过 MiniLM 分析文件。"
+
+msgid "tooltip_source"
+msgstr "用于打包和合并的文件夹路径（分号分隔）。"
+
+msgid "tooltip_span"
+msgstr "允许将内容跨越到多个顺序命名的文件夹中。"
+
+msgid "tooltip_start"
+msgstr "运行求解器并根据首选项组织文件/文件夹。"
+
+msgid "tooltip_stop"
+msgstr "中止当前正在运行的装配或文件组织过程。"
+
+msgid "tooltip_symlink"
+msgstr "在目标卷文件夹中创建文件系统符号链接（非破坏性）。"
+
+msgid "tooltip_target"
+msgstr "组织和写入卷的目标路径。"
+
+msgid "tooltip_test"
+msgstr "模拟装配而不执行实际磁盘文件操作，以测试卷空间利用率。"
+
+msgid "tooltip_trace"
+msgstr "在日志中显示额外的详细诊断和性能指标。"
+
+msgid "tooltip_verify_restore"
+msgstr "使用 PAR3 校验文件验证求解好的卷或复制并恢复损坏的文件。"
+
+msgid "trace_chk"
+msgstr "启用详细的求解器诊断跟踪 (Trace)"
+
+msgid "trace_tooltip"
+msgstr "在日志中显示额外的详细诊断和性能指标"
+
+msgid "type_col"
+msgstr "类型"
+
+msgid "verify_only_btn"
+msgstr "仅验证"
+
+msgid "verify_restore_btn"
+msgstr "验证并恢复..."
+
+msgid "verify_title"
+msgstr "验证与恢复卷..."
+
+msgid "volume_label"
+msgstr "卷标签:"

@@ -682,12 +682,13 @@ bool BttbSolver::ThreadSearchState::checkLimitsAndLog(int64_t currentSectors, in
     if (solver->stopRequested || solver->searchTimedOut) return true;
 
     // Check timeout periodically (every 10000 states to minimize chrono overhead)
-    if (solver->maxSearchTimeSeconds > 0 && (explored % 10000 == 0)) {
+    int limitSeconds = solver->maxSearchTimeSeconds > 0 ? solver->maxSearchTimeSeconds : 30;
+    if (explored % 10000 == 0) {
         auto now = std::chrono::steady_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - solver->solverStartTime).count();
-        if (elapsed >= solver->maxSearchTimeSeconds) {
+        if (elapsed >= limitSeconds) {
             solver->searchTimedOut = true;
-            solver->logNotify(_T("log_search_time_limit_exceeded_1", "Search time limit exceeded (") + std::to_string(solver->maxSearchTimeSeconds) + _T("log_search_time_limit_exceeded_2", " seconds)."), 2);
+            solver->logNotify(_T("log_search_time_limit_exceeded_1", "Search time limit exceeded (") + std::to_string(limitSeconds) + _T("log_search_time_limit_exceeded_2", " seconds)."), 2);
             return true;
         }
     }
@@ -783,12 +784,13 @@ bool BttbSolver::checkLimitsAndLog(int64_t currentSectors, int poz) {
     if (stopRequested || searchTimedOut) return true;
 
     // Check timeout periodically (every 10000 states to minimize chrono overhead)
-    if (maxSearchTimeSeconds > 0 && (exploredStates % 10000 == 0)) {
+    int limitSeconds = maxSearchTimeSeconds > 0 ? maxSearchTimeSeconds : 30;
+    if (exploredStates % 10000 == 0) {
         auto now = std::chrono::steady_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - solverStartTime).count();
-        if (elapsed >= maxSearchTimeSeconds) {
+        if (elapsed >= limitSeconds) {
             searchTimedOut = true;
-            logNotify(_T("log_search_time_limit_exceeded_1", "Search time limit exceeded (") + std::to_string(maxSearchTimeSeconds) + _T("log_search_time_limit_exceeded_2", " seconds)."), 2);
+            logNotify(_T("log_search_time_limit_exceeded_1", "Search time limit exceeded (") + std::to_string(limitSeconds) + _T("log_search_time_limit_exceeded_2", " seconds)."), 2);
             return true;
         }
     }
@@ -1223,8 +1225,10 @@ void BttbSolver::run() {
                 }
             }
             vol.itemPaths.push_back(itemsToSplit[idx]->relativePath);
+            vol.itemOriginalPaths.push_back(itemsToSplit[idx]->absolutePath);
             vol.itemSizes.push_back(itemsToSplit[idx]->sizeBytes);
             vol.itemGroupedPaths.push_back(itemsToSplit[idx]->groupedPaths);
+            vol.itemOriginalGroupedPaths.push_back(itemsToSplit[idx]->absoluteGroupedPaths);
             vol.totalBytes += itemsToSplit[idx]->sizeBytes;
 
             std::string dateStr = "";
@@ -1370,22 +1374,87 @@ void BttbSolver::run() {
                     indexFile << "      \"volumeIndex\": " << vol.volumeIndex << ",\n";
                     indexFile << "      \"totalBytes\": " << vol.totalBytes << ",\n";
                     indexFile << "      \"files\": [\n";
+                    
+                    // Count total flat items in this volume
+                    size_t totalFlatItems = 0;
                     for (size_t f = 0; f < vol.itemPaths.size(); ++f) {
-                        indexFile << "        {\n";
-                        
-                        std::string escapedPath = "";
-                        for (char c : vol.itemPaths[f]) {
-                            if (c == '\\') escapedPath += "\\\\";
-                            else if (c == '"') escapedPath += "\\\"";
-                            else if (c == '\n') escapedPath += "\\n";
-                            else if (c == '\r') escapedPath += "\\r";
-                            else if (c == '\t') escapedPath += "\\t";
-                            else escapedPath += c;
+                        if (f < vol.itemGroupedPaths.size() && !vol.itemGroupedPaths[f].empty()) {
+                            totalFlatItems += vol.itemGroupedPaths[f].size();
+                        } else {
+                            totalFlatItems += 1;
                         }
-                        indexFile << "          \"path\": \"" << escapedPath << "\",\n";
-                        indexFile << "          \"size\": " << vol.itemSizes[f] << ",\n";
-                        indexFile << "          \"date\": \"" << vol.itemDates[f] << "\"\n";
-                        indexFile << "        }" << (f + 1 < vol.itemPaths.size() ? ",\n" : "\n");
+                    }
+                    
+                    size_t flatIdx = 0;
+                    for (size_t f = 0; f < vol.itemPaths.size(); ++f) {
+                        if (f < vol.itemGroupedPaths.size() && !vol.itemGroupedPaths[f].empty()) {
+                            // It's a group, write each file in the group
+                            for (size_t i = 0; i < vol.itemGroupedPaths[f].size(); ++i) {
+                                indexFile << "        {\n";
+                                std::string escapedPath = "";
+                                for (char c : vol.itemGroupedPaths[f][i]) {
+                                    if (c == '\\') escapedPath += "\\\\";
+                                    else if (c == '"') escapedPath += "\\\"";
+                                    else if (c == '\n') escapedPath += "\\n";
+                                    else if (c == '\r') escapedPath += "\\r";
+                                    else if (c == '\t') escapedPath += "\\t";
+                                    else escapedPath += c;
+                                }
+                                std::string escapedOrig = "";
+                                if (f < vol.itemOriginalGroupedPaths.size() && i < vol.itemOriginalGroupedPaths[f].size()) {
+                                    for (char c : vol.itemOriginalGroupedPaths[f][i]) {
+                                        if (c == '\\') escapedOrig += "\\\\";
+                                        else if (c == '"') escapedOrig += "\\\"";
+                                        else if (c == '\n') escapedOrig += "\\n";
+                                        else if (c == '\r') escapedOrig += "\\r";
+                                        else if (c == '\t') escapedOrig += "\\t";
+                                        else escapedOrig += c;
+                                    }
+                                }
+                                int64_t individualSize = 0;
+                                if (f < vol.itemOriginalGroupedPaths.size() && i < vol.itemOriginalGroupedPaths[f].size()) {
+                                    try {
+                                        std::filesystem::path p(utf8Path(vol.itemOriginalGroupedPaths[f][i]));
+                                        if (std::filesystem::exists(p) && !std::filesystem::is_directory(p)) {
+                                            individualSize = std::filesystem::file_size(p);
+                                        }
+                                    } catch (...) {}
+                                }
+                                indexFile << "          \"path\": \"" << escapedPath << "\",\n";
+                                indexFile << "          \"originalPath\": \"" << escapedOrig << "\",\n";
+                                indexFile << "          \"size\": " << individualSize << ",\n";
+                                indexFile << "          \"date\": \"" << vol.itemDates[f] << "\"\n";
+                                indexFile << "        }" << (++flatIdx < totalFlatItems ? ",\n" : "\n");
+                            }
+                        } else {
+                            // Standard file or directory
+                            indexFile << "        {\n";
+                            std::string escapedPath = "";
+                            for (char c : vol.itemPaths[f]) {
+                                if (c == '\\') escapedPath += "\\\\";
+                                else if (c == '"') escapedPath += "\\\"";
+                                else if (c == '\n') escapedPath += "\\n";
+                                else if (c == '\r') escapedPath += "\\r";
+                                else if (c == '\t') escapedPath += "\\t";
+                                else escapedPath += c;
+                            }
+                            std::string escapedOrig = "";
+                            if (f < vol.itemOriginalPaths.size()) {
+                                for (char c : vol.itemOriginalPaths[f]) {
+                                    if (c == '\\') escapedOrig += "\\\\";
+                                    else if (c == '"') escapedOrig += "\\\"";
+                                    else if (c == '\n') escapedOrig += "\\n";
+                                    else if (c == '\r') escapedOrig += "\\r";
+                                    else if (c == '\t') escapedOrig += "\\t";
+                                    else escapedOrig += c;
+                                }
+                            }
+                            indexFile << "          \"path\": \"" << escapedPath << "\",\n";
+                            indexFile << "          \"originalPath\": \"" << escapedOrig << "\",\n";
+                            indexFile << "          \"size\": " << vol.itemSizes[f] << ",\n";
+                            indexFile << "          \"date\": \"" << vol.itemDates[f] << "\"\n";
+                            indexFile << "        }" << (++flatIdx < totalFlatItems ? ",\n" : "\n");
+                        }
                     }
                     indexFile << "      ]\n";
                     indexFile << "    }" << (v + 1 < packedVolumes.size() ? ",\n" : "\n");
@@ -2051,7 +2120,7 @@ bool restoreVolumePar3(const std::string& volumePath, const std::string& destPat
     return true;
 }
 
-bool parseIndexJson(const std::string& jsonFilePath, std::vector<PackedVolume>& volumes, std::string& errorMsg) {
+bool parseIndexJson(const std::string& jsonFilePath, std::vector<PackedVolume>& volumes, std::string& errorMsg, std::set<std::string>* outSkippedFiles) {
     std::ifstream f(jsonFilePath);
     if (!f.is_open()) {
         errorMsg = "Failed to open file: " + jsonFilePath;
@@ -2162,6 +2231,7 @@ bool parseIndexJson(const std::string& jsonFilePath, std::vector<PackedVolume>& 
                         if (content[i] == '{') {
                             i++;
                             std::string filePath = "";
+                            std::string fileOrigPath = "";
                             int64_t fileSize = 0;
                             std::string fileDate = "";
                             
@@ -2183,6 +2253,8 @@ bool parseIndexJson(const std::string& jsonFilePath, std::vector<PackedVolume>& 
                                     skipWhitespace();
                                     if (fkey == "path") {
                                         filePath = parseString();
+                                    } else if (fkey == "originalPath") {
+                                        fileOrigPath = parseString();
                                     } else if (fkey == "size") {
                                         fileSize = parseNumber();
                                     } else if (fkey == "date") {
@@ -2194,15 +2266,44 @@ bool parseIndexJson(const std::string& jsonFilePath, std::vector<PackedVolume>& 
                                 }
                             }
                             currentVol.itemPaths.push_back(filePath);
+                            currentVol.itemOriginalPaths.push_back(fileOrigPath);
                             currentVol.itemSizes.push_back(fileSize);
                             currentVol.itemDates.push_back(fileDate);
                             currentVol.itemGroupedPaths.push_back({});
+                            currentVol.itemOriginalGroupedPaths.push_back({});
                         } else {
                             i++;
                         }
                     }
                     volumes.push_back(currentVol);
                     currentVol = PackedVolume();
+                }
+            } else if (key == "Skipped") {
+                if (i < content.size() && content[i] == '[') {
+                    i++;
+                    if (outSkippedFiles) {
+                        outSkippedFiles->clear();
+                    }
+                    while (i < content.size()) {
+                        skipWhitespace();
+                        if (i >= content.size()) break;
+                        if (content[i] == ']') {
+                            i++;
+                            break;
+                        }
+                        if (content[i] == ',') {
+                            i++;
+                            continue;
+                        }
+                        if (content[i] == '"') {
+                            std::string skippedPath = parseString();
+                            if (outSkippedFiles) {
+                                outSkippedFiles->insert(skippedPath);
+                            }
+                        } else {
+                            i++;
+                        }
+                    }
                 }
             } else {
                 if (content[i] == '"') parseString();

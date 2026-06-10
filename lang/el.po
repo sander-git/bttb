@@ -1,0 +1,611 @@
+msgid "about_btn"
+msgstr "Σχετικά..."
+
+msgid "about_comments"
+msgstr "Το Burn to the Brim (BTTB) είναι μια σύγχρονη μεταφορά σε C++20 της κλασικής εφαρμογής Delphi, σχεδιασμένη για τη βέλτιστη τοποθέτηση αρχείων και φακέλων σε μέσα αποθήκευσης προορισμού (CD, DVD, Blu-ray ή USB).\n\nΧαρακτηριστικά στην έκδοση v4.5.0:\n- Ολοκαίνουργιο εικονίδιο εφαρμογής υψηλής ανάλυσης (bttb.ico) και ενοποιημένο λογότυπο ιστότοπου (bttb.png)\n- Ελαχιστοποιημένα stack frames κατάστασης αναζήτησης & όριο stack 16MB Win32 (διόρθωση σφαλμάτων υπερχείλισης 0xC00000FD)\n- Διευρυμένα όρια buffer καταγραφής στα 10MB για την αποφυγή περικοπής των αρχείων καταγραφής\n- Μη μπλοκαρισμένη σταδιακή απόδοση GUI & παράκαμψη προειδοποιήσεων χωρητικότητας αρχείων\n- Δημιουργία ευρετηρίου JSON εκτός σύνδεσης και διαδραστικός αναλυτής\n- Προαιρετική δημιουργία και επαλήθευση αρχείων ισοτιμίας PAR3\n- Bit-perfect αποκατάσταση και επισκευή βάσει αντιγραφής PAR3\n- Υποστήριξη θεμάτων, συμπεριλαμβανομένων των τυπικών επιλογών σκούρου θέματος στο Linux GTK4\n- Βελτιωμένος υπολογισμός εκτιμώμενου υπολειπόμενου χρόνου αμέσως κατά την εκκίνηση\n- Επώνυμα προφίλ προσαρμοσμένων τόμων & δυναμικό αυτόματο μέγεθος τόμου\n- Μνήμη ρυθμίσεων που επαναφέρει την τελευταία επιλεγμένη διαμόρφωση τόμου\n- Παρακάμψεις συγκρούσεων κανόνων που επιτρέπουν την επικράτηση της ομαδοποίησης βάσει κανόνων ή της σημασιολογικής ομαδοποίησης\n- Εκτιμώμενος υπολειπόμενος χρόνος βάσει ρυθμού μεταφοράς & δείκτης δραστηριότητας κατάστασης\n- Σημασιολογική συσκευασία με επίγνωση εντροπίας βάσει ενσωματώσεων MiniLM\n- Ενσωμάτωση στο μενού επιλογών των Windows Explorer & υποστήριξη μεγάλων διαδρομών\n\nΤο BTTB είναι πλήρως μεταφρασμένο και προσαρμόζει δυναμικά ολόκληρη τη διεπαφή χρήστη με βάση τα τυπικά πρότυπα gettext .po σε Γερμανικά, Ολλανδικά, Γαλλικά και Ισπανικά.\n\nΒιβλιοθήκες και Συνεισφορές που Χρησιμοποιήθηκαν:\n- libpar3 (από τον Yutaka Sawada, LGPL v2.1+): https://github.com/Parchive/par3cmdline\n- BLAKE3 (από την ομάδα BLAKE3, CC0/Apache-2.0): https://github.com/BLAKE3-team/BLAKE3\n- Leopard-RS (από τον Christopher A. Taylor, BSD 3-Clause): https://github.com/catid/leopard\n- Βιβλιοθήκη Galois Field (από τον James S. Plank): http://web.eecs.utk.edu/~jplank/plank/www/software.html\n\nΣυγγραφείς: Sander Raaijmakers, Elwin Oost και η ομάδα του Burn to the Brim"
+
+msgid "about_title"
+msgstr "Σχετικά με το Burn to the Brim"
+
+msgid "add_btn"
+msgstr "Προσθήκη..."
+
+msgid "add_rule_btn"
+msgstr "Προσθήκη Κανόνα"
+
+msgid "add_src_dir_title"
+msgstr "Προσθήκη καταλόγου προέλευσης"
+
+msgid "app_copyright"
+msgstr "Πνευματικά δικαιώματα © 2001-2026 Sander Raaijmakers, Elwin Oost και η ομάδα του Burn to the Brim"
+
+msgid "app_title"
+msgstr "Burn to the Brim"
+
+msgid "app_version"
+msgstr "Έκδοση 4.5.0"
+
+msgid "auto_size"
+msgstr "Αυτόματο Μέγεθος"
+
+msgid "browse_btn"
+msgstr "Αναζήτηση..."
+
+msgid "browse_dest_tooltip"
+msgstr "Αναζήτηση καταλόγου προορισμού"
+
+msgid "browse_src_tooltip"
+msgstr "Αναζήτηση καταλόγου προέλευσης"
+
+msgid "btn_cancel"
+msgstr "Ακύρωση"
+
+msgid "btn_resize"
+msgstr "Αλλαγή μεγέθους"
+
+msgid "btn_skip"
+msgstr "Παράλειψη αρχείων"
+
+msgid "cancel_btn"
+msgstr "Ακύρωση"
+
+msgid "capacity_label"
+msgstr "Χωρητικότητα:"
+
+msgid "capacity_recommend_prompt_gtk"
+msgstr "Το μεγαλύτερο σαρωμένο στοιχείο απαιτεί χωρητικότητα τόμου τουλάχιστον %.2f MB.\n\nΕπιλέξτε μια ενέργεια:"
+
+msgid "close_btn"
+msgstr "Κλείσιμο"
+
+msgid "cluster_label"
+msgstr "Μέγεθος Cluster (Bytes):"
+
+msgid "complete_list_src_folders"
+msgstr "Πλήρης λίστα φακέλων προέλευσης:"
+
+msgid "create_iso_btn"
+msgstr "Δημιουργία ISO..."
+
+msgid "create_symlinks_chk"
+msgstr "Δημιουργία συμβολικών συνδέσμων στον φάκελο προορισμού (Προεπιλογή)"
+
+msgid "custom_size"
+msgstr "Προσαρμοσμένο Μέγεθος"
+
+msgid "custom_vol_name_placeholder"
+msgstr "Όνομα προσαρμοσμένου τόμου"
+
+msgid "dark_theme_chk"
+msgstr "Ενεργοποίηση Σκούρου Θέματος:"
+
+msgid "dir_setup_group"
+msgstr "Ρύθμιση Καταλόγων"
+
+msgid "edit_btn"
+msgstr "Επεξεργασία..."
+
+msgid "edit_src_dir_title"
+msgstr "Επεξεργασία καταλόγου προέλευσης"
+
+msgid "enable_par3_chk"
+msgstr "Ενεργοποίηση προστασίας ισοτιμίας PAR3:"
+
+msgid "execution_log"
+msgstr "Καταγραφή Εκτέλεσης"
+
+msgid "files_col"
+msgstr "Αρχεία"
+
+msgid "filled_label"
+msgstr "Γέμισε: 0.00%"
+
+msgid "fitted_status_col"
+msgstr "Κατάσταση προσαρμογής"
+
+msgid "folders_col"
+msgstr "Φάκελοι"
+
+msgid "generate_btn"
+msgstr "Δημιουργία"
+
+msgid "grouping_rules_frame"
+msgstr "Κανόνες ομαδοποίησης αρχείων / φακέλων"
+
+msgid "help_btn"
+msgstr "Βοήθεια"
+
+msgid "help_guide_text"
+msgstr "1. Βάθος Διαχωρισμού Καταλόγου\nΚαθορίζει το επίπεδο φωλιάσματος φακέλων στο οποίο διαχωρίζονται τα στοιχεία:\n - Βάθος 0 (Προεπιλογή): Τα αρχεία και οι φάκελοι κορυφαίου επιπέδου αντιμετωπίζονται ως ξεχωριστά στοιχεία.\n - Βάθος 1: Ο διαχωρισμός πραγματοποιείται ένα επίπεδο βαθύτερα, διατηρώντας ανέπαφους τους φακέλους κορυφαίου επιπέδου αλλά διαχωρίζοντας τους άμεσους υποφακέλους τους.\n\n2. Μέγιστος Χρόνος Αναζήτησης\nΤα μέγιστα δευτερόλεπτα που επιτρέπεται να εκτελείται ο επιλύτης backtracking. Εάν επιτευχθεί το όριο, χρησιμοποιείται η καλύτερη επιλογή που βρέθηκε μέχρι εκείνο το σημείο.\n\n3. Spanning Slack\nΕπιτρέπει τον πρόωρο τερματισμό του επιλύτη μόλις ένας τόμος γεμίσει εντός αυτού του αριθμού bytes από την απόλυτη μέγιστη χωρητικότητα (π.χ. 2048 bytes).\n\n4. Κανόνες Ομαδοποίησης Αρχείων/Φακέλων\nΑναγκάζει τα στοιχεία που ταιριάζουν να παραμένουν ομαδοποιημένα στον ίδιο τόμο (π.χ. ταιριάζοντας με '*.mp3' ή regex '^album_.*').\n\n5. Πολλαπλοί Φάκελοι Προέλευσης (+)\nΚάντε κλικ στο '+' για να καθορίσετε πολλαπλούς φακέλους προέλευσης. Το BTTB συμπεριφέρεται σαν να βρίσκονται σε έναν ενιαίο ριζικό φάκελο. Οι φωλιασμένες διαδρομές προέλευσης αγνοούνται.\n\n6. Δημιουργία Συμβολικών Συνδέσμων\nΑντί να αντιγράφει/μετακινεί αρχεία στον φάκελο προορισμού, το BTTB δημιουργεί ελαφρούς συμβολικούς συνδέσμους που δείχνουν πίσω στα αρχικά σας αρχεία.\n\n7. Νευρωνική Σημασιολογική Συσκευασία & Οδηγός Ρύθμισης MiniLM\nΚαθορίζοντας ένα σημασιολογικό prompt, το BTTB ομαδοποιεί αρχεία με παρόμοιο περιεχόμενο χρησιμοποιώντας σημασιολογικές ενσωματώσεις βαθιάς μάθησης με επίγνωση του πλαισίου.\nΓια να χρησιμοποιήσετε το προτιμώμενο νευρωνικό μοντέλο MiniLM υψηλής ακρίβειας, πρέπει να εγκαταστήσετε την Python 3 και το sentence-transformers:\n - Βήμα 1: Βεβαιωθείτε ότι είναι εγκατεστημένα τα Python 3 & pip.\n   (Linux: εκτελέστε 'sudo apt install python3 python3-pip python3-venv')\n   (Windows: Εγκαταστήστε από το https://www.python.org/ και επιλέξτε 'Add Python to PATH')\n - Βήμα 2: Εγκαταστήστε το sentence-transformers μέσω τερματικού ή γραμμής εντολών:\n   Επιλογή Α (Συνιστάται για απλότητα):\n     pip install sentence-transformers\n   Επιλογή Β (Απομόνωση εικονικού περιβάλλοντος):\n     python3 -m venv bttb_env\n     source bttb_env/bin/activate  # (Windows: bttb_env\\Scripts\\activate)\n     pip install sentence-transformers\n - Βήμα 3: Επανεκκινήστε το Burn to the Brim για αυτόματη φόρτωση του MiniLM! Εάν δεν βρεθεί, το BTTB επιστρέφει ομαλά σε έναν τοπικό προβολέα χαρακτήρων TF-IDF."
+
+msgid "help_guide_title"
+msgstr "Οδηγός βοήθειας Burn to the Brim (BTTB)"
+
+msgid "help_title"
+msgstr "Βοήθεια - Burn to the Brim"
+
+msgid "import_json_btn"
+msgstr "Εισαγωγή JSON..."
+
+msgid "integrate_ctx_chk"
+msgstr "Ενσωμάτωση στο μενού επιλογών των Windows Explorer"
+
+msgid "iso_title"
+msgstr "Δημιουργία Εικόνας ISO"
+
+msgid "label_par3_base"
+msgstr "Βασικό Όνομα PAR3:"
+
+msgid "label_rec_directory"
+msgstr "Κατάλογος Ανάκτησης:"
+
+msgid "label_vol_directory"
+msgstr "Κατάλογος Τόμου:"
+
+msgid "language_label"
+msgstr "Γλώσσα:"
+
+msgid "log_auto_volume_cap_set_1"
+msgstr "Η χωρητικότητα αυτόματου τόμου ορίστηκε σε: "
+
+msgid "log_auto_volume_cap_set_2"
+msgstr " bytes ("
+
+msgid "log_backtracking_failed_fallback_greedy"
+msgstr "Ο επιλύτης backtracking δεν βρήκε προσαρμογή (ή έληξε ο χρόνος). Επιστροφή σε άπληστη κατανομή για να διασφαλιστεί ότι περιλαμβάνονται όλα τα υπόλοιπα αρχεία..."
+
+msgid "log_bytes_suffix"
+msgstr " bytes)"
+
+msgid "log_capacity_adapted_1"
+msgstr "Η χωρητικότητα προσαρμόστηκε σε "
+
+msgid "log_capacity_adapted_2"
+msgstr " bytes. Επανάληψη επίλυσης..."
+
+msgid "log_capacity_skip_larger"
+msgstr "Παραλείφθηκαν τα μεγαλύτερα αρχεία. Επανάληψη επίλυσης..."
+
+msgid "log_completed_file_organization"
+msgstr "Ολοκληρώθηκε η οργάνωση αρχείων."
+
+msgid "log_copying_repair"
+msgstr "Αντιγραφή περιεχομένων τόμου και εκτέλεση επισκευής. Παρακαλώ περιμένετε...\n"
+
+msgid "log_created_offline_json_index"
+msgstr "Δημιουργήθηκε αρχείο ευρετηρίου JSON εκτός σύνδεσης: "
+
+msgid "log_damaged_files"
+msgstr "Βρέθηκαν κατεστραμμένα αρχεία ή αρχεία που λείπουν:\n"
+
+msgid "log_errors"
+msgstr "Καταγραφές/Σφάλματα: "
+
+msgid "log_fail_restore"
+msgstr "\nΑΠΟΤΥΧΙΑ: Η επαναφορά ή η επισκευή απέτυχε.\n"
+
+msgid "log_fail_verify_status"
+msgstr "\nΗ επαλήθευση εντόπισε προβλήματα (κατάσταση "
+
+msgid "log_failed_create_json_index"
+msgstr "Αποτυχία δημιουργίας αρχείου ευρετηρίου JSON: "
+
+msgid "log_failed_organize_item_1"
+msgstr "Αποτυχία οργάνωσης "
+
+msgid "log_failed_par3_creation"
+msgstr "Η δημιουργία PAR3 απέτυχε: "
+
+msgid "log_failed_read_temp_embed_output"
+msgstr "Αποτυχία ανάγνωσης προσωρινού αρχείου εξόδου ενσωμάτωσης: "
+
+msgid "log_failed_symlink_retry_copy_1"
+msgstr "Αποτυχία δημιουργίας συμβολικού συνδέσμου για "
+
+msgid "log_failed_symlink_retry_copy_2"
+msgstr " (επανάληψη με αντιγραφή)"
+
+msgid "log_failed_write_temp_embed_input"
+msgstr "Αποτυχία εγγραφής προσωρινού αρχείου εισαγωγής ενσωμάτωσης: "
+
+msgid "log_finished_solving_1"
+msgstr "Η επίλυση ολοκληρώθηκε. Χρόνος που παρήλθε: "
+
+msgid "log_finished_solving_2"
+msgstr " ms"
+
+msgid "log_forcing_progress_exceeds_cap_1"
+msgstr "Αναγκαστική πρόοδος: συσκευασία εναπομένοντος στοιχείου μεγαλύτερου από τη χωρητικότητα του μέσου ("
+
+msgid "log_found_items"
+msgstr "Βρέθηκαν στοιχεία προς προσαρμογή: "
+
+msgid "log_frame_title"
+msgstr "Καταγραφή κατάστασης και επίλυσης"
+
+msgid "log_frame_title_verify"
+msgstr "Καταγραφή Επαλήθευσης & Επαναφοράς"
+
+msgid "log_generating_par3_for_volume_1"
+msgstr "Δημιουργία αρχείων ισοτιμίας PAR3 για τον Τόμο "
+
+msgid "log_generating_semantic_embeddings"
+msgstr "Δημιουργία σημασιολογικών ενσωματώσεων..."
+
+msgid "log_index_fail"
+msgstr "Δεν εντοπίστηκαν μεμονωμένα κατεστραμμένα αρχεία, αλλά η επαλήθευση ευρετηρίου απέτυχε. Το ίδιο το αρχείο PAR3 ενδέχεται να έχει υποστεί ζημιά.\n"
+
+msgid "log_medium_capacity_1"
+msgstr "Χωρητικότητα μέσου: "
+
+msgid "log_medium_capacity_2"
+msgstr " τομείς ("
+
+msgid "log_new_best_space_utilization"
+msgstr "Νέα βέλτιστη χρήση χώρου: "
+
+msgid "log_no_files_written_on_disk"
+msgstr "Δεν αντιγράφηκαν, μετακινήθηκαν ή συνδέθηκαν συμβολικά αρχεία στο δίσκο."
+
+msgid "log_no_items_to_fit"
+msgstr "Δεν υπάρχουν στοιχεία προς προσαρμογή."
+
+msgid "log_optimal_selection_covers"
+msgstr "Η βέλτιστη επιλογή καλύπτει: "
+
+msgid "log_organizing_item"
+msgstr "Οργάνωση στοιχείου: "
+
+msgid "log_par3_base"
+msgstr "Βασικό όνομα PAR3: "
+
+msgid "log_recovery_path"
+msgstr "Διαδρομή ανάκτησης: "
+
+msgid "log_running_semantic_clustering"
+msgstr "Εκτέλεση συσσωρευτικής σημασιολογικής ομαδοποίησης (κατώφλι=0.6)..."
+
+msgid "log_scan_aborted_failed_iterate"
+msgstr "Η σάρωση διακόπηκε από το χρήστη λόγω αποτυχίας επανάληψης καταλόγου."
+
+msgid "log_scan_aborted_unreadable_dir"
+msgstr "Η σάρωση διακόπηκε από το χρήστη λόγω μη αναγνώσιμου καταλόγου."
+
+msgid "log_scan_aborted_unreadable_item"
+msgstr "Η σάρωση διακόπηκε από το χρήστη λόγω μη αναγνώσιμου στοιχείου."
+
+msgid "log_scanning_folder"
+msgstr "Σάρωση φακέλου: "
+
+msgid "log_search_time_limit_exceeded_1"
+msgstr "Υπέρβαση χρονικού ορίου αναζήτησης ("
+
+msgid "log_search_time_limit_exceeded_2"
+msgstr " δευτερόλεπτα)."
+
+msgid "log_selected_items"
+msgstr "Επιλεγμένα στοιχεία:"
+
+msgid "log_selected_items_for_volume_1"
+msgstr "Επιλεγμένα στοιχεία για τον Τόμο "
+
+msgid "log_selection_within_slack_1"
+msgstr "Βρέθηκε επιλογή εντός της ανοχής slack ("
+
+msgid "log_selection_within_slack_2"
+msgstr "%). Πρόωρος τερματισμός αναζήτησης."
+
+msgid "log_semantic_clustering_completed"
+msgstr "Η σημασιολογική ομαδοποίηση ολοκληρώθηκε. Συνολικές ενοποιημένες ομάδες: "
+
+msgid "log_semantic_grouping_fallback"
+msgstr "-> Η σημασιολογική ομαδοποίηση θα επιστρέψει σε τοπικές μετρήσεις αντιστοίχισης συμβολοσειρών."
+
+msgid "log_single_vol_sol_forcing"
+msgstr "Λύση μονού τόμου: αναγκαστική επιλογή όλων των αρχείων για εγγύηση 100% συμπερίληψης..."
+
+msgid "log_solver_aborted_files_exceed_cap"
+msgstr "Ο επιλύτης διακόπηκε: το σύνολο δεδομένων περιέχει αρχεία που υπερβαίνουν τη χωρητικότητα."
+
+msgid "log_solver_aborted_files_exceed_cap_adapt"
+msgstr "Ο επιλύτης διακόπηκε: το σύνολο δεδομένων περιέχει αρχεία που υπερβαίνουν τη χωρητικότητα. Προσαρμόστε τη χωρητικότητα ή ενεργοποιήστε την διαδραστική επανάληψη."
+
+msgid "log_solving_for_vol_header_1"
+msgstr "\r\n--- ΕΠΙΛΥΣΗ ΓΙΑ ΤΟΝ ΤΟΜΟ "
+
+msgid "log_solving_for_vol_header_2"
+msgstr " ---"
+
+msgid "log_solving_optimal_bin"
+msgstr "Επίλυση βέλτιστης επιλογής bin..."
+
+msgid "log_start_restore"
+msgstr "Έναρξη επαναφοράς/επισκευής τόμου...\n"
+
+msgid "log_start_verify"
+msgstr "Έναρξη επαλήθευσης τόμου...\n"
+
+msgid "log_success_par3_for_volume_1"
+msgstr "Δημιουργήθηκε με επιτυχία προστασία ισοτιμίας PAR3 για τον Τόμο "
+
+msgid "log_success_restore"
+msgstr "\nΕΠΙΤΥΧΙΑ: Ο τόμος αντιγράφηκε και επισκευάστηκε με επιτυχία σε ξεχωριστό φάκελο ανάκτησης!\n"
+
+msgid "log_success_verify"
+msgstr "\nΕΠΙΤΥΧΙΑ: Όλα τα αρχεία επαληθεύτηκαν και είναι καθαρά/bit-perfect!\n"
+
+msgid "log_target_volume_cap_1"
+msgstr "Χωρητικότητα τόμου προορισμού: "
+
+msgid "log_target_volume_cap_2"
+msgstr " bytes ("
+
+msgid "log_test_simulation_complete"
+msgstr "--- Η ΔΟΚΙΜΑΣΤΙΚΗ ΠΡΟΣΟΜΟΙΩΣΗ ΟΛΟΚΛΗΡΩΘΗΚΕ ---"
+
+msgid "log_theoretical_min_vols"
+msgstr "Θεωρητικός ελάχιστος αριθμός τόμων που απαιτούνται: "
+
+msgid "log_total_dataset_size_1"
+msgstr "Συνολικό μέγεθος συνόλου δεδομένων: "
+
+msgid "log_total_dataset_size_2"
+msgstr " bytes ("
+
+msgid "log_volume_packing_estimation_header"
+msgstr "--- Εκτίμηση Συσκευασίας Τόμου ---"
+
+msgid "log_volume_path"
+msgstr "Διαδρομή τόμου: "
+
+msgid "log_warn_dir_unreadable_1"
+msgstr "Προειδοποίηση: Ο κατάλογος '"
+
+msgid "log_warn_dir_unreadable_2"
+msgstr "' δεν είναι αναγνώσιμος ("
+
+msgid "log_warn_embedded_output_empty"
+msgstr "Προειδοποίηση: Η ενσωματωμένη έξοδος είναι κενή."
+
+msgid "log_warn_failed_iterate_dir_1"
+msgstr "Προειδοποίηση: Αποτυχία επανάληψης καταλόγου '"
+
+msgid "log_warn_failed_iterate_dir_2"
+msgstr "' ("
+
+msgid "log_warn_item_exceeds_cap_1"
+msgstr "Προειδοποίηση: Το στοιχείο '"
+
+msgid "log_warn_item_exceeds_cap_2"
+msgstr "' ("
+
+msgid "log_warn_item_exceeds_cap_3"
+msgstr " bytes) είναι μεγαλύτερο από το μέγεθος του τόμου προορισμού ("
+
+msgid "log_warn_item_unreadable_1"
+msgstr "Προειδοποίηση: Το αρχείο ή ο φάκελος στο '"
+
+msgid "log_warn_item_unreadable_2"
+msgstr "' δεν είναι αναγνώσιμος ("
+
+msgid "log_warn_python_embed_engine_failed"
+msgstr "Προειδοποίηση: Η μηχανή ενσωμάτωσης python απέτυχε ή η python3 δεν είναι εγκατεστημένη."
+
+msgid "manage_src_folders_title"
+msgstr "Διαχείριση φακέλων προέλευσης"
+
+msgid "match_files_chk"
+msgstr "Ταίριασμα Αρχείων"
+
+msgid "match_folders_chk"
+msgstr "Ταίριασμα Φακέλων"
+
+msgid "media_size_label"
+msgstr "Μέγεθος Μέσου:"
+
+msgid "move_files_chk"
+msgstr "Μετακίνηση προσαρμοσμένων φακέλων/αρχείων στον φάκελο προορισμού"
+
+msgid "move_tooltip"
+msgstr "Μετακινήστε αρχεία στους τόμους προορισμού τους αντί να τα αντιγράψετε ή να δημιουργήσετε συμβολικούς συνδέσμους"
+
+msgid "ok_btn"
+msgstr "OK"
+
+msgid "par3_block_size"
+msgstr "Μέγεθος μπλοκ PAR3 (Bytes):"
+
+msgid "par3_redundancy"
+msgstr "Ποσοστό πλεονασμού PAR3 (%):"
+
+msgid "pattern_col"
+msgstr "Μοτίβο"
+
+msgid "pref_title"
+msgstr "Προτιμήσεις"
+
+msgid "progress_frame_title"
+msgstr "Χωρητικότητα προσαρμοσμένου μέσου"
+
+msgid "regex_pattern_chk"
+msgstr "Μοτίβο Regex"
+
+msgid "rel_path_col"
+msgstr "Σχετική διαδρομή / Κατηγορία"
+
+msgid "remove_btn"
+msgstr "Κατάργηση"
+
+msgid "remove_selected_btn"
+msgstr "Κατάργηση Επιλεγμένων"
+
+msgid "restart_notice"
+msgstr "Οι προτιμήσεις γλώσσας αποθηκεύτηκαν. Παρακαλώ επανεκκινήστε το Burn to the Brim για να εφαρμόσετε τις αλλαγές."
+
+msgid "restart_title"
+msgstr "Η γλώσσα άλλαξε"
+
+msgid "restore_repair_btn"
+msgstr "Επαναφορά & Επισκευή"
+
+msgid "rule_pattern_placeholder"
+msgstr "Μοτίβο κανόνα (*.mp3 ή ^[0-9].*\\..*$)"
+
+msgid "rule_wins_chk"
+msgstr "Η ομαδοποίηση βάσει κανόνων υπερισχύει:"
+
+msgid "save_btn"
+msgstr "Αποθήκευση"
+
+msgid "save_cv_label"
+msgstr "Αποθήκευση Προσαρμ. Τόμου:"
+
+msgid "save_cv_tooltip"
+msgstr "Αποθήκευση τρέχουσας χωρητικότητας, τομέα και slack ως επώνυμο προσαρμοσμένο τόμο"
+
+msgid "search_time_label"
+msgstr "Μέγιστος Χρόνος Αναζήτησης (sec):"
+
+msgid "select_dest_dir_title"
+msgstr "Επιλογή καταλόγου προορισμού"
+
+msgid "select_medium_label"
+msgstr "Επιλογή Μέσου:"
+
+msgid "select_rec_dir_title"
+msgstr "Επιλογή Καταλόγου Ανάκτησης"
+
+msgid "select_vol_dir_title"
+msgstr "Επιλογή Καταλόγου Τόμου"
+
+msgid "semantic_placeholder"
+msgstr "π.χ. διατήρηση παρόμοιου περιεχομένου μαζί"
+
+msgid "semantic_prompt"
+msgstr "Σημασιολογικό prompt:"
+
+msgid "semantic_tooltip"
+msgstr "Καθορίστε μια σημασιολογική περιγραφή για την ομαδοποίηση παρόμοιων αρχείων χρησιμοποιώντας το MiniLM AI"
+
+msgid "size_col"
+msgstr "Μέγεθος"
+
+msgid "skip_empty_chk"
+msgstr "Παράλειψη κενών φακέλων / αρχείων"
+
+msgid "skip_empty_label"
+msgstr "Παράλειψη κενών αρχείων/καταλόγων:"
+
+msgid "skip_unreadable_chk"
+msgstr "Παράλειψη μη αναγνώσιμων αρχείων (Επιεικής)"
+
+msgid "slack_label"
+msgstr "Bytes Slack (Toler):"
+
+msgid "source_folder"
+msgstr "Φάκελος Προέλευσης:"
+
+msgid "source_tooltip"
+msgstr "Κατάλογος προέλευσης που περιέχει τα αρχεία προς οργάνωση"
+
+msgid "span_chk"
+msgstr "Κατανομή σε πολλαπλούς τόμους (Volume_1, Volume_2, κ.λπ.)"
+
+msgid "span_tooltip"
+msgstr "Προσαρμόστε τα υπόλοιπα αρχεία σε πολλούς τόμους διαδοχικά αντί μόνο στον πρώτο τόμο"
+
+msgid "split_depth_label"
+msgstr "Βάθος Διαχωρισμού Καταλόγου:"
+
+msgid "start_btn"
+msgstr "Έναρξη"
+
+msgid "start_tooltip"
+msgstr "Ξεκινήστε την οργάνωση αρχείων σε βέλτιστους τόμους"
+
+msgid "stop_btn"
+msgstr "Διακοπή"
+
+msgid "stop_tooltip"
+msgstr "Διακόψτε τον τρέχοντα επιλυτή ή τη λειτουργία αντιγραφής"
+
+msgid "symlink_tooltip"
+msgstr "Δημιουργήστε συμβολικούς συνδέσμους των αρχείων στον προορισμό τους αντί να τα αντιγράψετε"
+
+msgid "target_folder"
+msgstr "Φάκελος Προορισμού:"
+
+msgid "target_iso_file"
+msgstr "Αρχείο ISO Προορισμού:"
+
+msgid "target_tooltip"
+msgstr "Κατάλογος προορισμού όπου θα δημιουργηθούν οι οργανωμένοι τόμοι"
+
+msgid "test_btn"
+msgstr "Δοκιμή"
+
+msgid "test_tooltip"
+msgstr "Προσομοιώστε την οργάνωση αρχείων και υπολογίστε μετρήσεις χωρίς τροποποίηση αρχείων στο δίσκο"
+
+msgid "time_left_label"
+msgstr "Χρόνος που απομένει: --:--"
+
+msgid "tooltip_create_iso"
+msgstr "Δημιουργήστε εικόνες συστήματος αρχείων ISO από τους επιλυμένους τόμους."
+
+msgid "tooltip_import_json"
+msgstr "Εισαγωγή και ανάλυση αρχείων ευρετηρίου JSON εκτός σύνδεσης για προβολή λεπτομερειών των αρχείων του επιλυμένου τόμου."
+
+msgid "tooltip_move"
+msgstr "Μετακινήστε/αποκόψτε τα αρχικά αρχεία/φακέλους απευθείας στους φακέλους του τόμου προορισμού."
+
+msgid "tooltip_semantic"
+msgstr "Εισαγάγετε ένα prompt όπως 'keep audio together' για να αναλύσετε αρχεία μέσω MiniLM."
+
+msgid "tooltip_source"
+msgstr "Διαδρομές φακέλων προς συσκευασία και ενοποίηση, διαχωρισμένες με ελληνικό ερωτηματικό."
+
+msgid "tooltip_span"
+msgstr "Ενεργοποιήστε την κατανομή περιεχομένου σε πολλούς φακέλους με διαδοχική ονομασία."
+
+msgid "tooltip_start"
+msgstr "Εκτελέστε τον επιλυτή και οργανώστε αρχεία/φακέλους σύμφωνα με τις προτιμήσεις."
+
+msgid "tooltip_stop"
+msgstr "Διακοπή της τρέχουσας διαδικασίας συσκευασίας ή οργάνωσης αρχείων."
+
+msgid "tooltip_symlink"
+msgstr "Δημιουργήστε συμβολικούς συνδέσμους συστήματος αρχείων στους φακέλους του τόμου προορισμού (μη καταστροφικό)."
+
+msgid "tooltip_target"
+msgstr "Διαδρομή προορισμού όπου θα οργανωθούν και θα γραφτούν οι τόμοι."
+
+msgid "tooltip_test"
+msgstr "Προσομοίωση συσκευασίας χωρίς εκτέλεση λειτουργιών αρχείων στο δίσκο για δοκιμή της χρήσης του τόμου."
+
+msgid "tooltip_trace"
+msgstr "Εμφάνιση εξαιρετικά λεπτομερών διαγνωστικών στοιχείων και μετρήσεων απόδοσης."
+
+msgid "tooltip_verify_restore"
+msgstr "Επαληθεύστε τους επιλυμένους τόμους ή αντιγράψτε και επαναφέρετε κατεστραμμένα αρχεία χρησιμοποιώντας αρχειοθήκες PAR3."
+
+msgid "trace_chk"
+msgstr "Ενεργοποίηση λεπτομερούς διαγνωστικής καταγραφής (Trace)"
+
+msgid "trace_tooltip"
+msgstr "Εμφανίστε λεπτομερή διαγνωστικά στοιχεία και μετρήσεις απόδοσης στις καταγραφές"
+
+msgid "type_col"
+msgstr "Τύπος"
+
+msgid "verify_only_btn"
+msgstr "Μόνο Επαλήθευση"
+
+msgid "verify_restore_btn"
+msgstr "Επαλήθευση & Επαναφορά..."
+
+msgid "verify_title"
+msgstr "Επαλήθευση & Επαναφορά Τόμων..."
+
+msgid "volume_label"
+msgstr "Ετικέτα Τόμου:"

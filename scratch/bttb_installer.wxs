@@ -36,6 +36,15 @@
               <File Id="nl_po" Name="nl.po" Source="lang/nl.po" />
               <File Id="fr_po" Name="fr.po" Source="lang/fr.po" />
               <File Id="es_po" Name="es.po" Source="lang/es.po" />
+              <File Id="zh_po" Name="zh.po" Source="lang/zh.po" />
+              <File Id="ja_po" Name="ja.po" Source="lang/ja.po" />
+              <File Id="it_po" Name="it.po" Source="lang/it.po" />
+              <File Id="el_po" Name="el.po" Source="lang/el.po" />
+              <File Id="la_po" Name="la.po" Source="lang/la.po" />
+              <File Id="pt_po" Name="pt.po" Source="lang/pt.po" />
+              <File Id="hi_po" Name="hi.po" Source="lang/hi.po" />
+              <File Id="vul_po" Name="vul.po" Source="lang/vul.po" />
+              <File Id="elv_po" Name="elv.po" Source="lang/elv.po" />
             </Component>
           </Directory>
 

@@ -329,6 +329,15 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->language_combo), "Nederlands");
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->language_combo), "Français");
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->language_combo), "Español");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->language_combo), "简体中文");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->language_combo), "日本語");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->language_combo), "Italiano");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->language_combo), "Ελληνικά");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->language_combo), "Latina");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->language_combo), "Português");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->language_combo), "हिन्दी");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->language_combo), "Vuhlkansu (Vulkan)");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->language_combo), "Eldarin (Elvish)");
     
     if (solver.language == "auto") gtk_combo_box_set_active(GTK_COMBO_BOX(data->language_combo), 0);
     else if (solver.language == "en") gtk_combo_box_set_active(GTK_COMBO_BOX(data->language_combo), 1);
@@ -336,6 +345,15 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     else if (solver.language == "nl") gtk_combo_box_set_active(GTK_COMBO_BOX(data->language_combo), 3);
     else if (solver.language == "fr") gtk_combo_box_set_active(GTK_COMBO_BOX(data->language_combo), 4);
     else if (solver.language == "es") gtk_combo_box_set_active(GTK_COMBO_BOX(data->language_combo), 5);
+    else if (solver.language == "zh") gtk_combo_box_set_active(GTK_COMBO_BOX(data->language_combo), 6);
+    else if (solver.language == "ja") gtk_combo_box_set_active(GTK_COMBO_BOX(data->language_combo), 7);
+    else if (solver.language == "it") gtk_combo_box_set_active(GTK_COMBO_BOX(data->language_combo), 8);
+    else if (solver.language == "el") gtk_combo_box_set_active(GTK_COMBO_BOX(data->language_combo), 9);
+    else if (solver.language == "la") gtk_combo_box_set_active(GTK_COMBO_BOX(data->language_combo), 10);
+    else if (solver.language == "pt") gtk_combo_box_set_active(GTK_COMBO_BOX(data->language_combo), 11);
+    else if (solver.language == "hi") gtk_combo_box_set_active(GTK_COMBO_BOX(data->language_combo), 12);
+    else if (solver.language == "vul") gtk_combo_box_set_active(GTK_COMBO_BOX(data->language_combo), 13);
+    else if (solver.language == "elv") gtk_combo_box_set_active(GTK_COMBO_BOX(data->language_combo), 14);
     else gtk_combo_box_set_active(GTK_COMBO_BOX(data->language_combo), 0);
     
     gtk_grid_attach(GTK_GRID(grid), data->language_combo, 1, 14, 1, 1);
@@ -518,6 +536,15 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
         else if (lang_idx == 3) new_lang = "nl";
         else if (lang_idx == 4) new_lang = "fr";
         else if (lang_idx == 5) new_lang = "es";
+        else if (lang_idx == 6) new_lang = "zh";
+        else if (lang_idx == 7) new_lang = "ja";
+        else if (lang_idx == 8) new_lang = "it";
+        else if (lang_idx == 9) new_lang = "el";
+        else if (lang_idx == 10) new_lang = "la";
+        else if (lang_idx == 11) new_lang = "pt";
+        else if (lang_idx == 12) new_lang = "hi";
+        else if (lang_idx == 13) new_lang = "vul";
+        else if (lang_idx == 14) new_lang = "elv";
         
         bool lang_changed = (new_lang != data->solver->language);
         if (lang_changed) {

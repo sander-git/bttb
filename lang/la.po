@@ -1,0 +1,611 @@
+msgid "about_btn"
+msgstr "De..."
+
+msgid "about_comments"
+msgstr "Burn to the Brim (BTTB) est translatio hodierna in C++20 priscae Delphi applicationis, facta ad optime aptanda lima et diaria in media destinata (CDs, DVDs, Blu-rays, vel USBs).\n\nProprietates in v4.5.0:\n- Novissimum applicationis symbolum altae resolutionis (bttb.ico) et logo website unitum (bttb.png)\n- Minorati stack frames in investigatione & 16MB Win32 stack limit (removendo 0xC00000FD overflows)\n- Limites buffer scribendi extensi ad 10MB ne acta truncentur\n- Incremental GUI non-blocking rendering & skip capacitatum admonitus\n- Offiline indices JSON et interpretator interactivus\n- Optiva creatio et verificatio PAR3 filorum paritatis\n- Emendatio bit-perfecta per PAR3 copiam\n- Themata apta, inter quae tenebrosum thema in Linux GTK4\n- Melior computatio temporis reliqui statim ab initio\n- Custom Volume profiles nominata & dynamic auto volume sizing\n- Memoria configurationis ultimae selectae\n- Ordinatio ex regulis vel ex semanticis praevalens in conflictibus\n- Tempus reliquum aestimatum ex transitione et spinner status\n- Semantic Packing per MiniLM neural embeddings\n- Integrare in Windows Explorer contextu menu & viae longae legi possunt\n\nBTTB plene redditur et dynamic translate totam GUI per gettext .po in de, nl, fr, es.\n\nBibliothecae et Attributiones:\n- libpar3 (a Yutaka Sawada, LGPL v2.1+): https://github.com/Parchive/par3cmdline\n- BLAKE3 (a BLAKE3 team, CC0/Apache-2.0): https://github.com/BLAKE3-team/BLAKE3\n- Leopard-RS (a Christopher A. Taylor, BSD 3-Clause): https://github.com/catid/leopard\n- Galois Field library (a James S. Plank): http://web.eecs.utk.edu/~jplank/plank/www/software.html\n\nAuctores: Sander Raaijmakers, Elwin Oost et Burn to the Brim societas"
+
+msgid "about_title"
+msgstr "De Burn to the Brim"
+
+msgid "add_btn"
+msgstr "Addere..."
+
+msgid "add_rule_btn"
+msgstr "Addere Regulam"
+
+msgid "add_src_dir_title"
+msgstr "Addere directorium fontis"
+
+msgid "app_copyright"
+msgstr "Copyright © 2001-2026 Sander Raaijmakers, Elwin Oost et societas Burn to the Brim"
+
+msgid "app_title"
+msgstr "Burn to the Brim"
+
+msgid "app_version"
+msgstr "Versio 4.5.0"
+
+msgid "auto_size"
+msgstr "Mensura Automatica"
+
+msgid "browse_btn"
+msgstr "Quaerere..."
+
+msgid "browse_dest_tooltip"
+msgstr "Quaerere directorium destinatum"
+
+msgid "browse_src_tooltip"
+msgstr "Quaerere directorium fontis"
+
+msgid "btn_cancel"
+msgstr "Dimittere"
+
+msgid "btn_resize"
+msgstr "Mutare Mensuram"
+
+msgid "btn_skip"
+msgstr "Omittere Lima"
+
+msgid "cancel_btn"
+msgstr "Dimittere"
+
+msgid "capacity_label"
+msgstr "Capacitas:"
+
+msgid "capacity_recommend_prompt_gtk"
+msgstr "Maximum scannatum postulat capacitatem saltem %.2f MB.\n\nElige actionem:"
+
+msgid "close_btn"
+msgstr "Claudere"
+
+msgid "cluster_label"
+msgstr "Magnitudo Cluster (Bytes):"
+
+msgid "complete_list_src_folders"
+msgstr "Index plenus directoriorum fontis:"
+
+msgid "create_iso_btn"
+msgstr "Creare ISO..."
+
+msgid "create_symlinks_chk"
+msgstr "Creare nexus symbolicos in directorio destinato (Defalta)"
+
+msgid "custom_size"
+msgstr "Mensura Commutabilis"
+
+msgid "custom_vol_name_placeholder"
+msgstr "Nomen voluminis personalis"
+
+msgid "dark_theme_chk"
+msgstr "Licere Tenebrosum Thema:"
+
+msgid "dir_setup_group"
+msgstr "Configuratio Directoriorum"
+
+msgid "edit_btn"
+msgstr "Mutare..."
+
+msgid "edit_src_dir_title"
+msgstr "Mutare directorium fontis"
+
+msgid "enable_par3_chk"
+msgstr "Aptare PAR3 protectionem:"
+
+msgid "execution_log"
+msgstr "Acta Executionis"
+
+msgid "files_col"
+msgstr "Lima"
+
+msgid "filled_label"
+msgstr "Impletum: 0.00%"
+
+msgid "fitted_status_col"
+msgstr "Status aptationis"
+
+msgid "folders_col"
+msgstr "Diaria"
+
+msgid "generate_btn"
+msgstr "Creare"
+
+msgid "grouping_rules_frame"
+msgstr "Regulae ordinandi lima / diaria"
+
+msgid "help_btn"
+msgstr "Auxilium"
+
+msgid "help_guide_text"
+msgstr "1. Altitudo Scindendi Directoriorum\nDecernit ad quam altitudinem folder res scindantur:\n - Altitudo 0 (Defalta): Suprema lima et folders ut singulae res tractantur.\n - Altitudo 1: Scindere uno gradu profundius fit, integra suprema folder tenens sed subfolders eorum scindens.\n\n2. Tempus Maximi Spatii\nMaximi secundi liciti ad solventem currere. Si perventum erit, optima electio tunc inventa adhibebitur.\n\n3. Spanning Slack\nSinit solventem maturius finire si volumen impletum sit intra hos bytes ad capacitatem maximam (ex. 2048 bytes).\n\n4. Regulae ordinandi lima/diaria\nCoge matching res ut una in eodem volumine maneant (ex. congruens '*.mp3' vel regex '^album_.*').\n\n5. Fontis Diaria Plura (+)\nPreme '+' ad addenda fontis diaria plura. BTTB agit quasi omnia in uno radice folder essent.\n\n6. Nexus Symbolicos Creare\nLoco limis exscribendis vel movendis in folder destinatum, BTTB nexus symbolicos leves creat ad lima originalia.\n\n7. Neural Semantic Packing & MiniLM Setup Guide\nPer promptum semanticum, BTTB res similes colligit per deep learning embeddings.\nAd hoc neuronal model MiniLM utendum, Python 3 et sentence-transformers installare oportet:\n - Step 1: Python 3 & pip installata esse cura.\n   (Linux: run 'sudo apt install python3 python3-pip python3-venv')\n   (Windows: Install ex https://www.python.org/ et check 'Add Python to PATH')\n - Step 2: Install sentence-transformers per terminalem:\n   Option A (Simplex):\n     pip install sentence-transformers\n   Option B (Virtual environment):\n     python3 -m venv bttb_env\n     source bttb_env/bin/activate  # (Windows: bttb_env\\Scripts\\activate)\n     pip install sentence-transformers\n - Step 3: Restart Burn to the Brim! Nisi inveniatur, BTTB cadet in character TF-IDF projector."
+
+msgid "help_guide_title"
+msgstr "Burn to the Brim (BTTB) Manuale Auxilii"
+
+msgid "help_title"
+msgstr "Auxilium - Burn to the Brim"
+
+msgid "import_json_btn"
+msgstr "Importare JSON..."
+
+msgid "integrate_ctx_chk"
+msgstr "Integrare in Windows Explorer contextu menu"
+
+msgid "iso_title"
+msgstr "Imago ISO Creare"
+
+msgid "label_par3_base"
+msgstr "Nomen PAR3:"
+
+msgid "label_rec_directory"
+msgstr "Directorium Receptionis:"
+
+msgid "label_vol_directory"
+msgstr "Directorium Voluminis:"
+
+msgid "language_label"
+msgstr "Lingua:"
+
+msgid "log_auto_volume_cap_set_1"
+msgstr "Auto Volumen capacitas posita ad: "
+
+msgid "log_auto_volume_cap_set_2"
+msgstr " bytes ("
+
+msgid "log_backtracking_failed_fallback_greedy"
+msgstr "Backtracking solvens non invenit aptationem (vel exspiravit). Recadens ad greedy allocationem ut omnia reliqua lima includantur..."
+
+msgid "log_bytes_suffix"
+msgstr " bytes)"
+
+msgid "log_capacity_adapted_1"
+msgstr "Capacitas adaptata ad "
+
+msgid "log_capacity_adapted_2"
+msgstr " bytes. Solventem iterando..."
+
+msgid "log_capacity_skip_larger"
+msgstr "Maiora lima omissa. Solventem iterando..."
+
+msgid "log_completed_file_organization"
+msgstr "Ordinatio limorum peracta."
+
+msgid "log_copying_repair"
+msgstr "Contenta voluminis exscribuntur et reparatio initur. Quaeso expecta...\n"
+
+msgid "log_created_offline_json_index"
+msgstr "Creatus est index JSON offline: "
+
+msgid "log_damaged_files"
+msgstr "Lima laesa vel deperdita inventa sunt:\n"
+
+msgid "log_errors"
+msgstr "Acta/Errores: "
+
+msgid "log_fail_restore"
+msgstr "\nFAILURA: Instauratio vel reparatio defecit.\n"
+
+msgid "log_fail_verify_status"
+msgstr "\nVerificatio errata detexit (status "
+
+msgid "log_failed_create_json_index"
+msgstr "Defecit creare index JSON: "
+
+msgid "log_failed_organize_item_1"
+msgstr "Defecit ordinare "
+
+msgid "log_failed_par3_creation"
+msgstr "PAR3 creatio defecit: "
+
+msgid "log_failed_read_temp_embed_output"
+msgstr "Defecit legere temp output file pro embeddings: "
+
+msgid "log_failed_symlink_retry_copy_1"
+msgstr "Defecit creare nexum symbolicum pro "
+
+msgid "log_failed_symlink_retry_copy_2"
+msgstr " (iterando cum copia)"
+
+msgid "log_failed_write_temp_embed_input"
+msgstr "Defecit scribere temp file pro embeddings: "
+
+msgid "log_finished_solving_1"
+msgstr "Solutio peracta. Tempus: "
+
+msgid "log_finished_solving_2"
+msgstr " ms"
+
+msgid "log_forcing_progress_exceeds_cap_1"
+msgstr "Cogere progressum: compingens item reliquum maius medio ("
+
+msgid "log_found_items"
+msgstr "Items inventa ad aptandum: "
+
+msgid "log_frame_title"
+msgstr "Acta status et solventis"
+
+msgid "log_frame_title_verify"
+msgstr "Acta Verificationis & Instaurationis"
+
+msgid "log_generating_par3_for_volume_1"
+msgstr "Creando PAR3 files pro Volume "
+
+msgid "log_generating_semantic_embeddings"
+msgstr "Generando semanticos embeddings..."
+
+msgid "log_index_fail"
+msgstr "Nulla singula lima laesa inventa sunt, sed verificatio indicis defecit. Archivum PAR3 laesum esse potest.\n"
+
+msgid "log_medium_capacity_1"
+msgstr "Capacitas Medii: "
+
+msgid "log_medium_capacity_2"
+msgstr " sectores ("
+
+msgid "log_new_best_space_utilization"
+msgstr "Nova optima spatii utilitas: "
+
+msgid "log_no_files_written_on_disk"
+msgstr "Nulla lima scripta, exscripta vel mota in disco."
+
+msgid "log_no_items_to_fit"
+msgstr "Nulla items ad aptandum."
+
+msgid "log_optimal_selection_covers"
+msgstr "Optima selectio tegit: "
+
+msgid "log_organizing_item"
+msgstr "Ordinans item: "
+
+msgid "log_par3_base"
+msgstr "PAR3 nomen: "
+
+msgid "log_recovery_path"
+msgstr "Receptio iter: "
+
+msgid "log_running_semantic_clustering"
+msgstr "Clustering semanticum currens (threshold=0.6)..."
+
+msgid "log_scan_aborted_failed_iterate"
+msgstr "Scanning ab user ob errorem itineris intermissum est."
+
+msgid "log_scan_aborted_unreadable_dir"
+msgstr "Scanning ab user ob non legibile directorium intermissum est."
+
+msgid "log_scan_aborted_unreadable_item"
+msgstr "Scanning ab user ob non legibile item intermissum est."
+
+msgid "log_scanning_folder"
+msgstr "Scanning folder: "
+
+msgid "log_search_time_limit_exceeded_1"
+msgstr "Tempus spatii excessum ("
+
+msgid "log_search_time_limit_exceeded_2"
+msgstr " sec)."
+
+msgid "log_selected_items"
+msgstr "Selecta items:"
+
+msgid "log_selected_items_for_volume_1"
+msgstr "Selecta items pro Volume "
+
+msgid "log_selection_within_slack_1"
+msgstr "Selectio intra slack tolerantiam ("
+
+msgid "log_selection_within_slack_2"
+msgstr "%) inventa. Terminans maturius."
+
+msgid "log_semantic_clustering_completed"
+msgstr "Clustering semanticum completum. Tota consolida: "
+
+msgid "log_semantic_grouping_fallback"
+msgstr "-> Semanticum raggruppamento cadet in local metrics."
+
+msgid "log_single_vol_sol_forcing"
+msgstr "Solutio unius voluminis: cogere omnia lima ad 100% inclusionem..."
+
+msgid "log_solver_aborted_files_exceed_cap"
+msgstr "Defecit solvens: dataset continet lima maiora capacitate."
+
+msgid "log_solver_aborted_files_exceed_cap_adapt"
+msgstr "Defecit solvens: dataset continet lima maiora capacitate. Apta capacitatem vel permitte iterare."
+
+msgid "log_solving_for_vol_header_1"
+msgstr "\n--- SOLVENDUM PRO VOLUMINE "
+
+msgid "log_solving_for_vol_header_2"
+msgstr " ---"
+
+msgid "log_solving_optimal_bin"
+msgstr "Solvens optimam selectionem..."
+
+msgid "log_start_restore"
+msgstr "Instauratio/reparatio voluminis incipit...\n"
+
+msgid "log_start_verify"
+msgstr "Verificatio voluminis incipit...\n"
+
+msgid "log_success_par3_for_volume_1"
+msgstr "Prospere creata PAR3 protectio pro Volume "
+
+msgid "log_success_restore"
+msgstr "\nSUCCESSUS: Volumen prospere exscriptum et reparatum est in alio folder receptionis!\n"
+
+msgid "log_success_verify"
+msgstr "\nSUCCESSUS: Omnia lima verificata sunt et munda/bit-perfecta!\n"
+
+msgid "log_target_volume_cap_1"
+msgstr "Volumen destinatum capacitas: "
+
+msgid "log_target_volume_cap_2"
+msgstr " bytes ("
+
+msgid "log_test_simulation_complete"
+msgstr "--- SIMULATIO PROBATIONIS PERACTA ---"
+
+msgid "log_theoretical_min_vols"
+msgstr "Volumina minima theoretice requisita: "
+
+msgid "log_total_dataset_size_1"
+msgstr "Dataset magnitudo tota: "
+
+msgid "log_total_dataset_size_2"
+msgstr " bytes ("
+
+msgid "log_volume_packing_estimation_header"
+msgstr "--- Voluminis Compingendi Aestimatio ---"
+
+msgid "log_volume_path"
+msgstr "Volume iter: "
+
+msgid "log_warn_dir_unreadable_1"
+msgstr "Cave: Directorium '"
+
+msgid "log_warn_dir_unreadable_2"
+msgstr "' non legi potest ("
+
+msgid "log_warn_embedded_output_empty"
+msgstr "Cave: Embed output vacuum est."
+
+msgid "log_warn_failed_iterate_dir_1"
+msgstr "Cave: Defecit iterare directorium '"
+
+msgid "log_warn_failed_iterate_dir_2"
+msgstr "' ("
+
+msgid "log_warn_item_exceeds_cap_1"
+msgstr "Cave: Item '"
+
+msgid "log_warn_item_exceeds_cap_2"
+msgstr "' ("
+
+msgid "log_warn_item_exceeds_cap_3"
+msgstr " bytes) maius est quam volumen destinatum ("
+
+msgid "log_warn_item_unreadable_1"
+msgstr "Cave: Lima vel folder in '"
+
+msgid "log_warn_item_unreadable_2"
+msgstr "' non legi potest ("
+
+msgid "log_warn_python_embed_engine_failed"
+msgstr "Cave: Python embed defectus vel python3 non est installed."
+
+msgid "manage_src_folders_title"
+msgstr "Ordinare Fontis Diaria"
+
+msgid "match_files_chk"
+msgstr "Lima Aequare"
+
+msgid "match_folders_chk"
+msgstr "Diaria Aequare"
+
+msgid "media_size_label"
+msgstr "Mensura Medii:"
+
+msgid "move_files_chk"
+msgstr "Movere diaria/lima aptata in directorium destinatum"
+
+msgid "move_tooltip"
+msgstr "Movere lima in volumina destinata loco exscribendi vel nectendi"
+
+msgid "ok_btn"
+msgstr "OK"
+
+msgid "par3_block_size"
+msgstr "PAR3 Magnitudo Block (Bytes):"
+
+msgid "par3_redundancy"
+msgstr "PAR3 Redundantia Percent (%):"
+
+msgid "pattern_col"
+msgstr "Muster"
+
+msgid "pref_title"
+msgstr "Praeferentiae"
+
+msgid "progress_frame_title"
+msgstr "Capacitas medii impleti"
+
+msgid "regex_pattern_chk"
+msgstr "Regex Pattern"
+
+msgid "rel_path_col"
+msgstr "Relativum iter / Categoria"
+
+msgid "remove_btn"
+msgstr "Removere"
+
+msgid "remove_selected_btn"
+msgstr "Removere Selecta"
+
+msgid "restart_notice"
+msgstr "Praeferentiae linguae servatae sunt. Quaeso restart Burn to the Brim ut mutationes adhibeas."
+
+msgid "restart_title"
+msgstr "Lingua Mutata"
+
+msgid "restore_repair_btn"
+msgstr "Instaurare & Reparare"
+
+msgid "rule_pattern_placeholder"
+msgstr "Regula (*.mp3 vel ^[0-9].*\\..*$)"
+
+msgid "rule_wins_chk"
+msgstr "Ordinatio ex regulis vincit:"
+
+msgid "save_btn"
+msgstr "Servare"
+
+msgid "save_cv_label"
+msgstr "Servare Vol. Pers.:"
+
+msgid "save_cv_tooltip"
+msgstr "Servare currentem capacitatem, sectorem et slack ut nominatum volumen personalis"
+
+msgid "search_time_label"
+msgstr "Tempus Max Spatii (sec):"
+
+msgid "select_dest_dir_title"
+msgstr "Elige Directorium Destinatum"
+
+msgid "select_medium_label"
+msgstr "Elige Medium:"
+
+msgid "select_rec_dir_title"
+msgstr "Elige Directorium Receptionis"
+
+msgid "select_vol_dir_title"
+msgstr "Elige Directorium Voluminis"
+
+msgid "semantic_placeholder"
+msgstr "ex. serva similes res una"
+
+msgid "semantic_prompt"
+msgstr "Prompt Semanticus:"
+
+msgid "semantic_tooltip"
+msgstr "Specificare descriptionem semanticam ad colligenda similia lima per MiniLM AI"
+
+msgid "size_col"
+msgstr "Magnitudo"
+
+msgid "skip_empty_chk"
+msgstr "Omittere diaria / lima vacua"
+
+msgid "skip_empty_label"
+msgstr "Omittere diaria/lima vacua:"
+
+msgid "skip_unreadable_chk"
+msgstr "Omittere lima non legenda (Clementer)"
+
+msgid "slack_label"
+msgstr "Bytes Slack:"
+
+msgid "source_folder"
+msgstr "Directorium Fontis:"
+
+msgid "source_tooltip"
+msgstr "Directorium fontis continens lima ordinanda"
+
+msgid "span_chk"
+msgstr "Diffundere per plura volumina (Volume_1, Volume_2, etc.)"
+
+msgid "span_tooltip"
+msgstr "Aptare reliqua lima in plura volumina deinceps"
+
+msgid "split_depth_label"
+msgstr "Altiter Scindendi Dir:"
+
+msgid "start_btn"
+msgstr "Incipere"
+
+msgid "start_tooltip"
+msgstr "Incipere ordinare lima in optima volumina"
+
+msgid "stop_btn"
+msgstr "Sistere"
+
+msgid "stop_tooltip"
+msgstr "Sistere solventem currentem vel copiam"
+
+msgid "symlink_tooltip"
+msgstr "Creare nexus symbolicos pro exscribendo"
+
+msgid "target_folder"
+msgstr "Directorium Destinatum:"
+
+msgid "target_iso_file"
+msgstr "Lima ISO Destinata:"
+
+msgid "target_tooltip"
+msgstr "Directorium destinatum ubi volumina ordinata creabuntur"
+
+msgid "test_btn"
+msgstr "Probate"
+
+msgid "test_tooltip"
+msgstr "Simulare ordinationem et computare metrics sine modificatione in disco"
+
+msgid "time_left_label"
+msgstr "Tempus Reliquum: --:--"
+
+msgid "tooltip_create_iso"
+msgstr "Creare ISO filesystem imagines de voluminibus solutis."
+
+msgid "tooltip_import_json"
+msgstr "Importare et legere offline indices JSON ad videnda volumina soluta."
+
+msgid "tooltip_move"
+msgstr "Movere ipsa lima in folder voluminis destinati."
+
+msgid "tooltip_semantic"
+msgstr "Scribe promptum sicut 'keep audio together' ad explicanda lima per MiniLM."
+
+msgid "tooltip_source"
+msgstr "Semicoletis separata itinera directoriorum ad compingendum."
+
+msgid "tooltip_span"
+msgstr "Sinite diffundi per plura folder sequenter nominata."
+
+msgid "tooltip_start"
+msgstr "Solvere et ordinare lima secundum praeferentias."
+
+msgid "tooltip_stop"
+msgstr "Sistere solutionem currentem vel transitionem."
+
+msgid "tooltip_symlink"
+msgstr "Creare nexus symbolicos in folder voluminis destinati."
+
+msgid "tooltip_target"
+msgstr "Iter destinatum quo volumina ordinata scribentur."
+
+msgid "tooltip_test"
+msgstr "Simulare ordinationem sine limis scribendis ad tentandum volumen."
+
+msgid "tooltip_trace"
+msgstr "Monstrare diagnosticum verbosissimum in actis."
+
+msgid "tooltip_verify_restore"
+msgstr "Verificare volumina soluta vel reparare laesa lima per PAR3."
+
+msgid "trace_chk"
+msgstr "Licere diagnosticum solvendi tracing (Trace)"
+
+msgid "trace_tooltip"
+msgstr "Monstrare diagnostica et metrics in actis"
+
+msgid "type_col"
+msgstr "Typus"
+
+msgid "verify_only_btn"
+msgstr "Solum Verificare"
+
+msgid "verify_restore_btn"
+msgstr "Verificare & Instaurare..."
+
+msgid "verify_title"
+msgstr "Verificare & Instaurare Volumina..."
+
+msgid "volume_label"
+msgstr "Titulus Voluminis:"

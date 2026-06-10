@@ -1,0 +1,611 @@
+msgid "about_btn"
+msgstr "Informazioni..."
+
+msgid "about_comments"
+msgstr "Burn to the Brim (BTTB) è un port moderno in C++20 della classica applicazione Delphi progettata per adattare in modo ottimale file e cartelle su supporti di memorizzazione di destinazione (CD, DVD, Blu-ray o USB).\n\nCaratteristiche in v4.5.0:\n- Icona dell'applicazione ad alta risoluzione completamente nuova (bttb.ico) e logo del sito web unificato (bttb.png)\n- Stack frame dello stato di ricerca minimizzati & limite di stack Win32 di 16MB (risolvendo gli overflow 0xC00000FD)\n- Limiti del buffer di logging espansi a 10MB per evitare la troncamento del log di traccia\n- Rendering GUI incrementale non bloccante & salto avvisi capacità file\n- Creazione di indici JSON offline e parser interattivo\n- Generazione e verifica opzionale di file di parità PAR3\n- Ripristino e riparazione basati sulla copia PAR3 bit-perfect\n- Supporto dei temi inclusa l'opzione del tema scuro standard su Linux GTK4\n- Calcolo del tempo rimanente stimato migliorato immediatamente all'avvio\n- Profili di volume personalizzati denominati e dimensionamento automatico dinamico del volume\n- Memoria delle impostazioni che ripristina l'ultima configurazione di volume selezionata\n- Sostituzioni dei conflitti di regole che consentono la vittoria del raggruppamento basato su regole o semantico\n- Tempo rimasto stimato in base alla velocità di trasferimento & indicatore spinner di attività dello stato\n- Compressione semantica consapevole dell'entropia basata sugli embedding MiniLM\n- Integrazione con il menu contestuale di Windows Explorer & supporto dei percorsi lunghi\n\nBTTB è completamente localizzato e traduce dinamicamente l'intera interfaccia utente basandosi su modelli gettext .po standard in tedesco, olandese, francese e spagnolo.\n\nLibrerie ed Attribuzioni Utilizzate:\n- libpar3 (di Yutaka Sawada, LGPL v2.1+): https://github.com/Parchive/par3cmdline\n- BLAKE3 (del team BLAKE3, CC0/Apache-2.0): https://github.com/BLAKE3-team/BLAKE3\n- Leopard-RS (di Christopher A. Taylor, BSD 3-Clause): https://github.com/catid/leopard\n- Libreria Galois Field (di James S. Plank): http://web.eecs.utk.edu/~jplank/plank/www/software.html\n\nAutori: Sander Raaijmakers, Elwin Oost e il team di Burn to the Brim"
+
+msgid "about_title"
+msgstr "Informazioni su Burn to the Brim"
+
+msgid "add_btn"
+msgstr "Aggiungi..."
+
+msgid "add_rule_btn"
+msgstr "Aggiungi Regola"
+
+msgid "add_src_dir_title"
+msgstr "Aggiungi directory di origine"
+
+msgid "app_copyright"
+msgstr "Copyright © 2001-2026 Sander Raaijmakers, Elwin Oost e il team di Burn to the Brim"
+
+msgid "app_title"
+msgstr "Burn to the Brim"
+
+msgid "app_version"
+msgstr "Versione 4.5.0"
+
+msgid "auto_size"
+msgstr "Dimensione Automatica"
+
+msgid "browse_btn"
+msgstr "Sfoglia..."
+
+msgid "browse_dest_tooltip"
+msgstr "Sfoglia per la directory di destinazione"
+
+msgid "browse_src_tooltip"
+msgstr "Sfoglia per la directory di origine"
+
+msgid "btn_cancel"
+msgstr "Annulla"
+
+msgid "btn_resize"
+msgstr "Ridimensiona"
+
+msgid "btn_skip"
+msgstr "Salta file"
+
+msgid "cancel_btn"
+msgstr "Annulla"
+
+msgid "capacity_label"
+msgstr "Capacità:"
+
+msgid "capacity_recommend_prompt_gtk"
+msgstr "L'elemento scansionato più grande richiede una capacità di volume di almeno %.2f MB.\n\nScegli un'azione:"
+
+msgid "close_btn"
+msgstr "Chiudi"
+
+msgid "cluster_label"
+msgstr "Dim. Cluster (Byte):"
+
+msgid "complete_list_src_folders"
+msgstr "Elenco completo delle cartelle di origine:"
+
+msgid "create_iso_btn"
+msgstr "Crea ISO..."
+
+msgid "create_symlinks_chk"
+msgstr "Crea collegamenti simbolici nella cartella di destinazione (Predefinito)"
+
+msgid "custom_size"
+msgstr "Dimensione Personalizzata"
+
+msgid "custom_vol_name_placeholder"
+msgstr "Nome volume personalizzato"
+
+msgid "dark_theme_chk"
+msgstr "Abilita Tema Scuro:"
+
+msgid "dir_setup_group"
+msgstr "Configurazione Directory"
+
+msgid "edit_btn"
+msgstr "Modifica..."
+
+msgid "edit_src_dir_title"
+msgstr "Modifica directory di origine"
+
+msgid "enable_par3_chk"
+msgstr "Abilita protezione di parità PAR3:"
+
+msgid "execution_log"
+msgstr "Log di esecuzione"
+
+msgid "files_col"
+msgstr "File"
+
+msgid "filled_label"
+msgstr "Riempito: 0.00%"
+
+msgid "fitted_status_col"
+msgstr "Stato adattamento"
+
+msgid "folders_col"
+msgstr "Cartelle"
+
+msgid "generate_btn"
+msgstr "Genera"
+
+msgid "grouping_rules_frame"
+msgstr "Regole di raggruppamento file / cartelle"
+
+msgid "help_btn"
+msgstr "Aiuto"
+
+msgid "help_guide_text"
+msgstr "1. Profondità di divisione della directory\nDetermina il livello di nidificazione delle cartelle a cui gli elementi vengono divisi:\n - Profondità 0 (Predefinito): i file e le cartelle di livello superiore vengono trattati come elementi separati.\n - Profondità 1: la divisione avviene un livello più profondo, mantenendo intatte le cartelle di livello superiore ma dividendo le loro sottocartelle immediate.\n\n2. Tempo Massimo di Ricerca\nIl numero massimo di secondi in cui il risolutore con backtracking può essere eseguito. Se raggiunto, viene utilizzata la migliore selezione trovata fino a quel momento.\n\n3. Spanning Slack\nConsente la terminazione anticipata del risolutore quando un volume viene riempito entro questo numero di byte dalla capacità massima assoluta (ad es. 2048 byte).\n\n4. Regole di raggruppamento file/cartelle\nForza gli elementi corrispondenti a rimanere raggruppati insieme sullo stesso volume (ad es. corrispondenti a '*.mp3' o regex '^album_.*').\n\n5. Cartelle di origine multiple (+)\nFai clic su '+' per specificare più cartelle di origine. BTTB si comporta come se si trovassero in una singola cartella principale. I percorsi di origine nidificati vengono ignorati.\n\n6. Crea collegamenti simbolici\nInvece di copiare/spostare i file nella cartella di destinazione, BTTB crea collegamenti simbolici leggeri che rimandano ai file originali.\n\n7. Imballaggio Semantico Neurale & Guida alla Configurazione MiniLM\nSpecificando un prompt semantico, BTTB raggruppa i file con contenuto simile utilizzando embedding di deep learning sensibili al contesto.\nPer utilizzare il modello neurale MiniLM preferito ad alta precisione, è necessario installare Python 3 e sentence-transformers:\n - Passaggio 1: assicurarsi che Python 3 e pip siano installati.\n   (Linux: eseguire 'sudo apt install python3 python3-pip python3-venv')\n   (Windows: installare da https://www.python.org/ e selezionare 'Aggiungi Python a PATH')\n - Passaggio 2: installare sentence-transformers tramite terminale o prompt dei comandi:\n   Opzione A (Consigliata per semplicità):\n     pip install sentence-transformers\n   Opzione B (Isolamento dell'ambiente virtuale):\n     python3 -m venv bttb_env\n     source bttb_env/bin/activate  # (Windows: bttb_env\\Scripts\\activate)\n     pip install sentence-transformers\n - Passaggio 3: riavviare Burn to the Brim per caricare automaticamente MiniLM! Se non trovato, BTTB ripiega elegantemente su un proiettore TF-IDF a caratteri localizzato."
+
+msgid "help_guide_title"
+msgstr "Guida all'aiuto di Burn to the Brim (BTTB)"
+
+msgid "help_title"
+msgstr "Aiuto - Burn to the Brim"
+
+msgid "import_json_btn"
+msgstr "Importa JSON..."
+
+msgid "integrate_ctx_chk"
+msgstr "Integra nel menu contestuale di Windows Explorer"
+
+msgid "iso_title"
+msgstr "Crea Immagine ISO"
+
+msgid "label_par3_base"
+msgstr "Nome base PAR3:"
+
+msgid "label_rec_directory"
+msgstr "Directory di ripristino:"
+
+msgid "label_vol_directory"
+msgstr "Directory del volume:"
+
+msgid "language_label"
+msgstr "Lingua:"
+
+msgid "log_auto_volume_cap_set_1"
+msgstr "Capacità auto volume impostata a: "
+
+msgid "log_auto_volume_cap_set_2"
+msgstr " byte ("
+
+msgid "log_backtracking_failed_fallback_greedy"
+msgstr "Il risolutore con backtracking non ha trovato un adattamento (o è andato in timeout). Ricaduta sull'allocazione greedy per garantire che tutti i file rimanenti siano inclusi..."
+
+msgid "log_bytes_suffix"
+msgstr " byte)"
+
+msgid "log_capacity_adapted_1"
+msgstr "Capacità adattata a "
+
+msgid "log_capacity_adapted_2"
+msgstr " byte. Riprovo il risolutore..."
+
+msgid "log_capacity_skip_larger"
+msgstr "File più grandi saltati. Riprovo il risolutore..."
+
+msgid "log_completed_file_organization"
+msgstr "Organizzazione dei file completata."
+
+msgid "log_copying_repair"
+msgstr "Copia dei contenuti del volume ed esecuzione della riparazione. Attendere...\n"
+
+msgid "log_created_offline_json_index"
+msgstr "Creato file di indice JSON offline: "
+
+msgid "log_damaged_files"
+msgstr "File danneggiati o mancanti trovati:\n"
+
+msgid "log_errors"
+msgstr "Log/Errori: "
+
+msgid "log_fail_restore"
+msgstr "\nFALLIMENTO: Ripristino o riparazione falliti.\n"
+
+msgid "log_fail_verify_status"
+msgstr "\nLa verifica ha rilevato problemi (stato "
+
+msgid "log_failed_create_json_index"
+msgstr "Impossibile creare il file di indice JSON: "
+
+msgid "log_failed_organize_item_1"
+msgstr "Impossibile organizzare "
+
+msgid "log_failed_par3_creation"
+msgstr "Creazione PAR3 fallita: "
+
+msgid "log_failed_read_temp_embed_output"
+msgstr "Impossibile leggere il file temporaneo di output degli embedding: "
+
+msgid "log_failed_symlink_retry_copy_1"
+msgstr "Impossibile creare il collegamento simbolico per "
+
+msgid "log_failed_symlink_retry_copy_2"
+msgstr " (riprovo con la copia)"
+
+msgid "log_failed_write_temp_embed_input"
+msgstr "Impossibile scrivere il file temporaneo di input degli embedding: "
+
+msgid "log_finished_solving_1"
+msgstr "Risoluzione completata. Tempo trascorso: "
+
+msgid "log_finished_solving_2"
+msgstr " ms"
+
+msgid "log_forcing_progress_exceeds_cap_1"
+msgstr "Forzatura del progresso: compressione dell'elemento rimanente più grande della capacità del supporto ("
+
+msgid "log_found_items"
+msgstr "Elementi trovati da adattare: "
+
+msgid "log_frame_title"
+msgstr "Log di stato e del risolutore"
+
+msgid "log_frame_title_verify"
+msgstr "Log di verifica e ripristino"
+
+msgid "log_generating_par3_for_volume_1"
+msgstr "Generazione dei file di parità PAR3 per il Volume "
+
+msgid "log_generating_semantic_embeddings"
+msgstr "Generazione degli embedding semantici..."
+
+msgid "log_index_fail"
+msgstr "Nessun singolo file danneggiato identificato, ma la verifica dell'indice è fallita. L'archivio PAR3 stesso potrebbe essere danneggiato.\n"
+
+msgid "log_medium_capacity_1"
+msgstr "Capacità del supporto: "
+
+msgid "log_medium_capacity_2"
+msgstr " settori ("
+
+msgid "log_new_best_space_utilization"
+msgstr "Nuovo miglior utilizzo dello spazio: "
+
+msgid "log_no_files_written_on_disk"
+msgstr "Nessun file è stato copiato, collegato simbolicamente o spostato sul disco."
+
+msgid "log_no_items_to_fit"
+msgstr "Nessun elemento da adattare."
+
+msgid "log_optimal_selection_covers"
+msgstr "La selezione ottimale copre: "
+
+msgid "log_organizing_item"
+msgstr "Organizzazione dell'elemento: "
+
+msgid "log_par3_base"
+msgstr "Nome base PAR3: "
+
+msgid "log_recovery_path"
+msgstr "Percorso di ripristino: "
+
+msgid "log_running_semantic_clustering"
+msgstr "Esecuzione del clustering semantico agglomerativo (soglia=0.6)..."
+
+msgid "log_scan_aborted_failed_iterate"
+msgstr "Scansione interrotta dall'utente a causa del fallimento dell'iterazione della directory."
+
+msgid "log_scan_aborted_unreadable_dir"
+msgstr "Scansione interrotta dall'utente a causa di una directory non leggibile."
+
+msgid "log_scan_aborted_unreadable_item"
+msgstr "Scansione interrotta dall'utente a causa di un elemento non leggibile."
+
+msgid "log_scanning_folder"
+msgstr "Scansione della cartella: "
+
+msgid "log_search_time_limit_exceeded_1"
+msgstr "Limite di tempo di ricerca superato ("
+
+msgid "log_search_time_limit_exceeded_2"
+msgstr " secondi)."
+
+msgid "log_selected_items"
+msgstr "Elementi selezionati:"
+
+msgid "log_selected_items_for_volume_1"
+msgstr "Elementi selezionati per il volume "
+
+msgid "log_selection_within_slack_1"
+msgstr "Trovata selezione entro la tolleranza di slack ("
+
+msgid "log_selection_within_slack_2"
+msgstr "%). Termino la ricerca in anticipo."
+
+msgid "log_semantic_clustering_completed"
+msgstr "Clustering semantico completato. Gruppi consolidati totali: "
+
+msgid "log_semantic_grouping_fallback"
+msgstr "-> Il raggruppamento semantico ricadrà sulle metriche di corrispondenza delle stringhe locali."
+
+msgid "log_single_vol_sol_forcing"
+msgstr "Soluzione a volume singolo: forzatura della selezione di tutti i file per garantire l'inclusione al 100%..."
+
+msgid "log_solver_aborted_files_exceed_cap"
+msgstr "Risolutore interrotto: il set di dati contiene file che superano la capacità."
+
+msgid "log_solver_aborted_files_exceed_cap_adapt"
+msgstr "Risolutore interrotto: il set di dati contiene file che superano la capacità. Adatta la capacità o abilita il riprova interattivo."
+
+msgid "log_solving_for_vol_header_1"
+msgstr "\r\n--- RISOLUZIONE DEL VOLUME "
+
+msgid "log_solving_for_vol_header_2"
+msgstr " ---"
+
+msgid "log_solving_optimal_bin"
+msgstr "Risoluzione della selezione ottimale dei bin..."
+
+msgid "log_start_restore"
+msgstr "Avvio del ripristino/riparazione del volume...\n"
+
+msgid "log_start_verify"
+msgstr "Avvio della verifica del volume...\n"
+
+msgid "log_success_par3_for_volume_1"
+msgstr "Creata con successo la protezione di parità PAR3 per il Volume "
+
+msgid "log_success_restore"
+msgstr "\nSUCCESSO: Volume copiato e riparato con successo nella cartella di ripristino separata!\n"
+
+msgid "log_success_verify"
+msgstr "\nSUCCESSO: Tutti i file sono verificati e sono puliti/bit-perfect!\n"
+
+msgid "log_target_volume_cap_1"
+msgstr "Capacità del volume di destinazione: "
+
+msgid "log_target_volume_cap_2"
+msgstr " byte ("
+
+msgid "log_test_simulation_complete"
+msgstr "--- SIMULAZIONE DI TEST COMPLETATA ---"
+
+msgid "log_theoretical_min_vols"
+msgstr "Volumi minimi teorici richiesti: "
+
+msgid "log_total_dataset_size_1"
+msgstr "Dimensione totale del set di dati: "
+
+msgid "log_total_dataset_size_2"
+msgstr " byte ("
+
+msgid "log_volume_packing_estimation_header"
+msgstr "--- Stima della compressione del volume ---"
+
+msgid "log_volume_path"
+msgstr "Percorso del volume: "
+
+msgid "log_warn_dir_unreadable_1"
+msgstr "Attenzione: Directory '"
+
+msgid "log_warn_dir_unreadable_2"
+msgstr "' non è leggibile ("
+
+msgid "log_warn_embedded_output_empty"
+msgstr "Attenzione: L'output incorporato è vuoto."
+
+msgid "log_warn_failed_iterate_dir_1"
+msgstr "Attenzione: Impossibile iterare la directory '"
+
+msgid "log_warn_failed_iterate_dir_2"
+msgstr "' ("
+
+msgid "log_warn_item_exceeds_cap_1"
+msgstr "Attenzione: L'elemento '"
+
+msgid "log_warn_item_exceeds_cap_2"
+msgstr "' ("
+
+msgid "log_warn_item_exceeds_cap_3"
+msgstr " byte) è più grande della dimensione del volume di destinazione ("
+
+msgid "log_warn_item_unreadable_1"
+msgstr "Attenzione: File o cartella in '"
+
+msgid "log_warn_item_unreadable_2"
+msgstr "' non è leggibile ("
+
+msgid "log_warn_python_embed_engine_failed"
+msgstr "Attenzione: Il motore di embedding python del sottoprocesso è fallito o python3 non è installato."
+
+msgid "manage_src_folders_title"
+msgstr "Gestisci cartelle di origine"
+
+msgid "match_files_chk"
+msgstr "Corrispondenza File"
+
+msgid "match_folders_chk"
+msgstr "Corrispondenza Cartelle"
+
+msgid "media_size_label"
+msgstr "Dimensione Supporto:"
+
+msgid "move_files_chk"
+msgstr "Sposta cartelle/file adattati nella cartella di destinazione"
+
+msgid "move_tooltip"
+msgstr "Sposta i file nei volumi di destinazione invece di copiarli o creare collegamenti simbolici"
+
+msgid "ok_btn"
+msgstr "OK"
+
+msgid "par3_block_size"
+msgstr "Dimensione blocco PAR3 (Byte):"
+
+msgid "par3_redundancy"
+msgstr "Percentuale ridondanza PAR3 (%):"
+
+msgid "pattern_col"
+msgstr "Pattern"
+
+msgid "pref_title"
+msgstr "Preferenze"
+
+msgid "progress_frame_title"
+msgstr "Capacità del mezzo riempito"
+
+msgid "regex_pattern_chk"
+msgstr "Pattern Regex"
+
+msgid "rel_path_col"
+msgstr "Percorso relativo / Categoria"
+
+msgid "remove_btn"
+msgstr "Rimuovi"
+
+msgid "remove_selected_btn"
+msgstr "Rimuovi Selezionati"
+
+msgid "restart_notice"
+msgstr "Preferenze della lingua salvate. Riavvia Burn to the Brim per applicare le modifiche."
+
+msgid "restart_title"
+msgstr "Lingua Modificata"
+
+msgid "restore_repair_btn"
+msgstr "Ripristina & Ripara"
+
+msgid "rule_pattern_placeholder"
+msgstr "Pattern della regola (*.mp3 o ^[0-9].*\\..*$)"
+
+msgid "rule_wins_chk"
+msgstr "Il raggruppamento basato su regole vince:"
+
+msgid "save_btn"
+msgstr "Salva"
+
+msgid "save_cv_label"
+msgstr "Salva Volume Pers.:"
+
+msgid "save_cv_tooltip"
+msgstr "Salva la capacità corrente, il settore e lo slack come volume personalizzato con nome"
+
+msgid "search_time_label"
+msgstr "Tempo Max Ricerca (sec):"
+
+msgid "select_dest_dir_title"
+msgstr "Seleziona directory di destinazione"
+
+msgid "select_medium_label"
+msgstr "Seleziona Supporto:"
+
+msgid "select_rec_dir_title"
+msgstr "Seleziona directory di ripristino"
+
+msgid "select_vol_dir_title"
+msgstr "Seleziona directory del volume"
+
+msgid "semantic_placeholder"
+msgstr "es. mantieni simili contenuti insieme"
+
+msgid "semantic_prompt"
+msgstr "Prompt semantico:"
+
+msgid "semantic_tooltip"
+msgstr "Specifica una descrizione semantica per raggruppare file simili utilizzando MiniLM AI"
+
+msgid "size_col"
+msgstr "Dimensione"
+
+msgid "skip_empty_chk"
+msgstr "Salta cartelle / file vuoti"
+
+msgid "skip_empty_label"
+msgstr "Salta File/Dir vuoti:"
+
+msgid "skip_unreadable_chk"
+msgstr "Salta file illeggibili (Tollerante)"
+
+msgid "slack_label"
+msgstr "Byte di Slack:"
+
+msgid "source_folder"
+msgstr "Cartella di origine:"
+
+msgid "source_tooltip"
+msgstr "Directory di origine contenente i file da organizzare"
+
+msgid "span_chk"
+msgstr "Suddividi su più volumi (Volume_1, Volume_2, ecc.)"
+
+msgid "span_tooltip"
+msgstr "Adatta i file rimanenti in più volumi in sequenza invece del solo primo volume"
+
+msgid "split_depth_label"
+msgstr "Profondità divisione dir:"
+
+msgid "start_btn"
+msgstr "Avvia"
+
+msgid "start_tooltip"
+msgstr "Inizia a organizzare i file in volumi ottimali"
+
+msgid "stop_btn"
+msgstr "Ferma"
+
+msgid "stop_tooltip"
+msgstr "Ferma il risolutore corrente o l'operazione di copia"
+
+msgid "symlink_tooltip"
+msgstr "Crea collegamenti simbolici dei file nella destinazione invece di copiarli"
+
+msgid "target_folder"
+msgstr "Cartella di destinazione:"
+
+msgid "target_iso_file"
+msgstr "File ISO di destinazione:"
+
+msgid "target_tooltip"
+msgstr "Directory di destinazione in cui verranno creati i volumi organizzati"
+
+msgid "test_btn"
+msgstr "Test"
+
+msgid "test_tooltip"
+msgstr "Simula l'organizzazione dei file e calcola le metriche senza modificare i file sul disco"
+
+msgid "time_left_label"
+msgstr "Tempo Rimasto: --:--"
+
+msgid "tooltip_create_iso"
+msgstr "Crea immagini del file system ISO dai volumi risolti."
+
+msgid "tooltip_import_json"
+msgstr "Importa e analizza i file di indice JSON offline per visualizzare i dettagli dei file del volume risolto."
+
+msgid "tooltip_move"
+msgstr "Sposta/taglia i file/cartelle originali direttamente nelle cartelle del volume di destinazione."
+
+msgid "tooltip_semantic"
+msgstr "Inserisci un prompt come 'keep audio together' per analizzare i file tramite MiniLM."
+
+msgid "tooltip_source"
+msgstr "Percorsi delle cartelle da comprimere e consolidare, separati da punti e virgola."
+
+msgid "tooltip_span"
+msgstr "Abilita la suddivisione del contenuto in più cartelle denominate in modo sequenziale."
+
+msgid "tooltip_start"
+msgstr "Esegui il risolutore e organizza file/cartelle in base alle preferenze."
+
+msgid "tooltip_stop"
+msgstr "Interrompe il processo di compressione o di organizzazione dei file attualmente in esecuzione."
+
+msgid "tooltip_symlink"
+msgstr "Crea collegamenti simbolici del file system nelle cartelle del volume di destinazione (non distruttivo)."
+
+msgid "tooltip_target"
+msgstr "Percorso di destinazione in cui verranno organizzati e scritti i volumi."
+
+msgid "tooltip_test"
+msgstr "Simula il riempimento senza eseguire operazioni sui file sul disco per testare l'utilizzo del volume."
+
+msgid "tooltip_trace"
+msgstr "Mostra log di diagnostica dettagliati ed metriche di prestazioni."
+
+msgid "tooltip_verify_restore"
+msgstr "Verifica i volumi risolti o copia e ripristina i file danneggiati utilizzando gli archivi PAR3."
+
+msgid "trace_chk"
+msgstr "Abilita log diagnostico dettagliato del risolutore (Trace)"
+
+msgid "trace_tooltip"
+msgstr "Mostra diagnostica dettagliata e metriche di prestazioni nei log"
+
+msgid "type_col"
+msgstr "Tipo"
+
+msgid "verify_only_btn"
+msgstr "Solo Verifica"
+
+msgid "verify_restore_btn"
+msgstr "Verifica & Ripristina..."
+
+msgid "verify_title"
+msgstr "Verifica & Ripristina Volumi..."
+
+msgid "volume_label"
+msgstr "Etichetta del volume:"
