@@ -26,8 +26,9 @@ print("Cross-compiling Windows Win32 Native binary with exploit mitigations...")
 c_compiler = "x86_64-w64-mingw32-gcc"
 cpp_compiler = "x86_64-w64-mingw32-g++"
 common_flags = [
-    "-O3", "-static",
+    "-O2", "-static",
     "-mssse3",
+    "-flto", "-fno-ident",
     "-Isrc", "-Isrc/libpar3", "-Isrc/blake3", "-Isrc/leopard", "-Isrc/platform"
 ]
 
@@ -105,7 +106,7 @@ for src in leopard_sources:
 # Link Native AVX2 executable
 print("Linking objects to build/bttb_win32.exe (Native AVX2)...")
 link_avx2_cmd = [
-    cpp_compiler, "-static", "-mwindows"
+    cpp_compiler, "-static", "-mwindows", "-O2", "-flto"
 ] + c_obj_files + common_cpp_obj_files + leopard_avx2_obj_files + [
     "src/bttb_rc.o",
     "-lcomctl32", "-lshell32", "-lole32", "-lcomdlg32", "-ldwmapi", "-luxtheme",
@@ -117,7 +118,7 @@ subprocess.run(link_avx2_cmd, cwd=base_dir, check=True)
 # Link Compat SSSE3 executable
 print("Linking objects to build/bttb_win32_compat.exe (Compat SSSE3)...")
 link_compat_cmd = [
-    cpp_compiler, "-static", "-mwindows"
+    cpp_compiler, "-static", "-mwindows", "-O2", "-flto"
 ] + c_obj_files + common_cpp_obj_files + leopard_compat_obj_files + [
     "src/bttb_rc.o",
     "-lcomctl32", "-lshell32", "-lole32", "-lcomdlg32", "-ldwmapi", "-luxtheme",
@@ -128,8 +129,8 @@ subprocess.run(link_compat_cmd, cwd=base_dir, check=True)
 
 # Strip debug symbols
 print("Stripping debug symbols from Windows binaries to eliminate Defender ML false positives...")
-subprocess.run(["x86_64-w64-mingw32-strip", "build/bttb_win32.exe"], cwd=base_dir, check=True)
-subprocess.run(["x86_64-w64-mingw32-strip", "build/bttb_win32_compat.exe"], cwd=base_dir, check=True)
+subprocess.run(["x86_64-w64-mingw32-strip", "--strip-debug", "build/bttb_win32.exe"], cwd=base_dir, check=True)
+subprocess.run(["x86_64-w64-mingw32-strip", "--strip-debug", "build/bttb_win32_compat.exe"], cwd=base_dir, check=True)
 
 # 4. Create release ZIPs
 
