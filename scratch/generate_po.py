@@ -9,7 +9,7 @@ def main():
     # Add the missing multiline keys
     keys_dict["about_comments"] = (
         "Burn to the Brim (BTTB) is a modern C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums (CDs, DVDs, Blu-rays, or USBs).\n\n"
-        "Features in v4.6.0:\n"
+        "Features in v4.7.0:\n"
         "- Brand new high-resolution application icon (bttb.ico) and unified website logo (bttb.png)\n"
         "- Minimized search state stack frames & 16MB Win32 stack limit (fixing 0xC00000FD overflows)\n"
         "- Expanded logging buffer limits to 10MB to avoid trace log truncation\n"
@@ -108,7 +108,7 @@ def main():
         "cancel_btn": "取消",
         "ok_btn": "确定",
         "app_title": "Burn to the Brim",
-        "app_version": "版本 4.6.0",
+        "app_version": "版本 4.7.0",
         "app_copyright": "版权所有 © 2001-2026 Sander Raaijmakers, Elwin Oost 和 Burn to the Brim 团队",
         "select_medium_label": "选择介质:",
         "auto_size": "自动大小",
@@ -275,7 +275,7 @@ def main():
         "log_semantic_clustering_completed": "语义聚类完成。总合并组数: ",
         "about_comments": (
             "Burn to the Brim (BTTB) 是经典 Delphi 应用程序的现代 C++20 移植版本，旨在将文件和文件夹优化装配到目标存储介质（CD、DVD、蓝光或 USB 闪存盘）上。\n\n"
-            "v4.6.0 中的功能:\n"
+            "v4.7.0 中的功能:\n"
             "- 全新的高分辨率应用程序图标 (bttb.ico) 和统一的网站标志 (bttb.png)\n"
             "- 最小化搜索状态栈帧和 16MB Win32 栈限制（修复了 0xC00000FD 栈溢出）\n"
             "- 将日志缓冲区限制扩大到 10MB，以避免跟踪日志被截断\n"
@@ -370,7 +370,7 @@ def main():
         "cancel_btn": "キャンセル",
         "ok_btn": "OK",
         "app_title": "Burn to the Brim",
-        "app_version": "バージョン 4.6.0",
+        "app_version": "バージョン 4.7.0",
         "app_copyright": "Copyright © 2001-2026 Sander Raaijmakers, Elwin Oost and the Burn to the Brim team",
         "select_medium_label": "メディアの選択:",
         "auto_size": "自動サイズ",
@@ -537,7 +537,7 @@ def main():
         "log_semantic_clustering_completed": "セマンティッククラスタリングが完了しました。統合されたグループの総数: ",
         "about_comments": (
             "Burn to the Brim (BTTB) は、ファイルやフォルダーを対象の記憶媒体（CD、DVD、Blu-ray、またはUSB）に最適に配置するために設計された、クラシックなDelphiアプリケーションの最新のC++20移植版です。\n\n"
-            "v4.6.0の機能:\n"
+            "v4.7.0の機能:\n"
             "- まったく新しい高解像度アプリケーションアイコン（bttb.ico）と統一されたウェブサイトロゴ（bttb.png）\n"
             "- 検索状態スタックフレームの最小化と16MBのWin32スタック制限（0xC00000FDオーバーフローの修正）\n"
             "- トレースログの切り捨てを回避するためのログバッファ制限を10MBに拡張\n"
@@ -632,7 +632,7 @@ def main():
         "cancel_btn": "Annulla",
         "ok_btn": "OK",
         "app_title": "Burn to the Brim",
-        "app_version": "Versione 4.6.0",
+        "app_version": "Versione 4.7.0",
         "app_copyright": "Copyright © 2001-2026 Sander Raaijmakers, Elwin Oost e il team di Burn to the Brim",
         "select_medium_label": "Seleziona Supporto:",
         "auto_size": "Dimensione Automatica",
@@ -799,7 +799,7 @@ def main():
         "log_semantic_clustering_completed": "Clustering semantico completato. Gruppi consolidati totali: ",
         "about_comments": (
             "Burn to the Brim (BTTB) è un port moderno in C++20 della classica applicazione Delphi progettata per adattare in modo ottimale file e cartelle su supporti di memorizzazione di destinazione (CD, DVD, Blu-ray o USB).\n\n"
-            "Caratteristiche in v4.6.0:\n"
+            "Caratteristiche in v4.7.0:\n"
             "- Icona dell'applicazione ad alta risoluzione completamente nuova (bttb.ico) e logo del sito web unificato (bttb.png)\n"
             "- Stack frame dello stato di ricerca minimizzati & limite di stack Win32 di 16MB (risolvendo gli overflow 0xC00000FD)\n"
             "- Limiti del buffer di logging espansi a 10MB per evitare la troncamento del log di traccia\n"
@@ -894,7 +894,7 @@ def main():
         "cancel_btn": "Ακύρωση",
         "ok_btn": "OK",
         "app_title": "Burn to the Brim",
-        "app_version": "Έκδοση 4.6.0",
+        "app_version": "Έκδοση 4.7.0",
         "app_copyright": "Πνευματικά δικαιώματα © 2001-2026 Sander Raaijmakers, Elwin Oost και η ομάδα του Burn to the Brim",
         "select_medium_label": "Επιλογή Μέσου:",
         "auto_size": "Αυτόματο Μέγεθος",
@@ -1061,7 +1061,7 @@ def main():
         "log_semantic_clustering_completed": "Η σημασιολογική ομαδοποίηση ολοκληρώθηκε. Συνολικές ενοποιημένες ομάδες: ",
         "about_comments": (
             "Το Burn to the Brim (BTTB) είναι μια σύγχρονη μεταφορά σε C++20 της κλασικής εφαρμογής Delphi, σχεδιασμένη για τη βέλτιστη τοποθέτηση αρχείων και φακέλων σε μέσα αποθήκευσης προορισμού (CD, DVD, Blu-ray ή USB).\n\n"
-            "Χαρακτηριστικά στην έκδοση v4.6.0:\n"
+            "Χαρακτηριστικά στην έκδοση v4.7.0:\n"
             "- Ολοκαίνουργιο εικονίδιο εφαρμογής υψηλής ανάλυσης (bttb.ico) και ενοποιημένο λογότυπο ιστότοπου (bttb.png)\n"
             "- Ελαχιστοποιημένα stack frames κατάστασης αναζήτησης & όριο stack 16MB Win32 (διόρθωση σφαλμάτων υπερχείλισης 0xC00000FD)\n"
             "- Διευρυμένα όρια buffer καταγραφής στα 10MB για την αποφυγή περικοπής των αρχείων καταγραφής\n"
@@ -1156,7 +1156,7 @@ def main():
         "cancel_btn": "Dimittere",
         "ok_btn": "OK",
         "app_title": "Burn to the Brim",
-        "app_version": "Versio 4.6.0",
+        "app_version": "Versio 4.7.0",
         "app_copyright": "Copyright © 2001-2026 Sander Raaijmakers, Elwin Oost et societas Burn to the Brim",
         "select_medium_label": "Elige Medium:",
         "auto_size": "Mensura Automatica",
@@ -1323,7 +1323,7 @@ def main():
         "log_semantic_clustering_completed": "Clustering semanticum completum. Tota consolida: ",
         "about_comments": (
             "Burn to the Brim (BTTB) est translatio hodierna in C++20 priscae Delphi applicationis, facta ad optime aptanda lima et diaria in media destinata (CDs, DVDs, Blu-rays, vel USBs).\n\n"
-            "Proprietates in v4.6.0:\n"
+            "Proprietates in v4.7.0:\n"
             "- Novissimum applicationis symbolum altae resolutionis (bttb.ico) et logo website unitum (bttb.png)\n"
             "- Minorati stack frames in investigatione & 16MB Win32 stack limit (removendo 0xC00000FD overflows)\n"
             "- Limites buffer scribendi extensi ad 10MB ne acta truncentur\n"
@@ -1418,7 +1418,7 @@ def main():
         "cancel_btn": "Cancelar",
         "ok_btn": "OK",
         "app_title": "Burn to the Brim",
-        "app_version": "Versão 4.6.0",
+        "app_version": "Versão 4.7.0",
         "app_copyright": "Copyright © 2001-2026 Sander Raaijmakers, Elwin Oost e a equipe do Burn to the Brim",
         "select_medium_label": "Selecionar Mídia:",
         "auto_size": "Tamanho Automático",
@@ -1585,7 +1585,7 @@ def main():
         "log_semantic_clustering_completed": "Agrupamento semântico concluído. Total de grupos consolidados: ",
         "about_comments": (
             "O Burn to the Brim (BTTB) é uma conversão moderna em C++20 da clássica aplicação Delphi, projetada para ajustar de forma ideal arquivos e pastas em mídias de armazenamento de destino (CDs, DVDs, Blu-rays ou USBs).\n\n"
-            "Recursos na v4.6.0:\n"
+            "Recursos na v4.7.0:\n"
             "- Ícone da aplicação de alta resolução totalmente novo (bttb.ico) e logotipo unificado do site (bttb.png)\n"
             "- Minimização dos stack frames do estado de pesquisa & limite de stack Win32 de 16MB (corrigindo estouros 0xC00000FD)\n"
             "- Limites de buffer de log estendidos para 10MB para evitar a exclusão do log de rastreamento\n"
@@ -1680,7 +1680,7 @@ def main():
         "cancel_btn": "रद्द करें",
         "ok_btn": "ठीक है",
         "app_title": "Burn to the Brim",
-        "app_version": "संस्करण 4.6.0",
+        "app_version": "संस्करण 4.7.0",
         "app_copyright": "कॉपीराइट © 2001-2026 Sander Raaijmakers, Elwin Oost और Burn to the Brim टीम",
         "select_medium_label": "माध्यम चुनें:",
         "auto_size": "स्वचालित आकार",
@@ -1847,7 +1847,7 @@ def main():
         "log_semantic_clustering_completed": "सिमेंटिक क्लस्टरिंग पूरी हुई। कुल समेकित समूह: ",
         "about_comments": (
             "Burn to the Brim (BTTB) क्लासिक डेल्फी एप्लिकेशन का एक आधुनिक C++20 पोर्ट है जिसे लक्षित भंडारण माध्यमों (CDs, DVDs, Blu-rays, या USBs) पर फ़ाइलों और फ़ोल्डरों को इष्टतम रूप से फ़िट करने के लिए डिज़ाइन किया गया है।\n\n"
-            "v4.6.0 में विशेषताएं:\n"
+            "v4.7.0 में विशेषताएं:\n"
             "- ब्रांड नया उच्च-रिज़ॉल्यूशन एप्लिकेशन आइकन (bttb.ico) और एकीकृत वेबसाइट लोगो (bttb.png)\n"
             "- न्यूनतम खोज स्थिति स्टैक फ्रेम और 16MB Win32 स्टैक सीमा (0xC00000FD ओवरफ़्लो ठीक करना)\n"
             "- अनुरेखण लॉग विच्छेदन से बचने के लिए लॉगिंग बफ़र सीमाओं को 10MB तक बढ़ाना\n"
@@ -1945,7 +1945,7 @@ def main():
         "cancel_btn": "Kroykah",
         "ok_btn": "Nash-veh",
         "app_title": "Burn to the Brim",
-        "app_version": "Version 4.6.0",
+        "app_version": "Version 4.7.0",
         "app_copyright": "Copyright © 2001-2026 Sander Raaijmakers, Elwin Oost and the Vulkan Science Council",
         "select_medium_label": "Select Medium:",
         "auto_size": "Auto Size",
@@ -2112,7 +2112,7 @@ def main():
         "log_semantic_clustering_completed": "Logical clustering completed: ",
         "about_comments": (
             "Burn to the Brim (BTTB) is a logical C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums (CDs, DVDs, Blu-rays, or USBs).\n\n"
-            "Logic Features in v4.6.0:\n"
+            "Logic Features in v4.7.0:\n"
             "- New high-resolution application icon (bttb.ico) and logo (bttb.png)\n"
             "- Minimized search state stack frames & 16MB Win32 stack limit (fixing 0xC00000FD overflows)\n"
             "- Expanded log limits to 10MB to avoid truncation\n"
@@ -2190,7 +2190,7 @@ def main():
         "cancel_btn": "Cancel",
         "ok_btn": "OK",
         "app_title": "Burn to the Brim",
-        "app_version": "Version 4.6.0",
+        "app_version": "Version 4.7.0",
         "app_copyright": "Copyright © 2001-2026 Sander Raaijmakers, Elwin Oost and the Elves of Rivendell",
         "select_medium_label": "Select Medium:",
         "auto_size": "Auto Size",
@@ -2357,7 +2357,7 @@ def main():
         "log_semantic_clustering_completed": "Clustering completed: ",
         "about_comments": (
             "Burn to the Brim (BTTB) is a modern C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums (CDs, DVDs, Blu-rays, or USBs).\n\n"
-            "Features in v4.6.0:\n"
+            "Features in v4.7.0:\n"
             "- New application icon (bttb.ico) and website logo (bttb.png)\n"
             "- Minimized search state stack frames & 16MB Win32 stack limit (fixing 0xC00000FD overflows)\n"
             "- Expanded logging limits to 10MB to avoid truncation\n"

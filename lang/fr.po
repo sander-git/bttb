@@ -142,7 +142,7 @@ msgstr "Langue modifiée"
 msgid "about_comments"
 msgstr ""
 "Burn to the Brim (BTTB) est un portage C++20 moderne de l'application Delphi classique conçue pour adapter de manière optimale les fichiers et dossiers sur les supports de stockage cibles (CD, DVD, Blu-ray ou clés USB).\n\n"
-"Fonctionnalités de la v4.6.0 :\n"
+"Fonctionnalités de la v4.7.0 :\n"
 "- Nouvelle icône d'application haute résolution (bttb.ico) et logo de site Web unifié (bttb.png)\n"
 "- Réduction de la taille des trames de pile de recherche et limite de pile Win32 de 16 Mo (résolution des dépassements 0xC00000FD)\n"
 "- Extension de la taille maximale du journal à 10 Mo pour éviter la troncature\n"
@@ -235,7 +235,7 @@ msgid "regex_pattern_chk"
 msgstr "Motif Regex"
 
 msgid "app_version"
-msgstr "Version 4.6.0"
+msgstr "Version 4.7.0"
 
 msgid "app_copyright"
 msgstr "Copyright © 2001-2026 Sander Raaijmakers, Elwin Oost et l'équipe Burn to the Brim"
@@ -663,3 +663,60 @@ msgstr "L'élément scanné le plus volumineux nécessite une capacité de volum
 
 msgid "log_capacity_skip_larger"
 msgstr "Fichiers plus volumineux ignorés. Réessai du solveur..."
+
+msgid "tut_title"
+msgstr "Tutoriel Interactif"
+
+msgid "tut_start_btn"
+msgstr "Démarrer le tutoriel"
+
+msgid "tut_btn_prev"
+msgstr "Précédent"
+
+msgid "tut_btn_next"
+msgstr "Suivant"
+
+msgid "tut_btn_finish"
+msgstr "Terminer"
+
+msgid "tut_step1_title"
+msgstr "Bienvenue sur BTTB"
+
+msgid "tut_step1_text"
+msgstr "Bienvenue dans le tutoriel interactif de Burn to the Brim ! Ce guide vous présentera les fonctionnalités clés sans exécuter d'actions. Cliquez sur Suivant pour commencer."
+
+msgid "tut_step2_title"
+msgstr "Dossiers Sources"
+
+msgid "tut_step2_text"
+msgstr "Dossier Source : Cliquez sur '+' pour gérer plusieurs répertoires, ou entrez des chemins séparés par des points-virgules. Les fichiers de ces répertoires seront organisés."
+
+msgid "tut_step3_title"
+msgstr "Dossier Cible"
+
+msgid "tut_step3_text"
+msgstr "Dossier Cible : Spécifiez le répertoire de destination où BTTB créera les dossiers de volumes (ex. Volume_1, Volume_2)."
+
+msgid "tut_step4_title"
+msgstr "Invite Sémantique"
+
+msgid "tut_step4_text"
+msgstr "Invite Sémantique : Entrez des règles en langage naturel (ex. 'regrouper les fichiers audio') pour influencer l'organisation via des plongements neuronaux."
+
+msgid "tut_step5_title"
+msgstr "Options d'Organisation"
+
+msgid "tut_step5_text"
+msgstr "Options : Choisissez entre Déplacer (déplace les fichiers) ou Symlink (liens virtuels non destructifs). Vous pouvez aussi activer la répartition et les journaux."
+
+msgid "tut_step6_title"
+msgstr "Explorateur de Résultats"
+
+msgid "tut_step6_text"
+msgstr "Explorateur : L'arborescence montre la répartition des éléments sur les volumes. Faites un clic droit sur un volume ou fichier pour le restaurer à son emplacement d'origine."
+
+msgid "tut_step7_title"
+msgstr "Tester et Démarrer"
+
+msgid "tut_step7_text"
+msgstr "Tester & Démarrer : Cliquez sur 'Tester' pour exécuter une simulation d'organisation sans modifier de fichiers, ou sur 'Démarrer' pour lancer l'organisation réelle."

@@ -142,7 +142,7 @@ msgstr "Sprache geändert"
 msgid "about_comments"
 msgstr ""
 "Burn to the Brim (BTTB) ist eine moderne C++20-Portierung der klassischen Delphi-Anwendung, die entwickelt wurde, um Dateien und Ordner optimal auf Zielspeichermedien (CDs, DVDs, Blu-rays oder USB-Sticks) zu verteilen.\n\n"
-"Funktionen in v4.6.0:\n"
+"Funktionen in v4.7.0:\n"
 "- Brandneues hochauflösendes Anwendungssymbol (bttb.ico) und einheitliches Website-Logo (bttb.png)\n"
 "- Minimierte Suchzustand-Stackframes & 16MB Win32-Stacklimit (Behebung von 0xC00000FD Overflows)\n"
 "- Erweiterte Log-Pufferlimits auf 10MB zur Vermeidung von Protokoll-Abschneidungen\n"
@@ -235,7 +235,7 @@ msgid "regex_pattern_chk"
 msgstr "Regex-Muster"
 
 msgid "app_version"
-msgstr "Version 4.6.0"
+msgstr "Version 4.7.0"
 
 msgid "app_copyright"
 msgstr "Copyright © 2001-2026 Sander Raaijmakers, Elwin Oost und das Burn to the Brim Team"
@@ -663,3 +663,60 @@ msgstr "Das größte gescannte Element erfordert eine Volumenkapazität von mind
 
 msgid "log_capacity_skip_larger"
 msgstr "Größere Dateien übersprungen. Solver wird neu gestartet..."
+
+msgid "tut_title"
+msgstr "Interaktive Anleitung"
+
+msgid "tut_start_btn"
+msgstr "Anleitung starten"
+
+msgid "tut_btn_prev"
+msgstr "Zurück"
+
+msgid "tut_btn_next"
+msgstr "Weiter"
+
+msgid "tut_btn_finish"
+msgstr "Fertigstellen"
+
+msgid "tut_step1_title"
+msgstr "Willkommen bei BTTB"
+
+msgid "tut_step1_text"
+msgstr "Willkommen bei der interaktiven Anleitung für Burn to the Brim! Diese Anleitung führt Sie durch die wichtigsten Funktionen, ohne Aktionen auszuführen. Klicken Sie auf Weiter, um zu beginnen."
+
+msgid "tut_step2_title"
+msgstr "Quellverzeichnisse"
+
+msgid "tut_step2_text"
+msgstr "Quellordner: Klicken Sie auf '+', um mehrere Verzeichnisse zu verwalten, oder geben Sie Ordnerpfade durch Semikolons getrennt ein. Dateien in diesen Verzeichnissen werden organisiert."
+
+msgid "tut_step3_title"
+msgstr "Zielverzeichnis"
+
+msgid "tut_step3_text"
+msgstr "Zielordner: Geben Sie das Zielverzeichnis an, in dem BTTB die gepackten Datenträgerordner (z. B. Volume_1, Volume_2) erstellt."
+
+msgid "tut_step4_title"
+msgstr "Semantischer Prompt"
+
+msgid "tut_step4_text"
+msgstr "Semantischer Prompt: Geben Sie Verpackungsregeln in natürlicher Sprache ein (z. B. 'Musikdateien gruppieren'), um die Organisation mithilfe von neuronalen Embeddings zu beeinflussen."
+
+msgid "tut_step5_title"
+msgstr "Verpackungsoptionen"
+
+msgid "tut_step5_text"
+msgstr "Optionen: Wählen Sie zwischen Verschieben (verschiebt Dateien) oder Symlink (zerstörungsfreie virtuelle Verknüpfungen). Sie können auch Spanning und Protokolle aktivieren."
+
+msgid "tut_step6_title"
+msgstr "Ergebnis-Explorer"
+
+msgid "tut_step6_text"
+msgstr "Ergebnis-Explorer: Die Baumstruktur zeigt, wie Elemente den Volumes zugewiesen sind. Klicken Sie mit der rechten Maustaste auf ein Volume oder eine Datei, um sie an ihrem ursprünglichen Ort wiederherzustellen."
+
+msgid "tut_step7_title"
+msgstr "Testen und Starten"
+
+msgid "tut_step7_text"
+msgstr "Testen & Starten: Klicken Sie auf 'Testen', um eine sichere Simulation auszuführen, ohne Dateien zu ändern, oder auf 'Starten', um die tatsächliche Dateiorganisation zu beginnen."

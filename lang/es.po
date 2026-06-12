@@ -142,7 +142,7 @@ msgstr "Idioma cambiado"
 msgid "about_comments"
 msgstr ""
 "Burn to the Brim (BTTB) es una adaptación moderna en C++20 de la clásica aplicación Delphi diseñada para organizar de manera óptima archivos y carpetas en medios de almacenamiento de destino (CD, DVD, Blu-ray o USB).\n\n"
-"Características en v4.6.0:\n"
+"Características en v4.7.0:\n"
 "- Nuevo icono de aplicación de alta resolución (bttb.ico) y logotipo de sitio web unificado (bttb.png)\n"
 "- Minimización de marcos de pila de búsqueda y límite de pila Win32 de 16MB (resolviendo desbordamientos 0xC00000FD)\n"
 "- Ampliación de límites de búfer de registro a 10MB para evitar el truncamiento del registro de diagnóstico\n"
@@ -235,7 +235,7 @@ msgid "regex_pattern_chk"
 msgstr "Patrón Regex"
 
 msgid "app_version"
-msgstr "Versión 4.6.0"
+msgstr "Versión 4.7.0"
 
 msgid "app_copyright"
 msgstr "Copyright © 2001-2026 Sander Raaijmakers, Elwin Oost y el equipo de Burn to the Brim"
@@ -663,3 +663,60 @@ msgstr "El elemento escaneado más grande requiere una capacidad de volumen de a
 
 msgid "log_capacity_skip_larger"
 msgstr "Archivos más grandes omitidos. Reintentando el solucionador..."
+
+msgid "tut_title"
+msgstr "Tutorial Interactivo"
+
+msgid "tut_start_btn"
+msgstr "Iniciar Tutorial"
+
+msgid "tut_btn_prev"
+msgstr "Atrás"
+
+msgid "tut_btn_next"
+msgstr "Siguiente"
+
+msgid "tut_btn_finish"
+msgstr "Finalizar"
+
+msgid "tut_step1_title"
+msgstr "Bienvenido a BTTB"
+
+msgid "tut_step1_text"
+msgstr "¡Bienvenido al tutorial interactivo de Burn to the Brim! Esta guía le mostrará las funciones clave sin ejecutar ninguna acción. Haga clic en Siguiente para comenzar."
+
+msgid "tut_step2_title"
+msgstr "Directorios de Origen"
+
+msgid "tut_step2_text"
+msgstr "Carpeta de Origen: Haga clic en '+' para administrar varios directorios, o introduzca rutas separadas por punto y coma. Se organizarán los archivos de estas carpetas."
+
+msgid "tut_step3_title"
+msgstr "Directorio de Destino"
+
+msgid "tut_step3_text"
+msgstr "Carpeta de Destino: Especifique la carpeta de destino donde BTTB creará las carpetas de volúmenes (por ejemplo, Volume_1, Volume_2)."
+
+msgid "tut_step4_title"
+msgstr "Indicación Semántica"
+
+msgid "tut_step4_text"
+msgstr "Indicación Semántica: Introduzca reglas en lenguaje natural (por ejemplo, 'agrupar archivos de música') para guiar la organización mediante incrustaciones neuronales."
+
+msgid "tut_step5_title"
+msgstr "Opciones de Organización"
+
+msgid "tut_step5_text"
+msgstr "Opciones: Elija entre Mover (mueve archivos) o Symlink (enlaces virtuales no destructivos). También puede activar la división en volúmenes y el registro de depuración."
+
+msgid "tut_step6_title"
+msgstr "Explorador de Resultados"
+
+msgid "tut_step6_text"
+msgstr "Explorador: El árbol muestra cómo se asignan los elementos a los volúmenes. Haga clic con el botón derecho en un volumen o archivo para restaurarlo a su ubicación original."
+
+msgid "tut_step7_title"
+msgstr "Probar e Iniciar"
+
+msgid "tut_step7_text"
+msgstr "Probar e Iniciar: Haga clic en 'Probar' para simular la organización de forma segura sin tocar archivos, o haga clic en 'Iniciar' para comenzar el proceso real."

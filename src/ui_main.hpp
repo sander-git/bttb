@@ -81,6 +81,7 @@ public:
     bool process_render_batch();
     void set_ui_sensitive(gboolean sensitive);
     void restore_item(int type, int volIdx, int fileIdx, int gcIdx);
+    void start_tutorial();
 };
 
 } // namespace bttb

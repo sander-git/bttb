@@ -156,11 +156,19 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     
     gtk_window_set_child(GTK_WINDOW(dialog), main_box);
     
+    // Scrolled window for settings content (so buttons remain anchored at bottom)
+    GtkWidget* scrolled_win = gtk_scrolled_window_new();
+    gtk_widget_set_vexpand(scrolled_win, TRUE);
+    gtk_box_append(GTK_BOX(main_box), scrolled_win);
+    
+    GtkWidget* content_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled_win), content_box);
+    
     // Grid for standard inputs
     GtkWidget* grid = gtk_grid_new();
     gtk_grid_set_row_spacing(GTK_GRID(grid), 8);
     gtk_grid_set_column_spacing(GTK_GRID(grid), 12);
-    gtk_box_append(GTK_BOX(main_box), grid);
+    gtk_box_append(GTK_BOX(content_box), grid);
     
     // Media size
     GtkWidget* label_media = gtk_label_new(_T("media_size_label", "Media Size:").c_str());
@@ -360,7 +368,7 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     
     // Grouping Rules list frame
     GtkWidget* rules_frame = gtk_frame_new("File/Folder Grouping Rules");
-    gtk_box_append(GTK_BOX(main_box), rules_frame);
+    gtk_box_append(GTK_BOX(content_box), rules_frame);
     
     GtkWidget* rules_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
     gtk_widget_set_margin_start(rules_box, 8);

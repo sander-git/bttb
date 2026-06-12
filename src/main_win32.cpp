@@ -169,9 +169,29 @@ HWND g_btnCreateIso = NULL;
 HWND g_labelProgress = NULL;
 HWND g_editSemantic = NULL;
 
+// Global Handles for Resizing
+HWND g_btnPrefs = NULL;
+HWND g_btnHelp = NULL;
+HWND g_btnAbout = NULL;
+HWND g_btnBrowseSrc = NULL;
+HWND g_btnBrowseDest = NULL;
+HWND g_btnAddSrc = NULL;
+HWND g_grpDirs = NULL;
+HWND g_grpProgress = NULL;
+HWND g_grpLog = NULL;
+HWND g_lblSrc = NULL;
+HWND g_lblDest = NULL;
+HWND g_lblSemantic = NULL;
+
+bool g_isDraggingSplitter = false;
+int g_splitterX = 280;
+
 // Folders List Dialog State
 HWND g_hwndFolderList = NULL;
 HWND g_listFolders = NULL;
+HWND g_hwndHelp = NULL;
+HWND g_hwndTutorial = NULL;
+int g_tutStep = 1;
 
 // Preferences Dialog Global Controls
 HWND g_hwndPref = NULL;
@@ -1190,6 +1210,228 @@ LRESULT CALLBACK FolderListWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
     return 0;
 }
 
+#define ID_HELP_START_TUTORIAL 4001
+
+struct Win32TutorialStepData {
+    std::string titleKey;
+    std::string defaultTitle;
+    std::string textKey;
+    std::string defaultText;
+    HWND* targetFocusHwnd;
+};
+
+Win32TutorialStepData g_win32TutorialSteps[] = {
+    { "tut_step1_title", "Welcome to BTTB", "tut_step1_text", "Welcome to the Burn to the Brim interactive tutorial! This guide will walk you through the key features without running any actions. Click Next to begin.", nullptr },
+    { "tut_step2_title", "Source Directories", "tut_step2_text", "Source Folder: Click '+' to manage multiple directories, or enter folder paths separated by semicolons. Files inside these directories will be organized.", &g_editSrc },
+    { "tut_step3_title", "Target Directory", "tut_step3_text", "Target Folder: Specify the destination directory where BTTB will create packed volume directories (e.g., Volume_1, Volume_2).", &g_editDest },
+    { "tut_step4_title", "Semantic Prompt", "tut_step4_text", "Semantic Prompt: Enter natural language packing rules (e.g. 'group audio files') to influence organization using neural embeddings.", &g_editSemantic },
+    { "tut_step5_title", "Packing Options", "tut_step5_text", "Options: Choose between Move (relocates files) or Symlink (non-destructive virtual links). You can also enable volume spanning and logs.", &g_chkMove },
+    { "tut_step6_title", "TreeView Explorer", "tut_step6_text", "Results Explorer: The tree shows how items are assigned to volumes. Right-click any volume or file to open the context menu and restore it.", &g_hwndTreeView },
+    { "tut_step7_title", "Test and Start", "tut_step7_text", "Test & Start: Click 'Test' to run a safe packing simulation without touching files, or click 'Start' to perform the actual file placement.", &g_btnStart }
+};
+
+void SetWin32ActionButtonsEnabled(bool enabled) {
+    if (g_btnStart) EnableWindow(g_btnStart, enabled ? TRUE : FALSE);
+    if (g_btnTest) EnableWindow(g_btnTest, enabled ? TRUE : FALSE);
+    if (g_btnStop) EnableWindow(g_btnStop, enabled ? TRUE : FALSE);
+    if (g_btnPrefs) EnableWindow(g_btnPrefs, enabled ? TRUE : FALSE);
+    if (g_btnCreateIso) EnableWindow(g_btnCreateIso, enabled ? TRUE : FALSE);
+    if (g_btnHelp) EnableWindow(g_btnHelp, enabled ? TRUE : FALSE);
+    if (g_btnAbout) EnableWindow(g_btnAbout, enabled ? TRUE : FALSE);
+    if (g_btnImportJson) EnableWindow(g_btnImportJson, enabled ? TRUE : FALSE);
+    if (g_btnVerifyRestore) EnableWindow(g_btnVerifyRestore, enabled ? TRUE : FALSE);
+    if (g_btnAddSrc) EnableWindow(g_btnAddSrc, enabled ? TRUE : FALSE);
+    if (g_btnBrowseSrc) EnableWindow(g_btnBrowseSrc, enabled ? TRUE : FALSE);
+    if (g_btnBrowseDest) EnableWindow(g_btnBrowseDest, enabled ? TRUE : FALSE);
+}
+
+void StartWin32Tutorial(HWND hwndParent) {
+    if (g_hwndTutorial != NULL) {
+        SetForegroundWindow(g_hwndTutorial);
+        return;
+    }
+    
+    SetWin32ActionButtonsEnabled(false);
+    g_tutStep = 1;
+    
+    RECT rcParent;
+    GetWindowRect(hwndParent, &rcParent);
+    int x = rcParent.left + 50;
+    int y = rcParent.top + 320;
+    
+    g_hwndTutorial = CreateWindowEx(
+        WS_EX_TOPMOST | WS_EX_CONTROLPARENT,
+        "BttbWin32TutorialDialog",
+        _T("tut_title", "Interactive Tutorial").c_str(),
+        WS_POPUP | WS_CAPTION | WS_SYSMENU,
+        x, y, 460, 200,
+        hwndParent, NULL, GetModuleHandle(NULL), NULL
+    );
+    
+    if (g_hwndTutorial != NULL) {
+        ShowWindow(g_hwndTutorial, SW_SHOW);
+    } else {
+        SetWin32ActionButtonsEnabled(true);
+    }
+}
+
+void UpdateWin32TutorialStep(HWND hwnd) {
+    if (g_tutStep < 1) g_tutStep = 1;
+    if (g_tutStep > 7) g_tutStep = 7;
+    
+    const auto& step = g_win32TutorialSteps[g_tutStep - 1];
+    
+    std::string stepTitle = std::to_string(g_tutStep) + "/7: " + _T(step.titleKey, step.defaultTitle);
+    std::string stepText = _T(step.textKey, step.defaultText);
+    
+    SetWindowTextW(GetDlgItem(hwnd, 101), utf8ToWstring(stepTitle).c_str());
+    SetWindowTextW(GetDlgItem(hwnd, 102), utf8ToWstring(stepText).c_str());
+    
+    EnableWindow(GetDlgItem(hwnd, 103), g_tutStep > 1);
+    SetWindowTextW(GetDlgItem(hwnd, 104), utf8ToWstring(g_tutStep == 7 ? _T("tut_btn_finish", "Finish") : _T("tut_btn_next", "Next")).c_str());
+    
+    if (step.targetFocusHwnd && *step.targetFocusHwnd) {
+        SetFocus(*step.targetFocusHwnd);
+    }
+}
+
+LRESULT CALLBACK HelpWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    switch (msg) {
+        case WM_CREATE: {
+            std::string helpTitle = _T("help_guide_title", "Burn to the Brim (BTTB) Help Guide");
+            const char* default_help = 
+                "1. Directory Split Depth\n"
+                "Determines the folder nesting level at which items are split:\n"
+                " - Depth 0 (Default): Top-level files and folders are treated as separate items.\n"
+                " - Depth 1: Splitting occurs one level deeper, keeping top-level folders intact but splitting their immediate subfolders.\n\n"
+                "2. Max Search Time\n"
+                "The maximum seconds the backtracking solver is allowed to run. If reached, the best selection found up to that point is used.\n\n"
+                "3. Spanning Slack\n"
+                "Allows early solver termination once a volume is packed within this number of bytes from the absolute maximum capacity (e.g. 2048 bytes).\n\n"
+                "4. File/Folder Grouping Rules\n"
+                "Force matching items to remain grouped together on the same volume (e.g., matching '*.mp3' or regex '^album_.*').\n\n"
+                "5. Multiple Source Folders (+)\n"
+                "Click '+' to specify multiple source folders. BTTB acts as if they are in a single root folder. Nested source paths are ignored.\n\n"
+                "6. Create Symbolic Links\n"
+                "Instead of copying/moving files to the target folder, BTTB creates lightweight symbolic links pointing back to your original files.\n\n"
+                "7. Neural Semantic Packing & MiniLM Setup Guide\n"
+                "By specifying a semantic prompt, BTTB groups files with similar content using context-aware deep learning embeddings.\n"
+                "To use the preferred, high-accuracy MiniLM neural model, you must install Python 3 and sentence-transformers:\n"
+                " - Step 1: Ensure Python 3 & pip are installed.\n"
+                "   (Linux: run 'sudo apt install python3 python3-pip python3-venv')\n"
+                "   (Windows: Install from https://www.python.org/ and check 'Add Python to PATH')\n"
+                " - Step 2: Install sentence-transformers via terminal/command prompt:\n"
+                "   Option A (Recommended for simplicity):\n"
+                "     pip install sentence-transformers\n"
+                "   Option B (Virtual environment isolation):\n"
+                "     python3 -m venv bttb_env\n"
+                "     source bttb_env/bin/activate  # (Windows: bttb_env\\Scripts\\activate)\n"
+                "     pip install sentence-transformers\n"
+                " - Step 3: Restart Burn to the Brim to automatically load MiniLM! If not found, BTTB falls back gracefully to a localized character TF-IDF projector.";
+                
+            std::string helpText = helpTitle + "\n=============================\n\n" + _T("help_guide_text", default_help);
+            
+            CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", toWinNewlines(helpText).c_str(), 
+                           WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_READONLY | WS_VSCROLL | ES_AUTOVSCROLL, 
+                           20, 20, 440, 340, hwnd, NULL, GetModuleHandle(NULL), NULL);
+                           
+            CreateWindow("BUTTON", _T("tut_start_btn", "Start Tutorial").c_str(), 
+                         WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 20, 380, 150, 30, 
+                         hwnd, (HMENU)ID_HELP_START_TUTORIAL, GetModuleHandle(NULL), NULL);
+                         
+            CreateWindow("BUTTON", _T("close_btn", "Close").c_str(), 
+                         WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 360, 380, 100, 30, 
+                         hwnd, (HMENU)IDCANCEL, GetModuleHandle(NULL), NULL);
+                         
+            HFONT hFont = CreateFont(15, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "MS Shell Dlg");
+            EnumChildWindows(hwnd, [](HWND hwndChild, LPARAM lParam) -> BOOL {
+                SendMessage(hwndChild, WM_SETFONT, lParam, TRUE);
+                return TRUE;
+            }, (LPARAM)hFont);
+            
+            ApplyWindowTheme(hwnd);
+            break;
+        }
+        case WM_COMMAND: {
+            int wmId = LOWORD(wParam);
+            if (wmId == ID_HELP_START_TUTORIAL) {
+                DestroyWindow(hwnd);
+                StartWin32Tutorial(g_hwndMain);
+            } else if (wmId == IDCANCEL || wmId == IDOK) {
+                DestroyWindow(hwnd);
+            }
+            break;
+        }
+        case WM_CLOSE:
+            DestroyWindow(hwnd);
+            break;
+        case WM_DESTROY:
+            EnableWindow(g_hwndMain, TRUE);
+            SetForegroundWindow(g_hwndMain);
+            g_hwndHelp = NULL;
+            break;
+        default:
+            return DefWindowProc(hwnd, msg, wParam, lParam);
+    }
+    return 0;
+}
+
+LRESULT CALLBACK TutorialWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    switch (msg) {
+        case WM_CREATE: {
+            CreateWindow("STATIC", "", WS_CHILD | WS_VISIBLE | SS_LEFT, 20, 15, 420, 20, hwnd, (HMENU)101, GetModuleHandle(NULL), NULL);
+            CreateWindow("STATIC", "", WS_CHILD | WS_VISIBLE | SS_LEFT, 20, 40, 420, 80, hwnd, (HMENU)102, GetModuleHandle(NULL), NULL);
+            
+            CreateWindow("BUTTON", _T("tut_btn_prev", "Back").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 120, 130, 80, 28, hwnd, (HMENU)103, GetModuleHandle(NULL), NULL);
+            CreateWindow("BUTTON", _T("tut_btn_next", "Next").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 210, 130, 100, 28, hwnd, (HMENU)104, GetModuleHandle(NULL), NULL);
+            CreateWindow("BUTTON", _T("close_btn", "Close").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 320, 130, 80, 28, hwnd, (HMENU)105, GetModuleHandle(NULL), NULL);
+            
+            HFONT hFont = CreateFont(15, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "MS Shell Dlg");
+            EnumChildWindows(hwnd, [](HWND hwndChild, LPARAM lParam) -> BOOL {
+                SendMessage(hwndChild, WM_SETFONT, lParam, TRUE);
+                return TRUE;
+            }, (LPARAM)hFont);
+            
+            HFONT hFontBold = CreateFont(16, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "MS Shell Dlg");
+            SendMessage(GetDlgItem(hwnd, 101), WM_SETFONT, (WPARAM)hFontBold, TRUE);
+            
+            ApplyWindowTheme(hwnd);
+            UpdateWin32TutorialStep(hwnd);
+            break;
+        }
+        case WM_COMMAND: {
+            int wmId = LOWORD(wParam);
+            if (wmId == 103) {
+                if (g_tutStep > 1) {
+                    g_tutStep--;
+                    UpdateWin32TutorialStep(hwnd);
+                }
+            } else if (wmId == 104) {
+                if (g_tutStep < 7) {
+                    g_tutStep++;
+                    UpdateWin32TutorialStep(hwnd);
+                } else {
+                    DestroyWindow(hwnd);
+                }
+            } else if (wmId == 105 || wmId == IDCANCEL) {
+                DestroyWindow(hwnd);
+            }
+            break;
+        }
+        case WM_CLOSE:
+            DestroyWindow(hwnd);
+            break;
+        case WM_DESTROY:
+            SetWin32ActionButtonsEnabled(true);
+            g_hwndTutorial = NULL;
+            SetForegroundWindow(g_hwndMain);
+            break;
+        default:
+            return DefWindowProc(hwnd, msg, wParam, lParam);
+    }
+    return 0;
+}
+
 // About Dialog Window Procedure
 LRESULT CALLBACK AboutWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
@@ -1200,12 +1442,16 @@ LRESULT CALLBACK AboutWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             SendMessage(hIcon, STM_SETICON, (WPARAM)hIco, 0);
             
             CreateWindow("STATIC", _T("app_title", "Burn to the Brim").c_str(), WS_CHILD | WS_VISIBLE, 70, 20, 300, 20, hwnd, NULL, NULL, NULL);
-            CreateWindow("STATIC", _T("app_version", "Version 4.6.0").c_str(), WS_CHILD | WS_VISIBLE, 70, 40, 300, 20, hwnd, NULL, NULL, NULL);
+            CreateWindow("STATIC", _T("app_version", "Version 4.7.0").c_str(), WS_CHILD | WS_VISIBLE, 70, 40, 300, 20, hwnd, NULL, NULL, NULL);
             CreateWindow("STATIC", _T("app_copyright", "Copyright \u00a9 2001-2026 Sander Raaijmakers, Elwin Oost and the Burn to the Brim team").c_str(), WS_CHILD | WS_VISIBLE, 70, 60, 350, 40, hwnd, NULL, NULL, NULL);
             
             const char* default_comments = 
                 "Burn to the Brim (BTTB) is a modern C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums (CDs, DVDs, Blu-rays, or USBs).\n\n"
-                "Features in v4.6.0:\n"
+                "Features in v4.7.0:\n"
+                "- Modeless interactive tutorial (translated in 13 languages) with highlighted/focused guidance controls\n"
+                "- Resizable Win32 main window layout adjustments & mouse-draggable TreeView splitter bar\n"
+                "- GTK4 popover context menu for item restoration under Linux\n"
+                "- Bottom-pinned button alignments in preferences dialogs\n"
                 "- Brand new high-resolution application icon (bttb.ico) and unified website logo (bttb.png)\n"
                 "- Minimized search state stack frames & 16MB Win32 stack limit (fixing 0xC00000FD overflows)\n"
                 "- Expanded logging buffer limits to 10MB to avoid trace log truncation\n"
@@ -1432,10 +1678,12 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             g_btnPrefAddRule = CreateWindow("BUTTON", _T("add_rule_btn", "Add Rule").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 340, y + 200, 100, 25, hwnd, (HMENU)ID_PREF_BTN_ADD_RULE, NULL, NULL);
             g_btnPrefDelRule = CreateWindow("BUTTON", _T("remove_selected_btn", "Remove Selected").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 450, y + 200, 130, 25, hwnd, (HMENU)ID_PREF_BTN_DEL_RULE, NULL, NULL);
             
-            y += 245;
-            // OK / Cancel Action Buttons
-            CreateWindow("BUTTON", _T("ok_btn", "OK").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 400, y, 100, 30, hwnd, (HMENU)ID_PREF_BTN_OK, NULL, NULL);
-            CreateWindow("BUTTON", _T("cancel_btn", "Cancel").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 510, y, 100, 30, hwnd, (HMENU)ID_PREF_BTN_CANCEL, NULL, NULL);
+            // OK / Cancel Action Buttons (Aligned to the bottom of the client area)
+            RECT rcPref;
+            GetClientRect(hwnd, &rcPref);
+            int btnY = rcPref.bottom - 45;
+            CreateWindow("BUTTON", _T("ok_btn", "OK").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 400, btnY, 100, 30, hwnd, (HMENU)ID_PREF_BTN_OK, NULL, NULL);
+            CreateWindow("BUTTON", _T("cancel_btn", "Cancel").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 510, btnY, 100, 30, hwnd, (HMENU)ID_PREF_BTN_CANCEL, NULL, NULL);
             
             // Set Font
             HFONT hFont = CreateFont(15, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "MS Shell Dlg");
@@ -1963,9 +2211,191 @@ void StartWin32TreeViewRendering(HWND hwndTV, bool includeUnfitted, const std::s
     PostMessage(hwndMain, WM_RENDER_NEXT_BATCH, 0, 0);
 }
 
+void ResizeControls(HWND hwnd) {
+    if (!g_hwndTreeView || !g_grpDirs || !g_editSrc || !g_editDest || !g_editSemantic || !g_editLog || !g_progress) {
+        return;
+    }
+    RECT rc;
+    GetClientRect(hwnd, &rc);
+    int width = rc.right - rc.left;
+    int height = rc.bottom - rc.top;
+    
+    if (width < 600) width = 600;
+    if (height < 400) height = 400;
+    
+    // Clamp g_splitterX
+    int minSplitter = 100;
+    int maxSplitter = width - 400; // Leave at least 400px for the right side
+    if (g_splitterX < minSplitter) g_splitterX = minSplitter;
+    if (g_splitterX > maxSplitter) g_splitterX = maxSplitter;
+    
+    int treeHeight = height - 24 - 100;
+    if (treeHeight < 100) treeHeight = 100;
+    
+    MoveWindow(g_hwndTreeView, 12, 24, g_splitterX - 12 - 6, treeHeight, TRUE);
+    
+    int leftBtnY = height - 51;
+    int leftBtnsWidth = g_splitterX - 24 - 8;
+    int importWidth = (leftBtnsWidth * 4) / 10;
+    int verifyWidth = leftBtnsWidth - importWidth - 8;
+    if (importWidth < 60) importWidth = 60;
+    if (verifyWidth < 90) verifyWidth = 90;
+    
+    if (g_btnImportJson) MoveWindow(g_btnImportJson, 12, leftBtnY, importWidth, 30, TRUE);
+    if (g_btnVerifyRestore) MoveWindow(g_btnVerifyRestore, 12 + importWidth + 8, leftBtnY, verifyWidth, 30, TRUE);
+    
+    int rightX = g_splitterX + 8;
+    int rightWidth = width - rightX - 12;
+    if (rightWidth < 300) rightWidth = 300;
+    
+    int grp1Height = 205;
+    int grp2Height = 60;
+    int grp1Y = 16;
+    int grp2Y = grp1Y + grp1Height + 8;
+    int grp3Y = grp2Y + grp2Height + 8;
+    
+    int btnY = height - 51;
+    int labelY = btnY - 25;
+    int grp3Height = labelY - grp3Y - 8;
+    if (grp3Height < 60) grp3Height = 60;
+    
+    MoveWindow(g_grpDirs, rightX, grp1Y, rightWidth, grp1Height, TRUE);
+    
+    int editWidth = rightWidth - 134 - 106;
+    if (editWidth < 100) editWidth = 100;
+    
+    if (g_btnAddSrc) MoveWindow(g_btnAddSrc, rightX + 12, grp1Y + 22, 30, 25, TRUE);
+    if (g_lblSrc) MoveWindow(g_lblSrc, rightX + 48, grp1Y + 26, 80, 20, TRUE);
+    MoveWindow(g_editSrc, rightX + 134, grp1Y + 24, editWidth, 22, TRUE);
+    if (g_btnBrowseSrc) MoveWindow(g_btnBrowseSrc, rightX + rightWidth - 102, grp1Y + 22, 90, 25, TRUE);
+    
+    if (g_lblDest) MoveWindow(g_lblDest, rightX + 12, grp1Y + 58, 110, 20, TRUE);
+    MoveWindow(g_editDest, rightX + 134, grp1Y + 56, editWidth, 22, TRUE);
+    if (g_btnBrowseDest) MoveWindow(g_btnBrowseDest, rightX + rightWidth - 102, grp1Y + 54, 90, 25, TRUE);
+    
+    int semanticWidth = rightWidth - 134 - 16;
+    if (semanticWidth < 100) semanticWidth = 100;
+    if (g_lblSemantic) MoveWindow(g_lblSemantic, rightX + 12, grp1Y + 84, 120, 20, TRUE);
+    MoveWindow(g_editSemantic, rightX + 134, grp1Y + 82, semanticWidth, 22, TRUE);
+    
+    int chkWidth = rightWidth - 134 - 16;
+    MoveWindow(g_chkMove, rightX + 134, grp1Y + 108, chkWidth, 20, TRUE);
+    MoveWindow(g_chkSymlink, rightX + 134, grp1Y + 130, chkWidth, 20, TRUE);
+    MoveWindow(g_chkSpan, rightX + 134, grp1Y + 152, chkWidth, 20, TRUE);
+    MoveWindow(g_chkTrace, rightX + 134, grp1Y + 174, chkWidth, 20, TRUE);
+    
+    MoveWindow(g_grpProgress, rightX, grp2Y, rightWidth, grp2Height, TRUE);
+    int progressWidth = rightWidth - 144;
+    if (progressWidth < 100) progressWidth = 100;
+    MoveWindow(g_progress, rightX + 12, grp2Y + 24, progressWidth, 20, TRUE);
+    MoveWindow(g_labelProgress, rightX + 12 + progressWidth + 12, grp2Y + 26, 120, 20, TRUE);
+    
+    MoveWindow(g_grpLog, rightX, grp3Y, rightWidth, grp3Height, TRUE);
+    int logHeight = grp3Height - 40;
+    if (logHeight < 40) logHeight = 40;
+    MoveWindow(g_editLog, rightX + 12, grp3Y + 24, rightWidth - 24, logHeight, TRUE);
+    
+    MoveWindow(g_labelSpinner, rightX + 12, labelY, 30, 20, TRUE);
+    int timeLeftWidth = rightWidth - 58;
+    if (timeLeftWidth < 100) timeLeftWidth = 100;
+    MoveWindow(g_labelTimeLeft, rightX + 46, labelY, timeLeftWidth, 20, TRUE);
+    
+    int aboutW = 75;
+    int helpW = 65;
+    int isoW = 115;
+    int prefsW = 115;
+    int stopW = 55;
+    int startW = 65;
+    int testW = 65;
+    
+    int aboutX = rightX + rightWidth - aboutW - 12;
+    int helpX = aboutX - helpW - 5;
+    int isoX = helpX - isoW - 5;
+    int prefsX = isoX - prefsW - 5;
+    int stopX = prefsX - stopW - 5;
+    int startX = stopX - startW - 5;
+    int testX = startX - testW - 5;
+    
+    if (g_btnAbout) MoveWindow(g_btnAbout, aboutX, btnY, aboutW, 30, TRUE);
+    if (g_btnHelp) MoveWindow(g_btnHelp, helpX, btnY, helpW, 30, TRUE);
+    if (g_btnCreateIso) MoveWindow(g_btnCreateIso, isoX, btnY, isoW, 30, TRUE);
+    if (g_btnPrefs) MoveWindow(g_btnPrefs, prefsX, btnY, prefsW, 30, TRUE);
+    if (g_btnStop) MoveWindow(g_btnStop, stopX, btnY, stopW, 30, TRUE);
+    if (g_btnStart) MoveWindow(g_btnStart, startX, btnY, startW, 30, TRUE);
+    if (g_btnTest) MoveWindow(g_btnTest, testX, btnY, testW, 30, TRUE);
+}
+
 // Window Procedure for Main Window
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
+        case WM_SIZE: {
+            ResizeControls(hwnd);
+            return 0;
+        }
+        case WM_NCHITTEST: {
+            LRESULT hit = DefWindowProc(hwnd, msg, wParam, lParam);
+            if (hit == HTCLIENT && !IsZoomed(hwnd)) {
+                POINT pt;
+                pt.x = (int)(short)LOWORD(lParam);
+                pt.y = (int)(short)HIWORD(lParam);
+                ScreenToClient(hwnd, &pt);
+                RECT rc;
+                GetClientRect(hwnd, &rc);
+                
+                int border = 8;
+                bool left = (pt.x < border);
+                bool right = (pt.x >= rc.right - border);
+                bool top = (pt.y < border);
+                bool bottom = (pt.y >= rc.bottom - border);
+                
+                if (left && top) return HTTOPLEFT;
+                if (left && bottom) return HTBOTTOMLEFT;
+                if (right && top) return HTTOPRIGHT;
+                if (right && bottom) return HTBOTTOMRIGHT;
+                if (left) return HTLEFT;
+                if (right) return HTRIGHT;
+                if (top) return HTTOP;
+                if (bottom) return HTBOTTOM;
+            }
+            return hit;
+        }
+        case WM_SETCURSOR: {
+            if ((HWND)wParam == hwnd && LOWORD(lParam) == HTCLIENT) {
+                POINT pt;
+                GetCursorPos(&pt);
+                ScreenToClient(hwnd, &pt);
+                if (pt.x >= g_splitterX - 5 && pt.x <= g_splitterX + 5) {
+                    SetCursor(LoadCursor(NULL, IDC_SIZEWE));
+                    return TRUE;
+                }
+            }
+            return DefWindowProc(hwnd, msg, wParam, lParam);
+        }
+        case WM_LBUTTONDOWN: {
+            int x = (int)(short)LOWORD(lParam);
+            if (x >= g_splitterX - 5 && x <= g_splitterX + 5) {
+                g_isDraggingSplitter = true;
+                SetCapture(hwnd);
+                return 0;
+            }
+            break;
+        }
+        case WM_MOUSEMOVE: {
+            if (g_isDraggingSplitter) {
+                int x = (int)(short)LOWORD(lParam);
+                g_splitterX = x;
+                ResizeControls(hwnd);
+            }
+            break;
+        }
+        case WM_LBUTTONUP: {
+            if (g_isDraggingSplitter) {
+                g_isDraggingSplitter = false;
+                ReleaseCapture();
+                return 0;
+            }
+            break;
+        }
         case WM_NOTIFY: {
             LPNMHDR pnmh = (LPNMHDR)lParam;
             if (pnmh->idFrom == ID_TREE_RESULTS) {
@@ -2064,23 +2494,23 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             int y = 16;
             
             // Group 1: Folders Selection (height expanded to 205 to fit semantic packing text box)
-            CreateWindow("BUTTON", _T("dir_setup_group", "Directories Setup").c_str(), WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 284, y, 630, 205, hwnd, NULL, NULL, NULL);
+            g_grpDirs = CreateWindow("BUTTON", _T("dir_setup_group", "Directories Setup").c_str(), WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 284, y, 630, 205, hwnd, NULL, NULL, NULL);
             
-            CreateWindow("BUTTON", "+", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 296, y + 22, 30, 25, hwnd, (HMENU)ID_BTN_ADD_FOLDERS, NULL, NULL);
-            CreateWindow("STATIC", _T("source_folder", "Source Folder:").c_str(), WS_CHILD | WS_VISIBLE, 332, y + 26, 80, 20, hwnd, NULL, NULL, NULL);
+            g_btnAddSrc = CreateWindow("BUTTON", "+", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 296, y + 22, 30, 25, hwnd, (HMENU)ID_BTN_ADD_FOLDERS, NULL, NULL);
+            g_lblSrc = CreateWindow("STATIC", _T("source_folder", "Source Folder:").c_str(), WS_CHILD | WS_VISIBLE, 332, y + 26, 80, 20, hwnd, NULL, NULL, NULL);
             g_editSrc = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 418, y + 24, 380, 22, hwnd, NULL, NULL, NULL);
             if (!g_folderToAdd.empty()) {
                 std::string utf8Folder = wstringToUtf8(g_folderToAdd);
                 SetWindowText(g_editSrc, utf8Folder.c_str());
             }
-            CreateWindow("BUTTON", _T("browse_btn", "Browse...").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 808, y + 22, 90, 25, hwnd, (HMENU)ID_BTN_SRC_BROWSE, NULL, NULL);
+            g_btnBrowseSrc = CreateWindow("BUTTON", _T("browse_btn", "Browse...").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 808, y + 22, 90, 25, hwnd, (HMENU)ID_BTN_SRC_BROWSE, NULL, NULL);
             
-            CreateWindow("STATIC", _T("target_folder", "Target Folder:").c_str(), WS_CHILD | WS_VISIBLE, 296, y + 58, 110, 20, hwnd, NULL, NULL, NULL);
+            g_lblDest = CreateWindow("STATIC", _T("target_folder", "Target Folder:").c_str(), WS_CHILD | WS_VISIBLE, 296, y + 58, 110, 20, hwnd, NULL, NULL, NULL);
             g_editDest = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 418, y + 56, 380, 22, hwnd, NULL, NULL, NULL);
-            CreateWindow("BUTTON", _T("browse_btn", "Browse...").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 808, y + 54, 90, 25, hwnd, (HMENU)ID_BTN_DEST_BROWSE, NULL, NULL);
+            g_btnBrowseDest = CreateWindow("BUTTON", _T("browse_btn", "Browse...").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 808, y + 54, 90, 25, hwnd, (HMENU)ID_BTN_DEST_BROWSE, NULL, NULL);
             
             // v4.0.0 Semantic Prompt Control at y + 82
-            CreateWindow("STATIC", _T("semantic_prompt", "Semantic Prompt:").c_str(), WS_CHILD | WS_VISIBLE, 296, y + 84, 120, 20, hwnd, NULL, NULL, NULL);
+            g_lblSemantic = CreateWindow("STATIC", _T("semantic_prompt", "Semantic Prompt:").c_str(), WS_CHILD | WS_VISIBLE, 296, y + 84, 120, 20, hwnd, NULL, NULL, NULL);
             g_editSemantic = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 418, y + 82, 480, 22, hwnd, (HMENU)ID_EDIT_SEMANTIC, NULL, NULL);
             
             // Checkboxes shifted down to accommodate semantic prompt control
@@ -2092,12 +2522,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             g_chkTrace = CreateWindow("BUTTON", _T("trace_chk", "Enable detailed solver diagnostic tracing (Trace)").c_str(), WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 418, y + 174, 480, 20, hwnd, (HMENU)ID_CHK_TRACE, NULL, NULL);
             
             // Group 2: Progress (Shifted to y=230)
-            CreateWindow("BUTTON", _T("progress_frame_title", "Fitted Capacity Status").c_str(), WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 284, 230, 630, 60, hwnd, NULL, NULL, NULL);
+            g_grpProgress = CreateWindow("BUTTON", _T("progress_frame_title", "Fitted Capacity Status").c_str(), WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 284, 230, 630, 60, hwnd, NULL, NULL, NULL);
             g_progress = CreateWindow(PROGRESS_CLASS, "", WS_CHILD | WS_VISIBLE, 296, 254, 470, 20, hwnd, NULL, NULL, NULL);
             g_labelProgress = CreateWindow("STATIC", _T("filled_label", "Filled: 0.00%").c_str(), WS_CHILD | WS_VISIBLE, 776, 256, 120, 20, hwnd, NULL, NULL, NULL);
             
             // Group 3: Log Output (Shifted to y=300)
-            CreateWindow("BUTTON", _T("log_frame_title", "Solver Output Log").c_str(), WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 284, 300, 630, 160, hwnd, NULL, NULL, NULL);
+            g_grpLog = CreateWindow("BUTTON", _T("log_frame_title", "Solver Output Log").c_str(), WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 284, 300, 630, 160, hwnd, NULL, NULL, NULL);
             g_editLog = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL | ES_READONLY, 296, 324, 600, 120, hwnd, NULL, NULL, NULL);
             SendMessage(g_editLog, EM_SETLIMITTEXT, 10485760, 0);
             
@@ -2109,10 +2539,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             g_btnTest = CreateWindow("BUTTON", _T("test_btn", "Test").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 327, 475, 65, 30, hwnd, (HMENU)ID_BTN_TEST, NULL, NULL);
             g_btnStart = CreateWindow("BUTTON", _T("start_btn", "Start").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 397, 475, 65, 30, hwnd, (HMENU)ID_BTN_START, NULL, NULL);
             g_btnStop = CreateWindow("BUTTON", _T("stop_btn", "Stop").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 467, 475, 55, 30, hwnd, (HMENU)ID_BTN_STOP, NULL, NULL);
-            CreateWindow("BUTTON", _T("pref_title", "Preferences...").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 527, 475, 115, 30, hwnd, (HMENU)ID_BTN_PREFS, NULL, NULL);
+            g_btnPrefs = CreateWindow("BUTTON", _T("pref_title", "Preferences...").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 527, 475, 115, 30, hwnd, (HMENU)ID_BTN_PREFS, NULL, NULL);
             g_btnCreateIso = CreateWindow("BUTTON", _T("create_iso_btn", "Create ISO...").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 647, 475, 115, 30, hwnd, (HMENU)ID_BTN_CREATE_ISO, NULL, NULL);
-            CreateWindow("BUTTON", _T("help_btn", "Help").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 767, 475, 65, 30, hwnd, (HMENU)ID_BTN_HELP, NULL, NULL);
-            CreateWindow("BUTTON", _T("about_btn", "About...").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 837, 475, 75, 30, hwnd, (HMENU)ID_BTN_ABOUT, NULL, NULL);
+            g_btnHelp = CreateWindow("BUTTON", _T("help_btn", "Help").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 767, 475, 65, 30, hwnd, (HMENU)ID_BTN_HELP, NULL, NULL);
+            g_btnAbout = CreateWindow("BUTTON", _T("about_btn", "About...").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 837, 475, 75, 30, hwnd, (HMENU)ID_BTN_ABOUT, NULL, NULL);
             
             g_btnImportJson = CreateWindow("BUTTON", _T("import_json_btn", "Import JSON...").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 12, 475, 120, 30, hwnd, (HMENU)ID_BTN_IMPORT_JSON, NULL, NULL);
             g_btnVerifyRestore = CreateWindow("BUTTON", _T("verify_restore_btn", "Verify & Restore...").c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 137, 475, 185, 30, hwnd, (HMENU)ID_BTN_VERIFY_RESTORE, NULL, NULL);
@@ -2141,6 +2571,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             ApplyWindowTheme(hwnd);
             ApplyThemeToTreeView(g_hwndTreeView);
             
+            ResizeControls(hwnd);
             break;
         }
         
@@ -2443,40 +2874,27 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             }
             
             if (wmId == ID_BTN_HELP) {
-                std::string helpTitle = _T("help_guide_title", "Burn to the Brim (BTTB) Help Guide");
+                if (g_hwndHelp != NULL) {
+                    SetForegroundWindow(g_hwndHelp);
+                    break;
+                }
                 
-                const char* default_help = 
-                    "1. Directory Split Depth\n"
-                    "Determines the folder nesting level at which items are split:\n"
-                    " - Depth 0 (Default): Top-level files and folders are treated as separate items.\n"
-                    " - Depth 1: Splitting occurs one level deeper, keeping top-level folders intact but splitting their immediate subfolders.\n\n"
-                    "2. Max Search Time\n"
-                    "The maximum seconds the backtracking solver is allowed to run. If reached, the best selection found up to that point is used.\n\n"
-                    "3. Spanning Slack\n"
-                    "Allows early solver termination once a volume is packed within this number of bytes from the absolute maximum capacity (e.g. 2048 bytes).\n\n"
-                    "4. File/Folder Grouping Rules\n"
-                    "Force matching items to remain grouped together on the same volume (e.g., matching '*.mp3' or regex '^album_.*').\n\n"
-                    "5. Multiple Source Folders (+)\n"
-                    "Click '+' to specify multiple source folders. BTTB acts as if they are in a single root folder. Nested source paths are ignored.\n\n"
-                    "6. Create Symbolic Links\n"
-                    "Instead of copying/moving files to the target folder, BTTB creates lightweight symbolic links pointing back to your original files.\n\n"
-                    "7. Neural Semantic Packing & MiniLM Setup Guide\n"
-                    "By specifying a semantic prompt, BTTB groups files with similar content using context-aware deep learning embeddings.\n"
-                    "To use the preferred, high-accuracy MiniLM neural model, you must install Python 3 and sentence-transformers:\n"
-                    " - Step 1: Ensure Python 3 & pip are installed.\n"
-                    "   (Linux: run 'sudo apt install python3 python3-pip python3-venv')\n"
-                    "   (Windows: Install from https://www.python.org/ and check 'Add Python to PATH')\n"
-                    " - Step 2: Install sentence-transformers via terminal/command prompt:\n"
-                    "   Option A (Recommended for simplicity):\n"
-                    "     pip install sentence-transformers\n"
-                    "   Option B (Virtual environment isolation):\n"
-                    "     python3 -m venv bttb_env\n"
-                    "     source bttb_env/bin/activate  # (Windows: bttb_env\\Scripts\\activate)\n"
-                    "     pip install sentence-transformers\n"
-                    " - Step 3: Restart Burn to the Brim to automatically load MiniLM! If not found, BTTB falls back gracefully to a localized character TF-IDF projector.";
-                    
-                std::string helpText = helpTitle + "\n=============================\n\n" + _T("help_guide_text", default_help);
-                MessageBox(hwnd, toWinNewlines(helpText).c_str(), _T("help_title", "Help - Burn to the Brim").c_str(), MB_OK | MB_ICONINFORMATION);
+                EnableWindow(hwnd, FALSE);
+                
+                g_hwndHelp = CreateWindowEx(
+                    WS_EX_CONTROLPARENT,
+                    "BttbWin32HelpDialog",
+                    _T("help_title", "Help - Burn to the Brim").c_str(),
+                    WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
+                    CW_USEDEFAULT, CW_USEDEFAULT, 500, 470,
+                    hwnd, NULL, GetModuleHandle(NULL), NULL
+                );
+                
+                if (g_hwndHelp != NULL) {
+                    ShowWindow(g_hwndHelp, SW_SHOW);
+                } else {
+                    EnableWindow(hwnd, TRUE);
+                }
             }
             
             if (wmId == ID_BTN_ABOUT) {
@@ -2924,6 +3342,40 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         return 0;
     }
     
+    // Register Help Dialog Window Class
+    WNDCLASSEXW wcHelp = {0};
+    wcHelp.cbSize = sizeof(WNDCLASSEXW);
+    wcHelp.style = CS_HREDRAW | CS_VREDRAW;
+    wcHelp.lpfnWndProc = HelpWndProc;
+    wcHelp.hInstance = hInstance;
+    wcHelp.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wcHelp.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
+    wcHelp.lpszClassName = L"BttbWin32HelpDialog";
+    wcHelp.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(1));
+    wcHelp.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+    
+    if (!RegisterClassExW(&wcHelp)) {
+        MessageBoxW(NULL, L"Help Dialog Registration Failed!", L"Error", MB_ICONEXCLAMATION | MB_OK);
+        return 0;
+    }
+
+    // Register Tutorial Dialog Window Class
+    WNDCLASSEXW wcTutorial = {0};
+    wcTutorial.cbSize = sizeof(WNDCLASSEXW);
+    wcTutorial.style = CS_HREDRAW | CS_VREDRAW;
+    wcTutorial.lpfnWndProc = TutorialWndProc;
+    wcTutorial.hInstance = hInstance;
+    wcTutorial.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wcTutorial.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
+    wcTutorial.lpszClassName = L"BttbWin32TutorialDialog";
+    wcTutorial.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(1));
+    wcTutorial.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+    
+    if (!RegisterClassExW(&wcTutorial)) {
+        MessageBoxW(NULL, L"Tutorial Dialog Registration Failed!", L"Error", MB_ICONEXCLAMATION | MB_OK);
+        return 0;
+    }
+    
     // Register Folder List Dialog Window Class
     WNDCLASSEXW wcFolderList = {0};
     wcFolderList.cbSize = sizeof(WNDCLASSEXW);
@@ -2963,7 +3415,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         WS_EX_CONTROLPARENT,
         "BttbWin32GUI",
         "Burn to the Brim (Native Win32 GUI)",
-        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
+        WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT, 930, 565,
         NULL, NULL, hInstance, NULL
     );

@@ -203,6 +203,175 @@ public:
     }
 };
 
+struct HelpCallbackData {
+    MainWindow* self;
+    GtkWidget* help_dlg;
+};
+
+static void on_help_clicked(GtkWidget* btn, gpointer user_data) {
+    auto* self = static_cast<MainWindow*>(user_data);
+    
+    GtkWidget* help_dlg = gtk_window_new();
+    gtk_window_set_title(GTK_WINDOW(help_dlg), _T("help_title", "Help - Burn to the Brim").c_str());
+    gtk_window_set_default_size(GTK_WINDOW(help_dlg), 520, 420);
+    gtk_window_set_modal(GTK_WINDOW(help_dlg), TRUE);
+    gtk_window_set_transient_for(GTK_WINDOW(help_dlg), GTK_WINDOW(self->window));
+    
+    GtkWidget* vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_widget_set_margin_start(vbox, 16);
+    gtk_widget_set_margin_end(vbox, 16);
+    gtk_widget_set_margin_top(vbox, 16);
+    gtk_widget_set_margin_bottom(vbox, 16);
+    gtk_window_set_child(GTK_WINDOW(help_dlg), vbox);
+    
+    GtkWidget* label_title = gtk_label_new(nullptr);
+    gtk_label_set_markup(GTK_LABEL(label_title), ("<b><span size='large'>" + _T("help_guide_title", "Burn to the Brim (BTTB) Help Guide") + "</span></b>").c_str());
+    gtk_widget_set_halign(label_title, GTK_ALIGN_START);
+    gtk_box_append(GTK_BOX(vbox), label_title);
+    
+    GtkWidget* scroll = gtk_scrolled_window_new();
+    gtk_widget_set_vexpand(scroll, TRUE);
+    gtk_box_append(GTK_BOX(vbox), scroll);
+    
+    GtkWidget* text_view = gtk_text_view_new();
+    gtk_text_view_set_editable(GTK_TEXT_VIEW(text_view), FALSE);
+    gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(text_view), GTK_WRAP_WORD);
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), text_view);
+    
+    GtkTextBuffer* buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
+    const char* help_text = 
+        "1. Directory Split Depth\n"
+        "Determines the folder nesting level at which items are split:\n"
+        " - Depth 0 (Default): Top-level files and folders are treated as separate items.\n"
+        " - Depth 1: Splitting occurs one level deeper, keeping top-level folders intact but splitting their immediate subfolders.\n\n"
+        "2. Max Search Time\n"
+        "The maximum seconds the backtracking solver is allowed to run. If reached, the best selection found up to that point is used.\n\n"
+        "3. Spanning Slack\n"
+        "Allows early solver termination once a volume is packed within this number of bytes from the absolute maximum capacity (e.g. 2048 bytes).\n\n"
+        "4. File/Folder Grouping Rules\n"
+        "Force matching items to remain grouped together on the same volume (e.g., matching '*.mp3' or regex '^album_.*').\n\n"
+        "5. Multiple Source Folders (+)\n"
+        "Click '+' to specify multiple source folders. BTTB acts as if they are in a single root folder. Nested source paths are ignored.\n\n"
+        "6. Create Symbolic Links\n"
+        "Instead of copying/moving files to the target folder, BTTB creates lightweight symbolic links pointing back to your original files.\n\n"
+        "7. Neural Semantic Packing & MiniLM Setup Guide\n"
+        "By specifying a semantic prompt, BTTB groups files with similar content using context-aware deep learning embeddings.\n"
+        "To use the preferred, high-accuracy MiniLM neural model, you must install Python 3 and sentence-transformers:\n"
+        " - Step 1: Ensure Python 3 & pip are installed.\n"
+        "   (Linux: run 'sudo apt install python3 python3-pip python3-venv')\n"
+        "   (Windows: Install from https://www.python.org/ and check 'Add Python to PATH')\n"
+        " - Step 2: Install sentence-transformers via terminal or command prompt:\n"
+        "   Option A (Recommended for simplicity):\n"
+        "     pip install sentence-transformers\n"
+        "   Option B (Virtual environment isolation):\n"
+        "     python3 -m venv bttb_env\n"
+        "     source bttb_env/bin/activate  # (Windows: bttb_env\\Scripts\\activate)\n"
+        "     pip install sentence-transformers\n"
+        " - Step 3: Restart Burn to the Brim to automatically load MiniLM! If not found, BTTB falls back gracefully to a localized character TF-IDF projector.";
+        
+    gtk_text_buffer_set_text(buffer, _T("help_guide_text", help_text).c_str(), -1);
+    
+    GtkWidget* btn_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_widget_set_halign(btn_box, GTK_ALIGN_END);
+    gtk_box_append(GTK_BOX(vbox), btn_box);
+
+    GtkWidget* start_tut_btn = gtk_button_new_with_label(_T("start_tutorial_btn", "Interactive Tutorial").c_str());
+    gtk_box_append(GTK_BOX(btn_box), start_tut_btn);
+
+    GtkWidget* close_btn = gtk_button_new_with_label(_T("close_btn", "Close").c_str());
+    gtk_box_append(GTK_BOX(btn_box), close_btn);
+
+    auto* cb_data = new HelpCallbackData{self, help_dlg};
+    g_object_set_data_full(G_OBJECT(help_dlg), "help_cb_data", cb_data, [](gpointer data) {
+        delete static_cast<HelpCallbackData*>(data);
+    });
+
+    g_signal_connect(start_tut_btn, "clicked", G_CALLBACK((+[](GtkWidget*, gpointer data) {
+        auto* cb = static_cast<HelpCallbackData*>(data);
+        MainWindow* self = cb->self;
+        GtkWidget* help_dlg = cb->help_dlg;
+        gtk_window_destroy(GTK_WINDOW(help_dlg));
+        self->start_tutorial();
+    })), cb_data);
+
+    g_signal_connect_swapped(close_btn, "clicked", G_CALLBACK(gtk_window_destroy), help_dlg);
+    
+    gtk_window_present(GTK_WINDOW(help_dlg));
+}
+
+struct ContextMenuData {
+    MainWindow* self;
+    int type;
+    int volIdx;
+    int fileIdx;
+    int gcIdx;
+    GtkWidget* popover;
+};
+
+static void on_treeview_pressed(GtkGestureClick* gesture, int n_press, double x, double y, gpointer user_data) {
+    auto* self = static_cast<MainWindow*>(user_data);
+    GtkTreePath* path = nullptr;
+    if (gtk_tree_view_get_path_at_pos(GTK_TREE_VIEW(self->tree_view), (int)x, (int)y, &path, nullptr, nullptr, nullptr)) {
+        GtkTreeSelection* selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(self->tree_view));
+        gtk_tree_selection_select_path(selection, path);
+        
+        GtkTreeIter iter;
+        if (gtk_tree_model_get_iter(GTK_TREE_MODEL(self->tree_store), &iter, path)) {
+            int type = -1;
+            int volIdx = -1;
+            int fileIdx = -1;
+            int gcIdx = -1;
+            gtk_tree_model_get(GTK_TREE_MODEL(self->tree_store), &iter,
+                               3, &type,
+                               4, &volIdx,
+                               5, &fileIdx,
+                               6, &gcIdx,
+                               -1);
+            
+            if (type == 0 || type == 1 || type == 2) {
+                GtkWidget* popover = gtk_popover_new();
+                gtk_widget_set_parent(popover, self->tree_view);
+                
+                GdkRectangle rect;
+                rect.x = (int)x;
+                rect.y = (int)y;
+                rect.width = 1;
+                rect.height = 1;
+                gtk_popover_set_pointing_to(GTK_POPOVER(popover), &rect);
+                
+                GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+                GtkWidget* button = gtk_button_new_with_label(_T("menu_restore", "Restore to Original Location").c_str());
+                gtk_button_set_has_frame(GTK_BUTTON(button), FALSE);
+                
+                auto* cmd = new ContextMenuData{self, type, volIdx, fileIdx, gcIdx, popover};
+                
+                g_object_set_data_full(G_OBJECT(popover), "menu_data", cmd, [](gpointer data) {
+                    delete static_cast<ContextMenuData*>(data);
+                });
+                
+                g_signal_connect(button, "clicked", G_CALLBACK((+[](GtkWidget*, gpointer data) {
+                    auto* pop = GTK_WIDGET(data);
+                    auto* cmd = static_cast<ContextMenuData*>(g_object_get_data(G_OBJECT(pop), "menu_data"));
+                    if (cmd) {
+                        cmd->self->restore_item(cmd->type, cmd->volIdx, cmd->fileIdx, cmd->gcIdx);
+                    }
+                    gtk_popover_popdown(GTK_POPOVER(pop));
+                })), popover);
+                
+                gtk_box_append(GTK_BOX(box), button);
+                gtk_popover_set_child(GTK_POPOVER(popover), box);
+                
+                g_signal_connect(popover, "closed", G_CALLBACK((+[](GtkWidget* p, gpointer) {
+                    gtk_widget_unparent(p);
+                })), nullptr);
+                
+                gtk_popover_popup(GTK_POPOVER(popover));
+            }
+        }
+        gtk_tree_path_free(path);
+    }
+}
+
 MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
     std::cout << "[GUI MainWindow] Solver language: '" << solver.language 
               << "', BttbLocale active language: '" << BttbLocale::getInstance().getLanguage() << "'" << std::endl;
@@ -309,14 +478,18 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
         gtk_window_set_transient_for(GTK_WINDOW(about), GTK_WINDOW(self->window));
         
         gtk_about_dialog_set_program_name(GTK_ABOUT_DIALOG(about), "Burn to the Brim");
-        gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(about), "4.6.0");
+        gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(about), "4.7.0");
         gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(about), "Copyright \u00a9 2001-2026 Sander Raaijmakers, Elwin Oost and the Burn to the Brim team");
         gtk_about_dialog_set_license_type(GTK_ABOUT_DIALOG(about), GTK_LICENSE_GPL_2_0);
         gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(about), "https://sourceforge.net/projects/bttb/");
         
         const char* default_comments = 
             "Burn to the Brim (BTTB) is a modern C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums (CDs, DVDs, Blu-rays, or USBs).\n\n"
-            "Features in v4.6.0:\n"
+            "Features in v4.7.0:\n"
+            "- Modeless interactive tutorial (translated in 13 languages) with highlighted/focused guidance controls\n"
+            "- Resizable Win32 main window layout adjustments & mouse-draggable TreeView splitter bar\n"
+            "- GTK4 popover context menu for item restoration under Linux\n"
+            "- Bottom-pinned button alignments in preferences dialogs\n"
             "- Brand new high-resolution application icon (bttb.ico) and unified website logo (bttb.png)\n"
             "- Minimized search state stack frames & 16MB Win32 stack limit (fixing 0xC00000FD overflows)\n"
             "- Expanded logging buffer limits to 10MB to avoid trace log truncation\n"
@@ -392,77 +565,7 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
     gtk_widget_set_tooltip_text(help_btn, _T("help_title", "Help Documentation").c_str());
     gtk_header_bar_pack_start(GTK_HEADER_BAR(header), help_btn);
     
-    g_signal_connect(help_btn, "clicked", G_CALLBACK(+[](GtkWidget* btn, gpointer user_data) {
-        auto* self = static_cast<MainWindow*>(user_data);
-        
-        GtkWidget* help_dlg = gtk_window_new();
-        gtk_window_set_title(GTK_WINDOW(help_dlg), _T("help_title", "Help - Burn to the Brim").c_str());
-        gtk_window_set_default_size(GTK_WINDOW(help_dlg), 520, 420);
-        gtk_window_set_modal(GTK_WINDOW(help_dlg), TRUE);
-        gtk_window_set_transient_for(GTK_WINDOW(help_dlg), GTK_WINDOW(self->window));
-        
-        GtkWidget* vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
-        gtk_widget_set_margin_start(vbox, 16);
-        gtk_widget_set_margin_end(vbox, 16);
-        gtk_widget_set_margin_top(vbox, 16);
-        gtk_widget_set_margin_bottom(vbox, 16);
-        gtk_window_set_child(GTK_WINDOW(help_dlg), vbox);
-        
-        GtkWidget* label_title = gtk_label_new(nullptr);
-        gtk_label_set_markup(GTK_LABEL(label_title), ("<b><span size='large'>" + _T("help_guide_title", "Burn to the Brim (BTTB) Help Guide") + "</span></b>").c_str());
-        gtk_widget_set_halign(label_title, GTK_ALIGN_START);
-        gtk_box_append(GTK_BOX(vbox), label_title);
-        
-        GtkWidget* scroll = gtk_scrolled_window_new();
-        gtk_widget_set_vexpand(scroll, TRUE);
-        gtk_box_append(GTK_BOX(vbox), scroll);
-        
-        GtkWidget* text_view = gtk_text_view_new();
-        gtk_text_view_set_editable(GTK_TEXT_VIEW(text_view), FALSE);
-        gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(text_view), GTK_WRAP_WORD);
-        gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), text_view);
-        
-        GtkTextBuffer* buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
-        const char* help_text = 
-            "1. Directory Split Depth\n"
-            "Determines the folder nesting level at which items are split:\n"
-            " - Depth 0 (Default): Top-level files and folders are treated as separate items.\n"
-            " - Depth 1: Splitting occurs one level deeper, keeping top-level folders intact but splitting their immediate subfolders.\n\n"
-            "2. Max Search Time\n"
-            "The maximum seconds the backtracking solver is allowed to run. If reached, the best selection found up to that point is used.\n\n"
-            "3. Spanning Slack\n"
-            "Allows early solver termination once a volume is packed within this number of bytes from the absolute maximum capacity (e.g. 2048 bytes).\n\n"
-            "4. File/Folder Grouping Rules\n"
-            "Force matching items to remain grouped together on the same volume (e.g., matching '*.mp3' or regex '^album_.*').\n\n"
-            "5. Multiple Source Folders (+)\n"
-            "Click '+' to specify multiple source folders. BTTB acts as if they are in a single root folder. Nested source paths are ignored.\n\n"
-            "6. Create Symbolic Links\n"
-            "Instead of copying/moving files to the target folder, BTTB creates lightweight symbolic links pointing back to your original files.\n\n"
-            "7. Neural Semantic Packing & MiniLM Setup Guide\n"
-            "By specifying a semantic prompt, BTTB groups files with similar content using context-aware deep learning embeddings.\n"
-            "To use the preferred, high-accuracy MiniLM neural model, you must install Python 3 and sentence-transformers:\n"
-            " - Step 1: Ensure Python 3 & pip are installed.\n"
-            "   (Linux: run 'sudo apt install python3 python3-pip python3-venv')\n"
-            "   (Windows: Install from https://www.python.org/ and check 'Add Python to PATH')\n"
-            " - Step 2: Install sentence-transformers via terminal or command prompt:\n"
-            "   Option A (Recommended for simplicity):\n"
-            "     pip install sentence-transformers\n"
-            "   Option B (Virtual environment isolation):\n"
-            "     python3 -m venv bttb_env\n"
-            "     source bttb_env/bin/activate  # (Windows: bttb_env\\Scripts\\activate)\n"
-            "     pip install sentence-transformers\n"
-            " - Step 3: Restart Burn to the Brim to automatically load MiniLM! If not found, BTTB falls back gracefully to a localized character TF-IDF projector.";
-            
-        gtk_text_buffer_set_text(buffer, _T("help_guide_text", help_text).c_str(), -1);
-        
-        GtkWidget* close_btn = gtk_button_new_with_label(_T("close_btn", "Close").c_str());
-        gtk_widget_set_halign(close_btn, GTK_ALIGN_END);
-        gtk_box_append(GTK_BOX(vbox), close_btn);
-        
-        g_signal_connect_swapped(close_btn, "clicked", G_CALLBACK(gtk_window_destroy), help_dlg);
-        
-        gtk_window_present(GTK_WINDOW(help_dlg));
-    }), this);
+    g_signal_connect(help_btn, "clicked", G_CALLBACK(on_help_clicked), this);
     
     // Solver thread triggers
     // Solver thread triggers
@@ -602,33 +705,7 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
     
     GtkGesture* gesture = gtk_gesture_click_new();
     gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(gesture), GDK_BUTTON_SECONDARY);
-    g_signal_connect(gesture, "pressed", G_CALLBACK(+[](GtkGestureClick* gesture, int n_press, double x, double y, gpointer user_data) {
-        auto* self = static_cast<MainWindow*>(user_data);
-        GtkTreePath* path = nullptr;
-        if (gtk_tree_view_get_path_at_pos(GTK_TREE_VIEW(self->tree_view), (int)x, (int)y, &path, nullptr, nullptr, nullptr)) {
-            GtkTreeSelection* selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(self->tree_view));
-            gtk_tree_selection_select_path(selection, path);
-            
-            GtkTreeIter iter;
-            if (gtk_tree_model_get_iter(GTK_TREE_MODEL(self->tree_store), &iter, path)) {
-                int type = -1;
-                int volIdx = -1;
-                int fileIdx = -1;
-                int gcIdx = -1;
-                gtk_tree_model_get(GTK_TREE_MODEL(self->tree_store), &iter,
-                                   3, &type,
-                                   4, &volIdx,
-                                   5, &fileIdx,
-                                   6, &gcIdx,
-                                   -1);
-                
-                if (type == 0 || type == 1 || type == 2) {
-                    self->restore_item(type, volIdx, fileIdx, gcIdx);
-                }
-            }
-            gtk_tree_path_free(path);
-        }
-    }), this);
+    g_signal_connect(gesture, "pressed", G_CALLBACK(on_treeview_pressed), this);
     gtk_widget_add_controller(tree_view, GTK_EVENT_CONTROLLER(gesture));
     
     // Main vertical box on the right
@@ -1443,6 +1520,143 @@ void MainWindow::restore_item(int type, int volIdx, int fileIdx, int gcIdx) {
         }
         delete ctx;
     }, ctx);
+}
+
+void MainWindow::start_tutorial() {
+    struct TutorialState {
+        MainWindow* self;
+        GtkWidget* tut_win;
+        GtkWidget* title_label;
+        GtkWidget* desc_label;
+        GtkWidget* prev_btn;
+        GtkWidget* next_btn;
+        int step;
+    };
+    
+    // Disable action buttons in main window
+    gtk_widget_set_sensitive(start_button, FALSE);
+    gtk_widget_set_sensitive(test_button, FALSE);
+    gtk_widget_set_sensitive(stop_button, FALSE);
+    
+    // Create modeless window
+    GtkWidget* tut_win = gtk_window_new();
+    gtk_window_set_title(GTK_WINDOW(tut_win), _T("tut_title", "Interactive Tutorial").c_str());
+    gtk_window_set_default_size(GTK_WINDOW(tut_win), 460, 200);
+    gtk_window_set_transient_for(GTK_WINDOW(tut_win), GTK_WINDOW(window));
+    gtk_window_set_destroy_with_parent(GTK_WINDOW(tut_win), TRUE);
+    
+    // Layout
+    GtkWidget* vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_widget_set_margin_start(vbox, 16);
+    gtk_widget_set_margin_end(vbox, 16);
+    gtk_widget_set_margin_top(vbox, 16);
+    gtk_widget_set_margin_bottom(vbox, 16);
+    gtk_window_set_child(GTK_WINDOW(tut_win), vbox);
+    
+    GtkWidget* title_label = gtk_label_new(nullptr);
+    gtk_widget_set_halign(title_label, GTK_ALIGN_START);
+    gtk_box_append(GTK_BOX(vbox), title_label);
+    
+    GtkWidget* desc_label = gtk_label_new(nullptr);
+    gtk_widget_set_halign(desc_label, GTK_ALIGN_START);
+    gtk_label_set_wrap(GTK_LABEL(desc_label), TRUE);
+    gtk_widget_set_vexpand(desc_label, TRUE);
+    gtk_box_append(GTK_BOX(vbox), desc_label);
+    
+    GtkWidget* btn_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_widget_set_halign(btn_box, GTK_ALIGN_END);
+    gtk_box_append(GTK_BOX(vbox), btn_box);
+    
+    GtkWidget* prev_btn = gtk_button_new_with_label(_T("tut_btn_prev", "Back").c_str());
+    gtk_box_append(GTK_BOX(btn_box), prev_btn);
+    
+    GtkWidget* next_btn = gtk_button_new_with_label(_T("tut_btn_next", "Next").c_str());
+    gtk_box_append(GTK_BOX(btn_box), next_btn);
+    
+    GtkWidget* close_btn = gtk_button_new_with_label(_T("close_btn", "Close").c_str());
+    gtk_box_append(GTK_BOX(btn_box), close_btn);
+    
+    auto* state = new TutorialState{this, tut_win, title_label, desc_label, prev_btn, next_btn, 1};
+    
+    auto update_step = [](TutorialState* s) {
+        if (s->step < 1) s->step = 1;
+        if (s->step > 7) s->step = 7;
+        
+        struct GtkTutorialStepData {
+            std::string titleKey;
+            std::string defaultTitle;
+            std::string textKey;
+            std::string defaultText;
+        };
+        
+        GtkTutorialStepData steps[] = {
+            { "tut_step1_title", "Welcome to BTTB", "tut_step1_text", "Welcome to the Burn to the Brim interactive tutorial! This guide will walk you through the key features without running any actions. Click Next to begin." },
+            { "tut_step2_title", "Source Directories", "tut_step2_text", "Source Folder: Click '+' to manage multiple directories, or enter folder paths separated by semicolons. Files inside these directories will be organized." },
+            { "tut_step3_title", "Target Directory", "tut_step3_text", "Target Folder: Specify the destination directory where BTTB will create packed volume directories (e.g., Volume_1, Volume_2)." },
+            { "tut_step4_title", "Semantic Prompt", "tut_step4_text", "Semantic Prompt: Enter natural language packing rules (e.g. 'group audio files') to influence organization using neural embeddings." },
+            { "tut_step5_title", "Packing Options", "tut_step5_text", "Options: Choose between Move (relocates files) or Symlink (non-destructive virtual links). You can also enable volume spanning and logs." },
+            { "tut_step6_title", "TreeView Explorer", "tut_step6_text", "Results Explorer: The tree shows how items are assigned to volumes. Right-click any volume or file to open the context menu and restore it." },
+            { "tut_step7_title", "Test and Start", "tut_step7_text", "Test & Start: Click 'Test' to run a safe packing simulation without touching files, or click 'Start' to perform the actual file placement." }
+        };
+        
+        const auto& stepData = steps[s->step - 1];
+        
+        std::string titleMarkup = "<b>" + std::to_string(s->step) + "/7: " + _T(stepData.titleKey, stepData.defaultTitle) + "</b>";
+        gtk_label_set_markup(GTK_LABEL(s->title_label), titleMarkup.c_str());
+        gtk_label_set_text(GTK_LABEL(s->desc_label), _T(stepData.textKey, stepData.defaultText).c_str());
+        
+        gtk_widget_set_sensitive(s->prev_btn, s->step > 1);
+        gtk_button_set_label(GTK_BUTTON(s->next_btn), s->step == 7 ? _T("tut_btn_finish", "Finish").c_str() : _T("tut_btn_next", "Next").c_str());
+        
+        if (s->step == 2) gtk_widget_grab_focus(s->self->source_entry);
+        else if (s->step == 3) gtk_widget_grab_focus(s->self->target_entry);
+        else if (s->step == 4) gtk_widget_grab_focus(s->self->semantic_entry);
+        else if (s->step == 5) gtk_widget_grab_focus(s->self->move_check);
+        else if (s->step == 6) gtk_widget_grab_focus(s->self->tree_view);
+        else if (s->step == 7) gtk_widget_grab_focus(s->self->start_button);
+    };
+    
+    // Auto-free state on window destroy, and re-enable main window buttons
+    g_signal_connect(tut_win, "destroy", G_CALLBACK(+[](GtkWidget* w, gpointer data) {
+        auto* state = static_cast<TutorialState*>(data);
+        gtk_widget_set_sensitive(state->self->start_button, TRUE);
+        gtk_widget_set_sensitive(state->self->test_button, TRUE);
+        gtk_widget_set_sensitive(state->self->stop_button, TRUE);
+        delete state;
+    }), state);
+    
+    struct ClickData {
+        TutorialState* s;
+        void (*update_step_fn)(TutorialState*);
+    };
+    auto* cd = new ClickData{state, update_step};
+    
+    g_object_set_data_full(G_OBJECT(tut_win), "click_data", cd, [](gpointer data) {
+        delete static_cast<ClickData*>(data);
+    });
+    
+    g_signal_connect(prev_btn, "clicked", G_CALLBACK(+[](GtkButton*, gpointer data) {
+        auto* cd = static_cast<ClickData*>(data);
+        if (cd->s->step > 1) {
+            cd->s->step--;
+            cd->update_step_fn(cd->s);
+        }
+    }), cd);
+    
+    g_signal_connect(next_btn, "clicked", G_CALLBACK(+[](GtkButton*, gpointer data) {
+        auto* cd = static_cast<ClickData*>(data);
+        if (cd->s->step < 7) {
+            cd->s->step++;
+            cd->update_step_fn(cd->s);
+        } else {
+            gtk_window_destroy(GTK_WINDOW(cd->s->tut_win));
+        }
+    }), cd);
+    
+    g_signal_connect_swapped(close_btn, "clicked", G_CALLBACK(gtk_window_destroy), tut_win);
+    
+    update_step(state);
+    gtk_window_present(GTK_WINDOW(tut_win));
 }
 
 } // namespace bttb

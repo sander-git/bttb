@@ -142,7 +142,7 @@ msgstr "Taal gewijzigd"
 msgid "about_comments"
 msgstr ""
 "Burn to the Brim (BTTB) is een moderne C++20-port van de klassieke Delphi-applicatie die is ontworpen om bestanden en mappen optimaal te verdelen over doelopslagmedia (cd's, dvd's, Blu-rays of USB-sticks).\n\n"
-"Functies in v4.6.0:\n"
+"Functies in v4.7.0:\n"
 "- Gloednieuw applicatiepictogram met hoge resolutie (bttb.ico) en uniform websitelogo (bttb.png)\n"
 "- Minimale zoekstatus stackframes & 16MB Win32 stacklimiet (oplossing voor 0xC00000FD overflows)\n"
 "- Uitgebreide logbufferlimiet tot 10MB om afkapping van traceerlogs te voorkomen\n"
@@ -235,7 +235,7 @@ msgid "regex_pattern_chk"
 msgstr "Regex-patroon"
 
 msgid "app_version"
-msgstr "Versie 4.6.0"
+msgstr "Versie 4.7.0"
 
 msgid "app_copyright"
 msgstr "Copyright © 2001-2026 Sander Raaijmakers, Elwin Oost en het Burn to the Brim-team"
@@ -663,3 +663,60 @@ msgstr "Het grootste gescande item vereist een volumecapaciteit van ten minste %
 
 msgid "log_capacity_skip_larger"
 msgstr "Grotere bestanden overgeslagen. Solver opnieuw opstarten..."
+
+msgid "tut_title"
+msgstr "Interactieve Handleiding"
+
+msgid "tut_start_btn"
+msgstr "Handleiding Starten"
+
+msgid "tut_btn_prev"
+msgstr "Vorige"
+
+msgid "tut_btn_next"
+msgstr "Volgende"
+
+msgid "tut_btn_finish"
+msgstr "Voltooien"
+
+msgid "tut_step1_title"
+msgstr "Welkom bij BTTB"
+
+msgid "tut_step1_text"
+msgstr "Welkom bij de interactieve handleiding van Burn to the Brim! Deze gids loodst u door de belangrijkste functies zonder acties uit te voeren. Klik op Volgende om te beginnen."
+
+msgid "tut_step2_title"
+msgstr "Bronmappen"
+
+msgid "tut_step2_text"
+msgstr "Bronmap: Klik op '+' om meerdere mappen te beheren, of voer paden in gescheiden door puntkomma's. Bestanden in deze mappen worden georganiseerd."
+
+msgid "tut_step3_title"
+msgstr "Doelmap"
+
+msgid "tut_step3_text"
+msgstr "Doelmap: Geef de doelmap op waarin BTTB de volume-mappen (bijv. Volume_1, Volume_2) zal aanmaken."
+
+msgid "tut_step4_title"
+msgstr "Semantische Prompt"
+
+msgid "tut_step4_text"
+msgstr "Semantische Prompt: Voer regels in in natuurlijke taal (bijv. 'groepeer audiobestanden') om de verdeling te sturen met behulp van neurale netwerken."
+
+msgid "tut_step5_title"
+msgstr "Inpakopties"
+
+msgid "tut_step5_text"
+msgstr "Inpakopties: Kies tussen Verplaatsen (verplaatst bestanden) of Symlink (virtuele snelkoppelingen). U kunt ook spanning over meerdere volumes en logboeken inschakelen."
+
+msgid "tut_step6_title"
+msgstr "Resultatenverkenner"
+
+msgid "tut_step6_text"
+msgstr "Resultatenverkenner: De boomstructuur toont hoe bestanden zijn verdeeld over de volumes. Klik met de rechtermuisknop op een volume of bestand om het te herstellen naar de originele locatie."
+
+msgid "tut_step7_title"
+msgstr "Testen en Starten"
+
+msgid "tut_step7_text"
+msgstr "Testen & Starten: Klik op 'Testen' om een veilige simulatie uit te voeren zonder bestanden te wijzigen, of klik op 'Starten' om de daadwerkelijke bestandsverplaatsing te starten."

@@ -1,12 +1,17 @@
 <?xml version="1.0" encoding="windows-1252"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
   <Product Name="$(var.APP_NAME) $(var.VERSION)" Id="*" UpgradeCode="$(var.UPGRADE_CODE)" 
-           Language="1033" Codepage="1252" Version="$(var.VERSION)" Manufacturer="BurnToTheBrim Team">
+           Language="1033" Codepage="1252" Version="$(var.VERSION)" Manufacturer="Sander Raaijmakers">
     
     <Package Id="*" Keywords="Installer" Description="$(var.APP_NAME) $(var.VERSION) Installer" 
-             Manufacturer="BurnToTheBrim Team" InstallerVersion="200" Compressed="yes" InstallScope="perMachine"
+             Manufacturer="Sander Raaijmakers" InstallerVersion="200" Compressed="yes" InstallScope="perMachine"
              Languages="1033,1031,1043,1036,1034,2052,1041,1040,1032,1095,2070,1081" />
     
+    <Property Id="PublisherName" Value="CN=6CAC6825-2EBE-49DB-B14B-9AFF934DE747" />
+    <Property Id="PublisherDisplayName" Value="Sander Raaijmakers" />
+    <Property Id="PackageName" Value="SanderRaaijmakers.BurnToTheBrim" />
+    <Property Id="PackageDisplayName" Value="Burn to the Brim" />
+
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     
     <Media Id="1" Cabinet="bttb.cab" EmbedCab="yes" />
