@@ -13,6 +13,17 @@
 
 namespace bttb {
 
+// Optical disc standard capacities (sector size = 2048 bytes)
+constexpr int64_t BD25_CAPACITY_BYTES = 25025314816LL;           // 12,219,392 sectors (SL standard raw)
+constexpr int64_t BD25_DM_CAPACITY_BYTES = 24220008448LL;        // 11,826,176 sectors (SL with ~780 MB / 768 MiB defect management)
+constexpr int64_t BD50_CAPACITY_BYTES = 50050629632LL;           // 24,438,784 sectors (DL standard raw)
+constexpr int64_t BD50_DM_CAPACITY_BYTES = 48440016896LL;        // 23,652,352 sectors (DL with defect management)
+constexpr int64_t BDXL100_CAPACITY_BYTES = 100101259264LL;       // 48,877,568 sectors (TL standard raw)
+constexpr int64_t BDXL100_DM_CAPACITY_BYTES = 96879009792LL;     // 47,304,704 sectors (TL with defect management)
+constexpr int64_t BDXL128_CAPACITY_BYTES = 128127598592LL;       // 62,562,304 sectors (QL standard raw)
+constexpr int64_t BDXL128_DM_CAPACITY_BYTES = 124906373120LL;    // 60,989,440 sectors (QL with defect management)
+constexpr int64_t BD_DEFECT_MANAGEMENT_RESERVED_BYTES = 805306368LL; // 393,216 sectors (~780 MB / 768 MiB)
+
 struct CDInfo {
     std::string name;
     int64_t capacityBytes = 0; // standard medium capacity
@@ -115,6 +126,9 @@ public:
     int64_t par3BlockSize = 2048;
     int par3RedundancyPercent = 10;
     
+    // BD Defect Management (~780 MB Spare Area)
+    bool enableDefectManagement = false;
+    
     // v4.3.0 Localization Enhancement
     std::string language = "auto";
     bool enableMultiThreading = true;
@@ -149,7 +163,7 @@ public:
         uint64_t pruned = 0;
         bool findAWay(int64_t currentSectors, int poz, int selectedFileCount);
         bool checkLimitsAndLog(int64_t currentSectors, int poz);
-        void handleNewSelection(int64_t testSectors);
+        void handleNewSelection(int64_t testSectors, int64_t par3Sectors = 0);
     };
 
     std::atomic<int64_t> currentBestSectors{0};
@@ -167,7 +181,7 @@ private:
     // Core subset-sum recursive backtracking search
     bool findAWay(int64_t currentSectors, int poz, int selectedFileCount);
     bool checkLimitsAndLog(int64_t currentSectors, int poz);
-    void handleNewSelection(int64_t testSectors);
+    void handleNewSelection(int64_t testSectors, int64_t par3Sectors = 0);
     
     void saveBestSelection();
     int countClusters(const std::string& path);

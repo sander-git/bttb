@@ -18,6 +18,7 @@ struct DialogData {
     GtkWidget* cv_name_entry;
     GtkWidget* conflict_switch;
     GtkWidget* dark_theme_switch;
+    GtkWidget* defect_mgmt_switch;
     GtkWidget* enable_par3_switch;
     GtkWidget* par3_block_size_entry;
     GtkWidget* par3_redundancy_entry;
@@ -35,6 +36,7 @@ struct DialogData {
 static void on_media_changed(GtkComboBox* combo, gpointer user_data) {
     auto* data = static_cast<DialogData*>(user_data);
     int active = gtk_combo_box_get_active(combo);
+    bool dm = data->defect_mgmt_switch ? gtk_switch_get_active(GTK_SWITCH(data->defect_mgmt_switch)) : data->solver->enableDefectManagement;
     
     if (active == 0) { // CD 650MB
         gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "650 MB");
@@ -53,47 +55,59 @@ static void on_media_changed(GtkComboBox* combo, gpointer user_data) {
         gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "2048");
         gtk_widget_set_sensitive(data->capacity_entry, FALSE);
     } else if (active == 4) { // BD 25GB
-        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "25 GB");
+        int64_t cap = dm ? BD25_DM_CAPACITY_BYTES : BD25_CAPACITY_BYTES;
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), formatHumanSize(cap).c_str());
         gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "2048");
         gtk_widget_set_sensitive(data->capacity_entry, FALSE);
     } else if (active == 5) { // BD DL 50GB
-        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "50 GB");
+        int64_t cap = dm ? BD50_DM_CAPACITY_BYTES : BD50_CAPACITY_BYTES;
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), formatHumanSize(cap).c_str());
         gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "2048");
         gtk_widget_set_sensitive(data->capacity_entry, FALSE);
-    } else if (active == 6) { // USB 8GB
+    } else if (active == 6) { // BD XL 100GB
+        int64_t cap = dm ? BDXL100_DM_CAPACITY_BYTES : BDXL100_CAPACITY_BYTES;
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), formatHumanSize(cap).c_str());
+        gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "2048");
+        gtk_widget_set_sensitive(data->capacity_entry, FALSE);
+    } else if (active == 7) { // BD XL 128GB
+        int64_t cap = dm ? BDXL128_DM_CAPACITY_BYTES : BDXL128_CAPACITY_BYTES;
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), formatHumanSize(cap).c_str());
+        gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "2048");
+        gtk_widget_set_sensitive(data->capacity_entry, FALSE);
+    } else if (active == 8) { // USB 8GB
         gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "8 GB");
         gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "4096");
         gtk_widget_set_sensitive(data->capacity_entry, FALSE);
-    } else if (active == 7) { // USB 16GB
+    } else if (active == 9) { // USB 16GB
         gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "16 GB");
         gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "4096");
         gtk_widget_set_sensitive(data->capacity_entry, FALSE);
-    } else if (active == 8) { // USB 32GB
+    } else if (active == 10) { // USB 32GB
         gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "32 GB");
         gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "4096");
         gtk_widget_set_sensitive(data->capacity_entry, FALSE);
-    } else if (active == 9) { // USB 64GB
+    } else if (active == 11) { // USB 64GB
         gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "64 GB");
         gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "4096");
         gtk_widget_set_sensitive(data->capacity_entry, FALSE);
-    } else if (active == 10) { // USB 256GB
+    } else if (active == 12) { // USB 256GB
         gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "256 GB");
         gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "4096");
         gtk_widget_set_sensitive(data->capacity_entry, FALSE);
-    } else if (active == 11) { // USB 512GB
+    } else if (active == 13) { // USB 512GB
         gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "512 GB");
         gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "4096");
         gtk_widget_set_sensitive(data->capacity_entry, FALSE);
-    } else if (active == 12) { // Auto Size
+    } else if (active == 14) { // Auto Size
         gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "Auto");
         gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "2048");
         gtk_widget_set_sensitive(data->capacity_entry, FALSE);
-    } else if (active == 13) { // Custom Size
+    } else if (active == 15) { // Custom Size
         gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "64 GB");
         gtk_editable_set_text(GTK_EDITABLE(data->cluster_entry), "4096");
         gtk_widget_set_sensitive(data->capacity_entry, TRUE);
-    } else if (active >= 14) { // Custom Volumes
-        int cvIdx = active - 14;
+    } else if (active >= 16) { // Custom Volumes
+        int cvIdx = active - 16;
         if (cvIdx >= 0 && cvIdx < (int)data->solver->customVolumes.size()) {
             const auto& cv = data->solver->customVolumes[cvIdx];
             std::string sizeStr = formatHumanSize(cv.capacityBytes);
@@ -141,7 +155,7 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     // Create transient modal window
     GtkWidget* dialog = gtk_window_new();
     gtk_window_set_title(GTK_WINDOW(dialog), _T("pref_title", "Preferences").c_str());
-    gtk_window_set_default_size(GTK_WINDOW(dialog), 600, 800);
+    gtk_window_set_default_size(GTK_WINDOW(dialog), 680, 950);
     gtk_window_set_modal(GTK_WINDOW(dialog), TRUE);
     gtk_window_set_transient_for(GTK_WINDOW(dialog), parent);
     
@@ -182,6 +196,8 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "DVD DL (8.5 GB)");
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "BD (25 GB)");
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "BD DL (50 GB)");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "BD XL (100 GB)");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "BD XL (128 GB)");
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "USB (8 GB)");
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "USB (16 GB)");
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), "USB (32 GB)");
@@ -231,7 +247,7 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
         
         gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->media_combo), cv.name.c_str());
         
-        int newIdx = 14 + data->solver->customVolumes.size() - 1;
+        int newIdx = 16 + data->solver->customVolumes.size() - 1;
         gtk_combo_box_set_active(GTK_COMBO_BOX(data->media_combo), newIdx);
         gtk_editable_set_text(GTK_EDITABLE(data->cv_name_entry), "");
     }), data);
@@ -299,36 +315,45 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     data->dark_theme_switch = gtk_switch_new();
     gtk_widget_set_halign(data->dark_theme_switch, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID(grid), data->dark_theme_switch, 1, 10, 1, 1);
+
+    // BD Defect Management switch
+    GtkWidget* label_dm = gtk_label_new(_T("enable_defect_mgmt_chk", "Enable BD Defect Management (~780 MB spare area):").c_str());
+    gtk_widget_set_halign(label_dm, GTK_ALIGN_START);
+    gtk_grid_attach(GTK_GRID(grid), label_dm, 0, 11, 1, 1);
+
+    data->defect_mgmt_switch = gtk_switch_new();
+    gtk_widget_set_halign(data->defect_mgmt_switch, GTK_ALIGN_START);
+    gtk_grid_attach(GTK_GRID(grid), data->defect_mgmt_switch, 1, 11, 1, 1);
     
     // Enable PAR3 Parity protection switch
     GtkWidget* label_par3 = gtk_label_new(_T("enable_par3_chk", "Enable PAR3 Parity Protection:").c_str());
     gtk_widget_set_halign(label_par3, GTK_ALIGN_START);
-    gtk_grid_attach(GTK_GRID(grid), label_par3, 0, 11, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), label_par3, 0, 12, 1, 1);
  
     data->enable_par3_switch = gtk_switch_new();
     gtk_widget_set_halign(data->enable_par3_switch, GTK_ALIGN_START);
-    gtk_grid_attach(GTK_GRID(grid), data->enable_par3_switch, 1, 11, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), data->enable_par3_switch, 1, 12, 1, 1);
  
     // PAR3 Block Size (Bytes) entry
     GtkWidget* label_par3_block = gtk_label_new(_T("par3_block_size", "PAR3 Block Size (Bytes):").c_str());
     gtk_widget_set_halign(label_par3_block, GTK_ALIGN_START);
-    gtk_grid_attach(GTK_GRID(grid), label_par3_block, 0, 12, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), label_par3_block, 0, 13, 1, 1);
  
     data->par3_block_size_entry = gtk_entry_new();
-    gtk_grid_attach(GTK_GRID(grid), data->par3_block_size_entry, 1, 12, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), data->par3_block_size_entry, 1, 13, 1, 1);
  
     // PAR3 Redundancy Percent entry
     GtkWidget* label_par3_red = gtk_label_new(_T("par3_redundancy", "PAR3 Redundancy Percent (%):").c_str());
     gtk_widget_set_halign(label_par3_red, GTK_ALIGN_START);
-    gtk_grid_attach(GTK_GRID(grid), label_par3_red, 0, 13, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), label_par3_red, 0, 14, 1, 1);
  
     data->par3_redundancy_entry = gtk_entry_new();
-    gtk_grid_attach(GTK_GRID(grid), data->par3_redundancy_entry, 1, 13, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), data->par3_redundancy_entry, 1, 14, 1, 1);
     
-    // Language selection entry (Row 14)
+    // Language selection entry (Row 15)
     GtkWidget* label_lang = gtk_label_new(_T("language_label", "Language:").c_str());
     gtk_widget_set_halign(label_lang, GTK_ALIGN_START);
-    gtk_grid_attach(GTK_GRID(grid), label_lang, 0, 14, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), label_lang, 0, 15, 1, 1);
     
     data->language_combo = gtk_combo_box_text_new();
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(data->language_combo), "System Default (Auto)");
@@ -364,10 +389,10 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     else if (solver.language == "elv") gtk_combo_box_set_active(GTK_COMBO_BOX(data->language_combo), 14);
     else gtk_combo_box_set_active(GTK_COMBO_BOX(data->language_combo), 0);
     
-    gtk_grid_attach(GTK_GRID(grid), data->language_combo, 1, 14, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), data->language_combo, 1, 15, 1, 1);
     
     // Grouping Rules list frame
-    GtkWidget* rules_frame = gtk_frame_new("File/Folder Grouping Rules");
+    GtkWidget* rules_frame = gtk_frame_new(_T("grouping_rules_frame", "File / Folder Grouping Rules").c_str());
     gtk_box_append(GTK_BOX(content_box), rules_frame);
     
     GtkWidget* rules_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
@@ -390,13 +415,13 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     // Columns
     GtkCellRenderer* renderer = gtk_cell_renderer_text_new();
     gtk_tree_view_append_column(GTK_TREE_VIEW(data->rule_tree_view),
-                                gtk_tree_view_column_new_with_attributes("Pattern", renderer, "text", 0, NULL));
+                                gtk_tree_view_column_new_with_attributes(_T("pattern_col", "Pattern").c_str(), renderer, "text", 0, NULL));
     gtk_tree_view_append_column(GTK_TREE_VIEW(data->rule_tree_view),
-                                gtk_tree_view_column_new_with_attributes("Files", renderer, "text", 1, NULL));
+                                gtk_tree_view_column_new_with_attributes(_T("files_col", "Files").c_str(), renderer, "text", 1, NULL));
     gtk_tree_view_append_column(GTK_TREE_VIEW(data->rule_tree_view),
-                                gtk_tree_view_column_new_with_attributes("Folders", renderer, "text", 2, NULL));
+                                gtk_tree_view_column_new_with_attributes(_T("folders_col", "Folders").c_str(), renderer, "text", 2, NULL));
     gtk_tree_view_append_column(GTK_TREE_VIEW(data->rule_tree_view),
-                                gtk_tree_view_column_new_with_attributes("Type", renderer, "text", 3, NULL));
+                                gtk_tree_view_column_new_with_attributes(_T("type_col", "Type").c_str(), renderer, "text", 3, NULL));
     
     // Inputs to add new rule
     GtkWidget* add_rule_grid = gtk_grid_new();
@@ -405,28 +430,28 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     gtk_box_append(GTK_BOX(rules_box), add_rule_grid);
     
     data->pattern_entry = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(data->pattern_entry), "Rule Pattern (*.mp3 or ^[0-9].*\\..*$)");
+    gtk_entry_set_placeholder_text(GTK_ENTRY(data->pattern_entry), _T("rule_pattern_placeholder", "Rule Pattern (*.mp3 or ^[0-9].*\\..*$)").c_str());
     gtk_grid_attach(GTK_GRID(add_rule_grid), data->pattern_entry, 0, 0, 3, 1);
     
-    data->match_files_check = gtk_check_button_new_with_label("Match Files");
+    data->match_files_check = gtk_check_button_new_with_label(_T("match_files_chk", "Match Files").c_str());
     gtk_check_button_set_active(GTK_CHECK_BUTTON(data->match_files_check), TRUE);
     gtk_grid_attach(GTK_GRID(add_rule_grid), data->match_files_check, 0, 1, 1, 1);
     
-    data->match_folders_check = gtk_check_button_new_with_label("Match Folders");
+    data->match_folders_check = gtk_check_button_new_with_label(_T("match_folders_chk", "Match Folders").c_str());
     gtk_check_button_set_active(GTK_CHECK_BUTTON(data->match_folders_check), TRUE);
     gtk_grid_attach(GTK_GRID(add_rule_grid), data->match_folders_check, 1, 1, 1, 1);
     
-    data->regex_check = gtk_check_button_new_with_label("Regex Pattern");
+    data->regex_check = gtk_check_button_new_with_label(_T("regex_pattern_chk", "Regex Pattern").c_str());
     gtk_grid_attach(GTK_GRID(add_rule_grid), data->regex_check, 2, 1, 1, 1);
     
     GtkWidget* rule_button_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     gtk_box_append(GTK_BOX(rules_box), rule_button_box);
     
-    GtkWidget* add_rule_btn = gtk_button_new_with_label("Add Rule");
+    GtkWidget* add_rule_btn = gtk_button_new_with_label(_T("add_rule_btn", "Add Rule").c_str());
     g_signal_connect(add_rule_btn, "clicked", G_CALLBACK(on_add_rule), data);
     gtk_box_append(GTK_BOX(rule_button_box), add_rule_btn);
     
-    GtkWidget* remove_rule_btn = gtk_button_new_with_label("Remove Selected");
+    GtkWidget* remove_rule_btn = gtk_button_new_with_label(_T("remove_selected_btn", "Remove Selected").c_str());
     g_signal_connect(remove_rule_btn, "clicked", G_CALLBACK(on_remove_rule), data);
     gtk_box_append(GTK_BOX(rule_button_box), remove_rule_btn);
     
@@ -442,12 +467,26 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     gtk_box_append(GTK_BOX(action_box), ok_btn);
     
     // Set initial human capacity value
-    if (solver.mediumInfo.capacityBytes == 681574400) gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "650 MB");
-    else if (solver.mediumInfo.capacityBytes == 734003200) gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "700 MB");
-    else if (solver.mediumInfo.capacityBytes == 4700000000LL) gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "4.7 GB");
-    else if (solver.mediumInfo.capacityBytes == 8500000000LL) gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "8.5 GB");
-    else if (solver.mediumInfo.capacityBytes == 25000000000LL) gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "25 GB");
-    else if (solver.mediumInfo.capacityBytes == 50000000000LL) gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "50 GB");
+    if (solver.mediumInfo.capacityBytes == 681574400LL) gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "650 MB");
+    else if (solver.mediumInfo.capacityBytes == 734003200LL) gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "700 MB");
+    else if (solver.mediumInfo.capacityBytes == 4707319808LL || solver.mediumInfo.capacityBytes == 4700000000LL) gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "4.7 GB");
+    else if (solver.mediumInfo.capacityBytes == 8543666176LL || solver.mediumInfo.capacityBytes == 8500000000LL) gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "8.5 GB");
+    else if (solver.mediumInfo.capacityBytes == BD25_CAPACITY_BYTES || solver.mediumInfo.capacityBytes == BD25_DM_CAPACITY_BYTES || solver.mediumInfo.capacityBytes == 25000000000LL) {
+        int64_t cap = solver.enableDefectManagement ? BD25_DM_CAPACITY_BYTES : BD25_CAPACITY_BYTES;
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), formatHumanSize(cap).c_str());
+    }
+    else if (solver.mediumInfo.capacityBytes == BD50_CAPACITY_BYTES || solver.mediumInfo.capacityBytes == BD50_DM_CAPACITY_BYTES || solver.mediumInfo.capacityBytes == 50000000000LL) {
+        int64_t cap = solver.enableDefectManagement ? BD50_DM_CAPACITY_BYTES : BD50_CAPACITY_BYTES;
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), formatHumanSize(cap).c_str());
+    }
+    else if (solver.mediumInfo.capacityBytes == BDXL100_CAPACITY_BYTES || solver.mediumInfo.capacityBytes == BDXL100_DM_CAPACITY_BYTES) {
+        int64_t cap = solver.enableDefectManagement ? BDXL100_DM_CAPACITY_BYTES : BDXL100_CAPACITY_BYTES;
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), formatHumanSize(cap).c_str());
+    }
+    else if (solver.mediumInfo.capacityBytes == BDXL128_CAPACITY_BYTES || solver.mediumInfo.capacityBytes == BDXL128_DM_CAPACITY_BYTES) {
+        int64_t cap = solver.enableDefectManagement ? BDXL128_DM_CAPACITY_BYTES : BDXL128_CAPACITY_BYTES;
+        gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), formatHumanSize(cap).c_str());
+    }
     else if (solver.mediumInfo.capacityBytes == 8000000000LL) gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "8 GB");
     else if (solver.mediumInfo.capacityBytes == 16000000000LL) gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "16 GB");
     else if (solver.mediumInfo.capacityBytes == 32000000000LL) gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), "32 GB");
@@ -466,9 +505,25 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     gtk_switch_set_active(GTK_SWITCH(data->skip_empty_switch), solver.skipEmpty);
     gtk_switch_set_active(GTK_SWITCH(data->conflict_switch), solver.ruleBasedWins);
     gtk_switch_set_active(GTK_SWITCH(data->dark_theme_switch), solver.enableDarkTheme);
+    gtk_switch_set_active(GTK_SWITCH(data->defect_mgmt_switch), solver.enableDefectManagement);
     gtk_switch_set_active(GTK_SWITCH(data->enable_par3_switch), solver.enablePar3);
     gtk_editable_set_text(GTK_EDITABLE(data->par3_block_size_entry), std::to_string(solver.par3BlockSize).c_str());
     gtk_editable_set_text(GTK_EDITABLE(data->par3_redundancy_entry), std::to_string(solver.par3RedundancyPercent).c_str());
+    
+    // Connect Defect Management switch callback to refresh capacity display if BD preset is selected
+    g_signal_connect(data->defect_mgmt_switch, "state-set", G_CALLBACK(+[](GtkSwitch* sw, gboolean state, gpointer user_data) -> gboolean {
+        auto* data = static_cast<DialogData*>(user_data);
+        int active = gtk_combo_box_get_active(GTK_COMBO_BOX(data->media_combo));
+        if (active >= 4 && active <= 7) {
+            int64_t cap = 0;
+            if (active == 4) cap = state ? BD25_DM_CAPACITY_BYTES : BD25_CAPACITY_BYTES;
+            else if (active == 5) cap = state ? BD50_DM_CAPACITY_BYTES : BD50_CAPACITY_BYTES;
+            else if (active == 6) cap = state ? BDXL100_DM_CAPACITY_BYTES : BDXL100_CAPACITY_BYTES;
+            else if (active == 7) cap = state ? BDXL128_DM_CAPACITY_BYTES : BDXL128_CAPACITY_BYTES;
+            gtk_editable_set_text(GTK_EDITABLE(data->capacity_entry), formatHumanSize(cap).c_str());
+        }
+        return FALSE;
+    }), data);
     
     // Listen for capacity edit changes to show dynamic parsed size in MB
     g_signal_connect(data->capacity_entry, "changed", G_CALLBACK(+[](GtkEditable* editable, gpointer user_data) {
@@ -499,9 +554,15 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     
     // Select custom/standard size default index
     int combo_index = solver.lastSelectedVolumeIndex;
-    int num_items = 14 + (int)solver.customVolumes.size();
-    if (combo_index < 0 || combo_index >= num_items) {
-        combo_index = 2; // Default to DVD (4.7 GB)
+    int num_items = 16 + (int)solver.customVolumes.size();
+    if (solver.enableAutoVolume) {
+        combo_index = 14;
+    } else if (combo_index < 0 || combo_index >= num_items) {
+        if (solver.mediumInfo.capacityBytes == BD25_CAPACITY_BYTES || solver.mediumInfo.capacityBytes == BD25_DM_CAPACITY_BYTES || solver.mediumInfo.capacityBytes == 25000000000LL) combo_index = 4;
+        else if (solver.mediumInfo.capacityBytes == BD50_CAPACITY_BYTES || solver.mediumInfo.capacityBytes == BD50_DM_CAPACITY_BYTES || solver.mediumInfo.capacityBytes == 50000000000LL) combo_index = 5;
+        else if (solver.mediumInfo.capacityBytes == BDXL100_CAPACITY_BYTES || solver.mediumInfo.capacityBytes == BDXL100_DM_CAPACITY_BYTES) combo_index = 6;
+        else if (solver.mediumInfo.capacityBytes == BDXL128_CAPACITY_BYTES || solver.mediumInfo.capacityBytes == BDXL128_DM_CAPACITY_BYTES) combo_index = 7;
+        else combo_index = 2; // Default to DVD (4.7 GB)
     }
     
     gtk_combo_box_set_active(GTK_COMBO_BOX(data->media_combo), combo_index);
@@ -516,12 +577,39 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
     g_signal_connect(ok_btn, "clicked", G_CALLBACK(+[](GtkButton* btn, gpointer user_data) {
         auto* data = static_cast<DialogData*>(user_data);
         
-        // Save values using parseHumanSize
-        const char* cap_txt = gtk_editable_get_text(GTK_EDITABLE(data->capacity_entry));
-        if (cap_txt && strcmp(cap_txt, "Auto") == 0) {
+        int active = gtk_combo_box_get_active(GTK_COMBO_BOX(data->media_combo));
+        bool dm = gtk_switch_get_active(GTK_SWITCH(data->defect_mgmt_switch));
+        data->solver->enableDefectManagement = dm;
+        
+        if (active == 14) { // Auto Size
             data->solver->mediumInfo.capacityBytes = 0;
-        } else {
+            data->solver->enableAutoVolume = true;
+        } else if (active >= 0 && active <= 13) {
+            data->solver->enableAutoVolume = false;
+            if (active == 0) data->solver->mediumInfo.capacityBytes = 681574400LL;
+            else if (active == 1) data->solver->mediumInfo.capacityBytes = 734003200LL;
+            else if (active == 2) data->solver->mediumInfo.capacityBytes = 4707319808LL;
+            else if (active == 3) data->solver->mediumInfo.capacityBytes = 8543666176LL;
+            else if (active == 4) data->solver->mediumInfo.capacityBytes = dm ? BD25_DM_CAPACITY_BYTES : BD25_CAPACITY_BYTES;
+            else if (active == 5) data->solver->mediumInfo.capacityBytes = dm ? BD50_DM_CAPACITY_BYTES : BD50_CAPACITY_BYTES;
+            else if (active == 6) data->solver->mediumInfo.capacityBytes = dm ? BDXL100_DM_CAPACITY_BYTES : BDXL100_CAPACITY_BYTES;
+            else if (active == 7) data->solver->mediumInfo.capacityBytes = dm ? BDXL128_DM_CAPACITY_BYTES : BDXL128_CAPACITY_BYTES;
+            else if (active == 8) data->solver->mediumInfo.capacityBytes = 8000000000LL;
+            else if (active == 9) data->solver->mediumInfo.capacityBytes = 16000000000LL;
+            else if (active == 10) data->solver->mediumInfo.capacityBytes = 32000000000LL;
+            else if (active == 11) data->solver->mediumInfo.capacityBytes = 64000000000LL;
+            else if (active == 12) data->solver->mediumInfo.capacityBytes = 256000000000LL;
+            else if (active == 13) data->solver->mediumInfo.capacityBytes = 512000000000LL;
+        } else if (active >= 16) { // Custom Volumes
+            int cvIdx = active - 16;
+            if (cvIdx >= 0 && cvIdx < (int)data->solver->customVolumes.size()) {
+                data->solver->mediumInfo.capacityBytes = data->solver->customVolumes[cvIdx].capacityBytes;
+            }
+            data->solver->enableAutoVolume = false;
+        } else { // Custom Size (15)
+            const char* cap_txt = gtk_editable_get_text(GTK_EDITABLE(data->capacity_entry));
             data->solver->mediumInfo.capacityBytes = parseHumanSize(cap_txt);
+            data->solver->enableAutoVolume = false;
         }
         data->solver->mediumInfo.sectorSize = std::stoll(gtk_editable_get_text(GTK_EDITABLE(data->cluster_entry)));
         data->solver->mediumInfo.slackBytes = std::stoll(gtk_editable_get_text(GTK_EDITABLE(data->slack_entry)));
@@ -529,8 +617,7 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
         data->solver->splitDepth = std::stoi(gtk_editable_get_text(GTK_EDITABLE(data->split_depth_entry)));
         data->solver->skipEmpty = gtk_switch_get_active(GTK_SWITCH(data->skip_empty_switch));
         
-        data->solver->lastSelectedVolumeIndex = gtk_combo_box_get_active(GTK_COMBO_BOX(data->media_combo));
-        data->solver->enableAutoVolume = (data->solver->lastSelectedVolumeIndex == 12);
+        data->solver->lastSelectedVolumeIndex = active;
         data->solver->ruleBasedWins = gtk_switch_get_active(GTK_SWITCH(data->conflict_switch));
         data->solver->enableDarkTheme = gtk_switch_get_active(GTK_SWITCH(data->dark_theme_switch));
         data->solver->enablePar3 = gtk_switch_get_active(GTK_SWITCH(data->enable_par3_switch));

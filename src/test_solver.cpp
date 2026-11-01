@@ -741,6 +741,89 @@ void run_test8() {
     std::cout << "SUCCESS: Multi-threaded solver test completed successfully!" << std::endl;
 }
 
+void run_test9() {
+    std::cout << "\n=== TEST 9: BD Volume Capacities, Defect Management & PAR3 Redundancy Packing ===" << std::endl;
+    
+    // 1. Verify exact standard BD capacity constants
+    std::cout << "Verifying optical BD sector and capacity constants..." << std::endl;
+    assert(bttb::BD25_CAPACITY_BYTES == 12219392LL * 2048LL); // 25,025,314,816 bytes
+    assert(bttb::BD25_DM_CAPACITY_BYTES == 11826176LL * 2048LL); // 24,220,008,448 bytes
+    assert(bttb::BD25_CAPACITY_BYTES - bttb::BD25_DM_CAPACITY_BYTES == bttb::BD_DEFECT_MANAGEMENT_RESERVED_BYTES);
+    assert(bttb::BD_DEFECT_MANAGEMENT_RESERVED_BYTES == 393216LL * 2048LL); // 768 MiB / ~780 MB
+    
+    assert(bttb::BD50_CAPACITY_BYTES == 24438784LL * 2048LL); // 50,050,629,632 bytes
+    assert(bttb::BD50_DM_CAPACITY_BYTES == 23652352LL * 2048LL); // 48,440,016,896 bytes
+    assert(bttb::BDXL100_CAPACITY_BYTES == 48877568LL * 2048LL); // 100,101,259,264 bytes
+    assert(bttb::BDXL100_DM_CAPACITY_BYTES == 47304704LL * 2048LL); // 96,879,009,792 bytes
+    assert(bttb::BDXL128_CAPACITY_BYTES == 62562304LL * 2048LL); // 128,127,598,592 bytes
+    assert(bttb::BDXL128_DM_CAPACITY_BYTES == 60989440LL * 2048LL); // 124,906,373,120 bytes
+    std::cout << "BD capacity and Defect Management sector math verified perfectly!" << std::endl;
+    
+    // 2. Verify parseHumanSize for BD strings
+    assert(bttb::parseHumanSize("bd25") == bttb::BD25_CAPACITY_BYTES);
+    assert(bttb::parseHumanSize("BD 50") == bttb::BD50_CAPACITY_BYTES);
+    assert(bttb::parseHumanSize("bd100") == bttb::BDXL100_CAPACITY_BYTES);
+    assert(bttb::parseHumanSize("bd128") == bttb::BDXL128_CAPACITY_BYTES);
+    std::cout << "parseHumanSize BD presets verified!" << std::endl;
+    
+    // 3. Test volume solver taking PAR3 redundancy into account
+    std::string test_dir = "test_bd_par_sandbox";
+    std::string test_src = test_dir + "/source";
+    std::string test_dest = test_dir + "/target";
+    std::filesystem::remove_all(test_dir);
+    std::filesystem::create_directories(test_src);
+    
+    // Create 10 files of 20 KB each = 200 KB total
+    for (int i = 0; i < 10; ++i) {
+        std::ofstream f(test_src + "/file_" + std::to_string(i) + ".dat", std::ios::binary);
+        std::vector<char> buf(20 * 1024, (char)('A' + i));
+        f.write(buf.data(), buf.size());
+    }
+    
+    bttb::BttbSolver solver;
+    solver.sourceDirectories.push_back(test_src);
+    solver.targetDirectory = test_dest;
+    solver.moveFiles = false;
+    solver.createSymlinks = false;
+    solver.spanMultipleVolumes = true;
+    solver.maxSearchTimeSeconds = 2;
+    solver.enableTrace = false;
+    // Set target capacity to 100 KB with 2048 cluster size
+    solver.mediumInfo.capacityBytes = 100 * 1024;
+    solver.mediumInfo.sectorSize = 2048;
+    solver.mediumInfo.slackBytes = 2048; // 1 sector slack
+    solver.enablePar3 = true;
+    solver.par3BlockSize = 2048;
+    solver.par3RedundancyPercent = 20; // 20% redundancy
+    
+    std::cout << "Running solver with PAR3 enabled (20% redundancy, 100 KB volume limit)..." << std::endl;
+    solver.run();
+    
+    std::cout << "Packed volumes count: " << solver.packedVolumes.size() << std::endl;
+    assert(!solver.packedVolumes.empty());
+    
+    for (const auto& vol : solver.packedVolumes) {
+        std::cout << "Volume " << vol.volumeIndex << ": totalBytes=" << vol.totalBytes 
+                  << " (Capacity=" << solver.mediumInfo.capacityBytes << ")" << std::endl;
+        // Verify that totalBytes including PAR3 does not overflow capacity
+        assert(vol.totalBytes <= solver.mediumInfo.capacityBytes);
+        // Verify PAR3 file is present in items
+        bool hasPar3 = false;
+        for (const auto& item : vol.itemPaths) {
+            if (item.find(".par3") != std::string::npos) {
+                hasPar3 = true;
+                break;
+            }
+        }
+        assert(hasPar3);
+        std::cout << "  -> Volume " << vol.volumeIndex << " properly fitted with PAR3 protection within medium capacity!" << std::endl;
+    }
+    
+    // Clean up
+    std::filesystem::remove_all(test_dir);
+    std::cout << "SUCCESS: BD volume and PAR3 redundancy packing test completed successfully!" << std::endl;
+}
+
 int main() {
     std::cout << "Starting BTTB automated verification suite..." << std::endl;
     run_test1();
@@ -751,6 +834,7 @@ int main() {
     run_test6();
     run_test7();
     run_test8();
+    run_test9();
     std::cout << "\nALL TESTS PASSED SUCCESSFULLY!" << std::endl;
     return 0;
 }

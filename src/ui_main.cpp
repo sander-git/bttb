@@ -478,14 +478,17 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
         gtk_window_set_transient_for(GTK_WINDOW(about), GTK_WINDOW(self->window));
         
         gtk_about_dialog_set_program_name(GTK_ABOUT_DIALOG(about), "Burn to the Brim");
-        gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(about), "4.7.0");
+        gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(about), "4.8.0");
         gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(about), "Copyright \u00a9 2001-2026 Sander Raaijmakers, Elwin Oost and the Burn to the Brim team");
         gtk_about_dialog_set_license_type(GTK_ABOUT_DIALOG(about), GTK_LICENSE_GPL_2_0);
         gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(about), "https://sourceforge.net/projects/bttb/");
         
         const char* default_comments = 
             "Burn to the Brim (BTTB) is a modern C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums (CDs, DVDs, Blu-rays, or USBs).\n\n"
-            "Features in v4.7.0:\n"
+            "Features in v4.8.0:\n"
+            "- Exact Blu-ray optical geometries & sector counts (BD 25GB, BD DL 50GB, BD XL 100GB, BD XL 128GB)\n"
+            "- Blu-ray Defect Management (~780 MB Spare Area reservation) toggle & persistence\n"
+            "- PAR3 parity redundancy-aware volume packing, early termination, and auto-sizing\n"
             "- Modeless interactive tutorial (translated in 13 languages) with highlighted/focused guidance controls\n"
             "- Resizable Win32 main window layout adjustments & mouse-draggable TreeView splitter bar\n"
             "- GTK4 popover context menu for item restoration under Linux\n"

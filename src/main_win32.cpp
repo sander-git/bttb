@@ -125,6 +125,7 @@ void ApplyThemeToListView(HWND hwndLV) {
 #define ID_PREF_EDIT_PAR3_BLOCK 3025
 #define ID_PREF_EDIT_PAR3_REDUNDANCY 3026
 #define ID_PREF_COMBO_LANG           3027
+#define ID_PREF_CHK_DEFECT_MGMT      3028
 
 #define ID_BTN_IMPORT_JSON 1020
 #define ID_BTN_VERIFY_RESTORE 1021
@@ -219,6 +220,7 @@ HWND g_editPrefCvName = NULL;
 HWND g_btnPrefCvSave = NULL;
 HWND g_chkPrefRuleWins = NULL;
 HWND g_chkPrefDarkTheme = NULL;
+HWND g_chkPrefDefectMgmt = NULL;
 HWND g_chkPrefPar3 = NULL;
 HWND g_editPrefPar3Block = NULL;
 HWND g_editPrefPar3Redundancy = NULL;
@@ -270,6 +272,41 @@ inline std::wstring utf8ToWstring(const std::string& str) {
     return wstrTo;
 }
 #endif
+
+// Explicit Unicode ListView Helpers and fallback macros
+#ifndef LVM_INSERTCOLUMNW
+#define LVM_INSERTCOLUMNW (LVM_FIRST + 97)
+#endif
+#ifndef LVM_INSERTITEMW
+#define LVM_INSERTITEMW (LVM_FIRST + 77)
+#endif
+#ifndef LVM_SETITEMTEXTW
+#define LVM_SETITEMTEXTW (LVM_FIRST + 116)
+#endif
+#ifndef LVM_GETITEMTEXTW
+#define LVM_GETITEMTEXTW (LVM_FIRST + 115)
+#endif
+
+inline int ListView_InsertColumnW(HWND hwnd, int iCol, const LVCOLUMNW* pcol) {
+    return (int)SendMessageW(hwnd, LVM_INSERTCOLUMNW, (WPARAM)iCol, (LPARAM)pcol);
+}
+inline int ListView_InsertItemW(HWND hwnd, const LVITEMW* pitem) {
+    return (int)SendMessageW(hwnd, LVM_INSERTITEMW, 0, (LPARAM)pitem);
+}
+inline void ListView_SetItemTextW(HWND hwnd, int i, int iSubItem, LPCWSTR pszText) {
+    LVITEMW _lvi = {0};
+    _lvi.iSubItem = iSubItem;
+    _lvi.pszText = const_cast<LPWSTR>(pszText);
+    SendMessageW(hwnd, LVM_SETITEMTEXTW, (WPARAM)i, (LPARAM)&_lvi);
+}
+inline void ListView_GetItemTextW(HWND hwnd, int i, int iSubItem, LPWSTR pszText, int cchTextMax) {
+    LVITEMW _lvi = {0};
+    _lvi.iSubItem = iSubItem;
+    _lvi.cchTextMax = cchTextMax;
+    _lvi.pszText = pszText;
+    SendMessageW(hwnd, LVM_GETITEMTEXTW, (WPARAM)i, (LPARAM)&_lvi);
+}
+
 
 struct TreeViewItemData {
     int type = -1; // 0 = volume parent, 1 = file child, 2 = grandchild, 3 = remaining parent, 4 = remaining child, 5 = remaining grandchild, 6 = skipped parent, 7 = skipped child
@@ -1438,16 +1475,19 @@ LRESULT CALLBACK AboutWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
         case WM_CREATE: {
             HWND hIcon = CreateWindow("STATIC", "", WS_CHILD | WS_VISIBLE | SS_ICON, 20, 20, 32, 32, hwnd, NULL, NULL, NULL);
-            HICON hIco = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(1));
+            HICON hIco = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(1), IMAGE_ICON, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON), LR_SHARED);
             SendMessage(hIcon, STM_SETICON, (WPARAM)hIco, 0);
             
             CreateWindow("STATIC", _T("app_title", "Burn to the Brim").c_str(), WS_CHILD | WS_VISIBLE, 70, 20, 300, 20, hwnd, NULL, NULL, NULL);
-            CreateWindow("STATIC", _T("app_version", "Version 4.7.0").c_str(), WS_CHILD | WS_VISIBLE, 70, 40, 300, 20, hwnd, NULL, NULL, NULL);
+            CreateWindow("STATIC", _T("app_version", "Version 4.8.0").c_str(), WS_CHILD | WS_VISIBLE, 70, 40, 300, 20, hwnd, NULL, NULL, NULL);
             CreateWindow("STATIC", _T("app_copyright", "Copyright \u00a9 2001-2026 Sander Raaijmakers, Elwin Oost and the Burn to the Brim team").c_str(), WS_CHILD | WS_VISIBLE, 70, 60, 350, 40, hwnd, NULL, NULL, NULL);
             
             const char* default_comments = 
                 "Burn to the Brim (BTTB) is a modern C++20 port of the classic Delphi application designed to optimally fit files and folders onto target storage mediums (CDs, DVDs, Blu-rays, or USBs).\n\n"
-                "Features in v4.7.0:\n"
+                "Features in v4.8.0:\n"
+                "- Exact Blu-ray optical geometries & sector counts (BD 25GB, BD DL 50GB, BD XL 100GB, BD XL 128GB)\n"
+                "- Blu-ray Defect Management (~780 MB Spare Area reservation) toggle & persistence\n"
+                "- PAR3 parity redundancy-aware volume packing, early termination, and auto-sizing\n"
                 "- Modeless interactive tutorial (translated in 13 languages) with highlighted/focused guidance controls\n"
                 "- Resizable Win32 main window layout adjustments & mouse-draggable TreeView splitter bar\n"
                 "- GTK4 popover context menu for item restoration under Linux\n"
@@ -1530,6 +1570,8 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"DVD DL (8.5 GB)");
             SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"BD (25 GB)");
             SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"BD DL (50 GB)");
+            SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"BD XL (100 GB)");
+            SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"BD XL (128 GB)");
             SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"USB (8 GB)");
             SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"USB (16 GB)");
             SendMessage(g_comboPrefMedia, CB_ADDSTRING, 0, (LPARAM)"USB (32 GB)");
@@ -1582,10 +1624,14 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             g_chkPrefRuleWins = CreateWindow("BUTTON", _T("rule_wins_chk", "Rule-based grouping wins over semantic prompt").c_str(), WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 20, y, 500, 20, hwnd, (HMENU)ID_PREF_CHK_RULE_WINS, NULL, NULL);
             
             y += 24;
+            // BD Defect Management Checkbox
+            g_chkPrefDefectMgmt = CreateWindow("BUTTON", _T("enable_defect_mgmt_chk", "Enable BD Defect Management (~780 MB spare area)").c_str(), WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 20, y, 500, 20, hwnd, (HMENU)ID_PREF_CHK_DEFECT_MGMT, NULL, NULL);
+
+            y += 24;
             // Dark Theme Toggle (Disabled completely on Windows)
             g_chkPrefDarkTheme = NULL;
             
-            y += 30;
+            y += 6;
             // PAR3 Settings
             g_chkPrefPar3 = CreateWindow("BUTTON", _T("enable_par3_chk", "Enable PAR3 Parity Protection").c_str(), WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 20, y, 500, 20, hwnd, (HMENU)ID_PREF_CHK_PAR3, NULL, NULL);
             
@@ -1638,31 +1684,31 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             // Group 5: Grouping Rules
             CreateWindow("BUTTON", _T("grouping_rules_frame", "File / Folder Grouping Rules").c_str(), WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 10, y, 580, 240, hwnd, NULL, NULL, NULL);
             
-            g_listPrefRules = CreateWindowEx(WS_EX_CLIENTEDGE, WC_LISTVIEW, "", WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SINGLESEL, 20, y + 20, 560, 110, hwnd, (HMENU)ID_PREF_LIST_RULES, NULL, NULL);
+            g_listPrefRules = CreateWindowExW(WS_EX_CLIENTEDGE, L"SysListView32", L"", WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SINGLESEL, 20, y + 20, 560, 110, hwnd, (HMENU)ID_PREF_LIST_RULES, NULL, NULL);
             ListView_SetExtendedListViewStyle(g_listPrefRules, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
             ApplyThemeToListView(g_listPrefRules);
             
-            LVCOLUMN lvc = {0};
+            LVCOLUMNW lvc = {0};
             lvc.mask = LVCF_TEXT | LVCF_WIDTH;
             lvc.cx = 220;
-            std::string colPattern = _T("pattern_col", "Pattern");
-            lvc.pszText = const_cast<LPSTR>(colPattern.c_str());
-            ListView_InsertColumn(g_listPrefRules, 0, &lvc);
+            std::wstring colPattern = utf8ToWstring(_T("pattern_col", "Pattern"));
+            lvc.pszText = const_cast<LPWSTR>(colPattern.c_str());
+            ListView_InsertColumnW(g_listPrefRules, 0, &lvc);
             
             lvc.cx = 100;
-            std::string colFiles = _T("files_col", "Files");
-            lvc.pszText = const_cast<LPSTR>(colFiles.c_str());
-            ListView_InsertColumn(g_listPrefRules, 1, &lvc);
+            std::wstring colFiles = utf8ToWstring(_T("files_col", "Files"));
+            lvc.pszText = const_cast<LPWSTR>(colFiles.c_str());
+            ListView_InsertColumnW(g_listPrefRules, 1, &lvc);
             
             lvc.cx = 100;
-            std::string colFolders = _T("folders_col", "Folders");
-            lvc.pszText = const_cast<LPSTR>(colFolders.c_str());
-            ListView_InsertColumn(g_listPrefRules, 2, &lvc);
+            std::wstring colFolders = utf8ToWstring(_T("folders_col", "Folders"));
+            lvc.pszText = const_cast<LPWSTR>(colFolders.c_str());
+            ListView_InsertColumnW(g_listPrefRules, 2, &lvc);
             
             lvc.cx = 120;
-            std::string colType = _T("type_col", "Type");
-            lvc.pszText = const_cast<LPSTR>(colType.c_str());
-            ListView_InsertColumn(g_listPrefRules, 3, &lvc);
+            std::wstring colType = utf8ToWstring(_T("type_col", "Type"));
+            lvc.pszText = const_cast<LPWSTR>(colType.c_str());
+            ListView_InsertColumnW(g_listPrefRules, 3, &lvc);
             
             g_editPrefPattern = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 20, y + 140, 240, 22, hwnd, (HMENU)ID_PREF_EDIT_PATTERN, NULL, NULL);
             SendMessage(g_editPrefPattern, EM_SETCUEBANNER, FALSE, (LPARAM)utf8ToWstring(_T("rule_pattern_placeholder", "Rule Pattern (*.mp3 or ^[0-9].*\\..*$)")).c_str());
@@ -1693,12 +1739,26 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             }, (LPARAM)hFont);
             
             // Load Solver Settings into Controls
-            if (g_solver.mediumInfo.capacityBytes == 681574400) SetWindowText(g_editPrefCap, "650 MB");
-            else if (g_solver.mediumInfo.capacityBytes == 734003200) SetWindowText(g_editPrefCap, "700 MB");
-            else if (g_solver.mediumInfo.capacityBytes == 4700000000LL) SetWindowText(g_editPrefCap, "4.7 GB");
-            else if (g_solver.mediumInfo.capacityBytes == 8500000000LL) SetWindowText(g_editPrefCap, "8.5 GB");
-            else if (g_solver.mediumInfo.capacityBytes == 25000000000LL) SetWindowText(g_editPrefCap, "25 GB");
-            else if (g_solver.mediumInfo.capacityBytes == 50000000000LL) SetWindowText(g_editPrefCap, "50 GB");
+            if (g_solver.mediumInfo.capacityBytes == 681574400LL) SetWindowText(g_editPrefCap, "650 MB");
+            else if (g_solver.mediumInfo.capacityBytes == 734003200LL) SetWindowText(g_editPrefCap, "700 MB");
+            else if (g_solver.mediumInfo.capacityBytes == 4707319808LL || g_solver.mediumInfo.capacityBytes == 4700000000LL) SetWindowText(g_editPrefCap, "4.7 GB");
+            else if (g_solver.mediumInfo.capacityBytes == 8543666176LL || g_solver.mediumInfo.capacityBytes == 8500000000LL) SetWindowText(g_editPrefCap, "8.5 GB");
+            else if (g_solver.mediumInfo.capacityBytes == bttb::BD25_CAPACITY_BYTES || g_solver.mediumInfo.capacityBytes == bttb::BD25_DM_CAPACITY_BYTES || g_solver.mediumInfo.capacityBytes == 25000000000LL) {
+                int64_t cap = g_solver.enableDefectManagement ? bttb::BD25_DM_CAPACITY_BYTES : bttb::BD25_CAPACITY_BYTES;
+                SetWindowText(g_editPrefCap, bttb::formatHumanSize(cap).c_str());
+            }
+            else if (g_solver.mediumInfo.capacityBytes == bttb::BD50_CAPACITY_BYTES || g_solver.mediumInfo.capacityBytes == bttb::BD50_DM_CAPACITY_BYTES || g_solver.mediumInfo.capacityBytes == 50000000000LL) {
+                int64_t cap = g_solver.enableDefectManagement ? bttb::BD50_DM_CAPACITY_BYTES : bttb::BD50_CAPACITY_BYTES;
+                SetWindowText(g_editPrefCap, bttb::formatHumanSize(cap).c_str());
+            }
+            else if (g_solver.mediumInfo.capacityBytes == bttb::BDXL100_CAPACITY_BYTES || g_solver.mediumInfo.capacityBytes == bttb::BDXL100_DM_CAPACITY_BYTES) {
+                int64_t cap = g_solver.enableDefectManagement ? bttb::BDXL100_DM_CAPACITY_BYTES : bttb::BDXL100_CAPACITY_BYTES;
+                SetWindowText(g_editPrefCap, bttb::formatHumanSize(cap).c_str());
+            }
+            else if (g_solver.mediumInfo.capacityBytes == bttb::BDXL128_CAPACITY_BYTES || g_solver.mediumInfo.capacityBytes == bttb::BDXL128_DM_CAPACITY_BYTES) {
+                int64_t cap = g_solver.enableDefectManagement ? bttb::BDXL128_DM_CAPACITY_BYTES : bttb::BDXL128_CAPACITY_BYTES;
+                SetWindowText(g_editPrefCap, bttb::formatHumanSize(cap).c_str());
+            }
             else if (g_solver.mediumInfo.capacityBytes == 8000000000LL) SetWindowText(g_editPrefCap, "8 GB");
             else if (g_solver.mediumInfo.capacityBytes == 16000000000LL) SetWindowText(g_editPrefCap, "16 GB");
             else if (g_solver.mediumInfo.capacityBytes == 32000000000LL) SetWindowText(g_editPrefCap, "32 GB");
@@ -1721,17 +1781,25 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             if (g_chkPrefDarkTheme) {
                 SendMessage(g_chkPrefDarkTheme, BM_SETCHECK, g_solver.enableDarkTheme ? BST_CHECKED : BST_UNCHECKED, 0);
             }
+            SendMessage(g_chkPrefDefectMgmt, BM_SETCHECK, g_solver.enableDefectManagement ? BST_CHECKED : BST_UNCHECKED, 0);
             SendMessage(g_chkPrefPar3, BM_SETCHECK, g_solver.enablePar3 ? BST_CHECKED : BST_UNCHECKED, 0);
             SetWindowText(g_editPrefPar3Block, std::to_string(g_solver.par3BlockSize).c_str());
             SetWindowText(g_editPrefPar3Redundancy, std::to_string(g_solver.par3RedundancyPercent).c_str());
             
             // Select correct Media combobox index from settings memory
             int index = g_solver.lastSelectedVolumeIndex;
-            if (index < 0 || index >= (int)SendMessage(g_comboPrefMedia, CB_GETCOUNT, 0, 0)) {
-                index = 2; // Default to DVD (4.7 GB)
+            int numItems = 16 + (int)g_solver.customVolumes.size();
+            if (g_solver.enableAutoVolume) {
+                index = 14;
+            } else if (index < 0 || index >= numItems) {
+                if (g_solver.mediumInfo.capacityBytes == bttb::BD25_CAPACITY_BYTES || g_solver.mediumInfo.capacityBytes == bttb::BD25_DM_CAPACITY_BYTES || g_solver.mediumInfo.capacityBytes == 25000000000LL) index = 4;
+                else if (g_solver.mediumInfo.capacityBytes == bttb::BD50_CAPACITY_BYTES || g_solver.mediumInfo.capacityBytes == bttb::BD50_DM_CAPACITY_BYTES || g_solver.mediumInfo.capacityBytes == 50000000000LL) index = 5;
+                else if (g_solver.mediumInfo.capacityBytes == bttb::BDXL100_CAPACITY_BYTES || g_solver.mediumInfo.capacityBytes == bttb::BDXL100_DM_CAPACITY_BYTES) index = 6;
+                else if (g_solver.mediumInfo.capacityBytes == bttb::BDXL128_CAPACITY_BYTES || g_solver.mediumInfo.capacityBytes == bttb::BDXL128_DM_CAPACITY_BYTES) index = 7;
+                else index = 2; // Default to DVD (4.7 GB)
             }
             SendMessage(g_comboPrefMedia, CB_SETCURSEL, index, 0);
-            EnableWindow(g_editPrefCap, (index == 13) ? TRUE : FALSE);
+            EnableWindow(g_editPrefCap, (index == 15) ? TRUE : FALSE);
             
             // Initial dynamic calculation
             SendMessage(hwnd, WM_COMMAND, MAKEWPARAM(ID_PREF_EDIT_CAP, EN_CHANGE), (LPARAM)g_editPrefCap);
@@ -1750,6 +1818,7 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             if (g_chkPrefDarkTheme) {
                 CreateToolTip(hwnd, g_chkPrefDarkTheme, "Toggle modern dark theme colors across the application.");
             }
+            CreateToolTip(hwnd, g_chkPrefDefectMgmt, "Reserve standard BD Defect Management spare area (~780 MB) on Blu-ray media.");
             CreateToolTip(hwnd, g_chkPrefPar3, "Create standard PAR3 recovery files to protect your volumes from corruption.");
             CreateToolTip(hwnd, g_editPrefPar3Block, "Parity block size in bytes (e.g. 2048).");
             CreateToolTip(hwnd, g_editPrefPar3Redundancy, "Parity redundancy target percentage (e.g. 10%).");
@@ -1761,16 +1830,17 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             // Load Rules list
             int rowIndex = 0;
             for (const auto& rule : g_solver.groupingRules) {
-                LVITEM lvi = {0};
+                LVITEMW lvi = {0};
                 lvi.mask = LVIF_TEXT;
                 lvi.iItem = rowIndex;
                 lvi.iSubItem = 0;
-                lvi.pszText = const_cast<LPSTR>(rule.patternString.c_str());
-                ListView_InsertItem(g_listPrefRules, &lvi);
+                std::wstring wPattern = utf8ToWstring(rule.patternString);
+                lvi.pszText = const_cast<LPWSTR>(wPattern.c_str());
+                ListView_InsertItemW(g_listPrefRules, &lvi);
                 
-                ListView_SetItemText(g_listPrefRules, rowIndex, 1, const_cast<LPSTR>(rule.matchFiles ? "Yes" : "No"));
-                ListView_SetItemText(g_listPrefRules, rowIndex, 2, const_cast<LPSTR>(rule.matchFolders ? "Yes" : "No"));
-                ListView_SetItemText(g_listPrefRules, rowIndex, 3, const_cast<LPSTR>(rule.isRegex ? "Regex" : "Glob"));
+                ListView_SetItemTextW(g_listPrefRules, rowIndex, 1, const_cast<LPWSTR>(rule.matchFiles ? L"Yes" : L"No"));
+                ListView_SetItemTextW(g_listPrefRules, rowIndex, 2, const_cast<LPWSTR>(rule.matchFolders ? L"Yes" : L"No"));
+                ListView_SetItemTextW(g_listPrefRules, rowIndex, 3, const_cast<LPWSTR>(rule.isRegex ? L"Regex" : L"Glob"));
                 
                 rowIndex++;
             }
@@ -1792,32 +1862,66 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
                 SetWindowText(g_labelPrefCapMB, labelBuf);
             }
             
+            if (wmId == ID_PREF_CHK_DEFECT_MGMT) {
+                int index = SendMessage(g_comboPrefMedia, CB_GETCURSEL, 0, 0);
+                if (index >= 4 && index <= 7) {
+                    bool dm = (SendMessage(g_chkPrefDefectMgmt, BM_GETCHECK, 0, 0) == BST_CHECKED);
+                    int64_t cap = 0;
+                    if (index == 4) cap = dm ? bttb::BD25_DM_CAPACITY_BYTES : bttb::BD25_CAPACITY_BYTES;
+                    else if (index == 5) cap = dm ? bttb::BD50_DM_CAPACITY_BYTES : bttb::BD50_CAPACITY_BYTES;
+                    else if (index == 6) cap = dm ? bttb::BDXL100_DM_CAPACITY_BYTES : bttb::BDXL100_CAPACITY_BYTES;
+                    else if (index == 7) cap = dm ? bttb::BDXL128_DM_CAPACITY_BYTES : bttb::BDXL128_CAPACITY_BYTES;
+                    std::string sizeStr = bttb::formatHumanSize(cap);
+                    SetWindowText(g_editPrefCap, sizeStr.c_str());
+                    SendMessage(hwnd, WM_COMMAND, MAKEWPARAM(ID_PREF_EDIT_CAP, EN_CHANGE), (LPARAM)g_editPrefCap);
+                }
+            }
+            
             if (wmId == ID_PREF_COMBO_MEDIA && wmEvent == CBN_SELCHANGE) {
                 int index = SendMessage(g_comboPrefMedia, CB_GETCURSEL, 0, 0);
-                if (index >= 0 && index < 12) {
+                bool dm = (SendMessage(g_chkPrefDefectMgmt, BM_GETCHECK, 0, 0) == BST_CHECKED);
+                if (index >= 0 && index < 14) {
                     if (index == 0) { SetWindowText(g_editPrefCap, "650 MB"); SetWindowText(g_editPrefClus, "2048"); }
                     else if (index == 1) { SetWindowText(g_editPrefCap, "700 MB"); SetWindowText(g_editPrefClus, "2048"); }
                     else if (index == 2) { SetWindowText(g_editPrefCap, "4.7 GB"); SetWindowText(g_editPrefClus, "2048"); }
                     else if (index == 3) { SetWindowText(g_editPrefCap, "8.5 GB"); SetWindowText(g_editPrefClus, "2048"); }
-                    else if (index == 4) { SetWindowText(g_editPrefCap, "25 GB"); SetWindowText(g_editPrefClus, "2048"); }
-                    else if (index == 5) { SetWindowText(g_editPrefCap, "50 GB"); SetWindowText(g_editPrefClus, "2048"); }
-                    else if (index == 6) { SetWindowText(g_editPrefCap, "8 GB"); SetWindowText(g_editPrefClus, "4096"); }
-                    else if (index == 7) { SetWindowText(g_editPrefCap, "16 GB"); SetWindowText(g_editPrefClus, "4096"); }
-                    else if (index == 8) { SetWindowText(g_editPrefCap, "32 GB"); SetWindowText(g_editPrefClus, "4096"); }
-                    else if (index == 9) { SetWindowText(g_editPrefCap, "64 GB"); SetWindowText(g_editPrefClus, "4096"); }
-                    else if (index == 10) { SetWindowText(g_editPrefCap, "256 GB"); SetWindowText(g_editPrefClus, "4096"); }
-                    else if (index == 11) { SetWindowText(g_editPrefCap, "512 GB"); SetWindowText(g_editPrefClus, "4096"); }
+                    else if (index == 4) {
+                        int64_t cap = dm ? bttb::BD25_DM_CAPACITY_BYTES : bttb::BD25_CAPACITY_BYTES;
+                        SetWindowText(g_editPrefCap, bttb::formatHumanSize(cap).c_str());
+                        SetWindowText(g_editPrefClus, "2048");
+                    }
+                    else if (index == 5) {
+                        int64_t cap = dm ? bttb::BD50_DM_CAPACITY_BYTES : bttb::BD50_CAPACITY_BYTES;
+                        SetWindowText(g_editPrefCap, bttb::formatHumanSize(cap).c_str());
+                        SetWindowText(g_editPrefClus, "2048");
+                    }
+                    else if (index == 6) {
+                        int64_t cap = dm ? bttb::BDXL100_DM_CAPACITY_BYTES : bttb::BDXL100_CAPACITY_BYTES;
+                        SetWindowText(g_editPrefCap, bttb::formatHumanSize(cap).c_str());
+                        SetWindowText(g_editPrefClus, "2048");
+                    }
+                    else if (index == 7) {
+                        int64_t cap = dm ? bttb::BDXL128_DM_CAPACITY_BYTES : bttb::BDXL128_CAPACITY_BYTES;
+                        SetWindowText(g_editPrefCap, bttb::formatHumanSize(cap).c_str());
+                        SetWindowText(g_editPrefClus, "2048");
+                    }
+                    else if (index == 8) { SetWindowText(g_editPrefCap, "8 GB"); SetWindowText(g_editPrefClus, "4096"); }
+                    else if (index == 9) { SetWindowText(g_editPrefCap, "16 GB"); SetWindowText(g_editPrefClus, "4096"); }
+                    else if (index == 10) { SetWindowText(g_editPrefCap, "32 GB"); SetWindowText(g_editPrefClus, "4096"); }
+                    else if (index == 11) { SetWindowText(g_editPrefCap, "64 GB"); SetWindowText(g_editPrefClus, "4096"); }
+                    else if (index == 12) { SetWindowText(g_editPrefCap, "256 GB"); SetWindowText(g_editPrefClus, "4096"); }
+                    else if (index == 13) { SetWindowText(g_editPrefCap, "512 GB"); SetWindowText(g_editPrefClus, "4096"); }
                     EnableWindow(g_editPrefCap, FALSE);
-                } else if (index == 12) { // Auto Size
+                } else if (index == 14) { // Auto Size
                     SetWindowText(g_editPrefCap, "Auto");
                     SetWindowText(g_editPrefClus, "2048");
                     EnableWindow(g_editPrefCap, FALSE);
-                } else if (index == 13) { // Custom Size
+                } else if (index == 15) { // Custom Size
                     SetWindowText(g_editPrefCap, "64 GB");
                     SetWindowText(g_editPrefClus, "4096");
                     EnableWindow(g_editPrefCap, TRUE);
-                } else if (index >= 14) { // Custom Volumes
-                    int cvIdx = index - 14;
+                } else if (index >= 16) { // Custom Volumes
+                    int cvIdx = index - 16;
                     if (cvIdx >= 0 && cvIdx < (int)g_solver.customVolumes.size()) {
                         const auto& cv = g_solver.customVolumes[cvIdx];
                         std::string sizeStr = bttb::formatHumanSize(cv.capacityBytes);
@@ -1827,12 +1931,13 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
                         EnableWindow(g_editPrefCap, FALSE);
                     }
                 }
+                SendMessage(hwnd, WM_COMMAND, MAKEWPARAM(ID_PREF_EDIT_CAP, EN_CHANGE), (LPARAM)g_editPrefCap);
             }
             
             if (wmId == ID_PREF_BTN_ADD_RULE) {
-                char pattern[256];
-                GetWindowText(g_editPrefPattern, pattern, 256);
-                if (strlen(pattern) == 0) break;
+                wchar_t pattern[256];
+                GetWindowTextW(g_editPrefPattern, pattern, 256);
+                if (wcslen(pattern) == 0) break;
                 
                 bool matchFiles = (SendMessage(g_chkPrefFiles, BM_GETCHECK, 0, 0) == BST_CHECKED);
                 bool matchFolders = (SendMessage(g_chkPrefFolders, BM_GETCHECK, 0, 0) == BST_CHECKED);
@@ -1840,18 +1945,18 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
                 
                 int count = ListView_GetItemCount(g_listPrefRules);
                 
-                LVITEM lvi = {0};
+                LVITEMW lvi = {0};
                 lvi.mask = LVIF_TEXT;
                 lvi.iItem = count;
                 lvi.iSubItem = 0;
                 lvi.pszText = pattern;
-                ListView_InsertItem(g_listPrefRules, &lvi);
+                ListView_InsertItemW(g_listPrefRules, &lvi);
                 
-                ListView_SetItemText(g_listPrefRules, count, 1, const_cast<LPSTR>(matchFiles ? "Yes" : "No"));
-                ListView_SetItemText(g_listPrefRules, count, 2, const_cast<LPSTR>(matchFolders ? "Yes" : "No"));
-                ListView_SetItemText(g_listPrefRules, count, 3, const_cast<LPSTR>(isRegex ? "Regex" : "Glob"));
+                ListView_SetItemTextW(g_listPrefRules, count, 1, const_cast<LPWSTR>(matchFiles ? L"Yes" : L"No"));
+                ListView_SetItemTextW(g_listPrefRules, count, 2, const_cast<LPWSTR>(matchFolders ? L"Yes" : L"No"));
+                ListView_SetItemTextW(g_listPrefRules, count, 3, const_cast<LPWSTR>(isRegex ? L"Regex" : L"Glob"));
                 
-                SetWindowText(g_editPrefPattern, "");
+                SetWindowTextW(g_editPrefPattern, L"");
             }
             
             if (wmId == ID_PREF_BTN_DEL_RULE) {
@@ -1901,10 +2006,42 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             
             if (wmId == ID_PREF_BTN_OK) {
                 char buf[64];
-                char capText[128];
                 
-                GetWindowText(g_editPrefCap, capText, 128);
-                g_solver.mediumInfo.capacityBytes = bttb::parseHumanSize(capText);
+                int selIdx = SendMessage(g_comboPrefMedia, CB_GETCURSEL, 0, 0);
+                bool dm = (SendMessage(g_chkPrefDefectMgmt, BM_GETCHECK, 0, 0) == BST_CHECKED);
+                g_solver.enableDefectManagement = dm;
+                
+                if (selIdx == 14) { // Auto Size
+                    g_solver.mediumInfo.capacityBytes = 0;
+                    g_solver.enableAutoVolume = true;
+                } else if (selIdx >= 0 && selIdx <= 13) {
+                    g_solver.enableAutoVolume = false;
+                    if (selIdx == 0) g_solver.mediumInfo.capacityBytes = 681574400LL;
+                    else if (selIdx == 1) g_solver.mediumInfo.capacityBytes = 734003200LL;
+                    else if (selIdx == 2) g_solver.mediumInfo.capacityBytes = 4707319808LL;
+                    else if (selIdx == 3) g_solver.mediumInfo.capacityBytes = 8543666176LL;
+                    else if (selIdx == 4) g_solver.mediumInfo.capacityBytes = dm ? bttb::BD25_DM_CAPACITY_BYTES : bttb::BD25_CAPACITY_BYTES;
+                    else if (selIdx == 5) g_solver.mediumInfo.capacityBytes = dm ? bttb::BD50_DM_CAPACITY_BYTES : bttb::BD50_CAPACITY_BYTES;
+                    else if (selIdx == 6) g_solver.mediumInfo.capacityBytes = dm ? bttb::BDXL100_DM_CAPACITY_BYTES : bttb::BDXL100_CAPACITY_BYTES;
+                    else if (selIdx == 7) g_solver.mediumInfo.capacityBytes = dm ? bttb::BDXL128_DM_CAPACITY_BYTES : bttb::BDXL128_CAPACITY_BYTES;
+                    else if (selIdx == 8) g_solver.mediumInfo.capacityBytes = 8000000000LL;
+                    else if (selIdx == 9) g_solver.mediumInfo.capacityBytes = 16000000000LL;
+                    else if (selIdx == 10) g_solver.mediumInfo.capacityBytes = 32000000000LL;
+                    else if (selIdx == 11) g_solver.mediumInfo.capacityBytes = 64000000000LL;
+                    else if (selIdx == 12) g_solver.mediumInfo.capacityBytes = 256000000000LL;
+                    else if (selIdx == 13) g_solver.mediumInfo.capacityBytes = 512000000000LL;
+                } else if (selIdx >= 16) { // Custom Volumes
+                    int cvIdx = selIdx - 16;
+                    if (cvIdx >= 0 && cvIdx < (int)g_solver.customVolumes.size()) {
+                        g_solver.mediumInfo.capacityBytes = g_solver.customVolumes[cvIdx].capacityBytes;
+                    }
+                    g_solver.enableAutoVolume = false;
+                } else { // Custom Size (15)
+                    char capText[128];
+                    GetWindowText(g_editPrefCap, capText, 128);
+                    g_solver.mediumInfo.capacityBytes = bttb::parseHumanSize(capText);
+                    g_solver.enableAutoVolume = false;
+                }
                 
                 GetWindowText(g_editPrefClus, buf, 64);
                 g_solver.mediumInfo.sectorSize = std::stoll(buf);
@@ -1921,10 +2058,8 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
                 g_solver.skipEmpty = (SendMessage(g_chkPrefEmpty, BM_GETCHECK, 0, 0) == BST_CHECKED);
                 g_solver.skipUnreadable = (SendMessage(g_chkPrefUnreadable, BM_GETCHECK, 0, 0) == BST_CHECKED);
                 
-                int selIdx = SendMessage(g_comboPrefMedia, CB_GETCURSEL, 0, 0);
                 if (selIdx >= 0) {
                     g_solver.lastSelectedVolumeIndex = selIdx;
-                    g_solver.enableAutoVolume = (selIdx == 12);
                 }
                 g_solver.ruleBasedWins = (SendMessage(g_chkPrefRuleWins, BM_GETCHECK, 0, 0) == BST_CHECKED);
                 g_solver.enablePar3 = (SendMessage(g_chkPrefPar3, BM_GETCHECK, 0, 0) == BST_CHECKED);
@@ -1984,21 +2119,21 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
                 g_solver.groupingRules.clear();
                 int count = ListView_GetItemCount(g_listPrefRules);
                 for (int i = 0; i < count; ++i) {
-                    char pattern[256] = {0};
-                    char matchFiles[16] = {0};
-                    char matchFolders[16] = {0};
-                    char type[16] = {0};
+                    wchar_t pattern[256] = {0};
+                    wchar_t matchFiles[16] = {0};
+                    wchar_t matchFolders[16] = {0};
+                    wchar_t type[16] = {0};
                     
-                    ListView_GetItemText(g_listPrefRules, i, 0, pattern, 256);
-                    ListView_GetItemText(g_listPrefRules, i, 1, matchFiles, 16);
-                    ListView_GetItemText(g_listPrefRules, i, 2, matchFolders, 16);
-                    ListView_GetItemText(g_listPrefRules, i, 3, type, 16);
+                    ListView_GetItemTextW(g_listPrefRules, i, 0, pattern, 256);
+                    ListView_GetItemTextW(g_listPrefRules, i, 1, matchFiles, 16);
+                    ListView_GetItemTextW(g_listPrefRules, i, 2, matchFolders, 16);
+                    ListView_GetItemTextW(g_listPrefRules, i, 3, type, 16);
                     
                     bttb::GroupRule rule;
-                    rule.patternString = pattern;
-                    rule.matchFiles = (strcmp(matchFiles, "Yes") == 0);
-                    rule.matchFolders = (strcmp(matchFolders, "Yes") == 0);
-                    rule.isRegex = (strcmp(type, "Regex") == 0);
+                    rule.patternString = wstringToUtf8(pattern);
+                    rule.matchFiles = (wcscmp(matchFiles, L"Yes") == 0);
+                    rule.matchFolders = (wcscmp(matchFolders, L"Yes") == 0);
+                    rule.isRegex = (wcscmp(type, L"Regex") == 0);
                     
                     try {
                         if (rule.isRegex) {
@@ -2774,7 +2909,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                     "BttbWin32PrefDialog",
                     _T("pref_title", "Preferences").c_str(),
                     WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
-                    CW_USEDEFAULT, CW_USEDEFAULT, 620, 720,
+                    CW_USEDEFAULT, CW_USEDEFAULT, 620, 750,
                     hwnd, NULL, GetModuleHandle(NULL), NULL
                 );
                 
@@ -3284,8 +3419,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
     wc.lpszClassName = L"BttbWin32GUI";
-    wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(1));
-    wc.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+    wc.hIcon = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED);
+    wc.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_SHARED);
     
     if (!RegisterClassExW(&wc)) {
         MessageBoxW(NULL, L"Window Registration Failed!", L"Error", MB_ICONEXCLAMATION | MB_OK);
@@ -3301,8 +3436,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wcIso.hCursor = LoadCursor(NULL, IDC_ARROW);
     wcIso.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
     wcIso.lpszClassName = L"BttbWin32ISODialog";
-    wcIso.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(1));
-    wcIso.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+    wcIso.hIcon = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED);
+    wcIso.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_SHARED);
     
     if (!RegisterClassExW(&wcIso)) {
         MessageBoxW(NULL, L"ISO Dialog Registration Failed!", L"Error", MB_ICONEXCLAMATION | MB_OK);
@@ -3318,8 +3453,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wcPref.hCursor = LoadCursor(NULL, IDC_ARROW);
     wcPref.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
     wcPref.lpszClassName = L"BttbWin32PrefDialog";
-    wcPref.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(1));
-    wcPref.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+    wcPref.hIcon = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED);
+    wcPref.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_SHARED);
     if (!RegisterClassExW(&wcPref)) {
         MessageBoxW(NULL, L"Preferences Dialog Registration Failed!", L"Error", MB_ICONEXCLAMATION | MB_OK);
         return 0;
@@ -3334,8 +3469,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wcAbout.hCursor = LoadCursor(NULL, IDC_ARROW);
     wcAbout.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
     wcAbout.lpszClassName = L"BttbWin32AboutDialog";
-    wcAbout.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(1));
-    wcAbout.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+    wcAbout.hIcon = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED);
+    wcAbout.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_SHARED);
     
     if (!RegisterClassExW(&wcAbout)) {
         MessageBoxW(NULL, L"About Dialog Registration Failed!", L"Error", MB_ICONEXCLAMATION | MB_OK);
@@ -3351,8 +3486,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wcHelp.hCursor = LoadCursor(NULL, IDC_ARROW);
     wcHelp.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
     wcHelp.lpszClassName = L"BttbWin32HelpDialog";
-    wcHelp.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(1));
-    wcHelp.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+    wcHelp.hIcon = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED);
+    wcHelp.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_SHARED);
     
     if (!RegisterClassExW(&wcHelp)) {
         MessageBoxW(NULL, L"Help Dialog Registration Failed!", L"Error", MB_ICONEXCLAMATION | MB_OK);
@@ -3368,8 +3503,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wcTutorial.hCursor = LoadCursor(NULL, IDC_ARROW);
     wcTutorial.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
     wcTutorial.lpszClassName = L"BttbWin32TutorialDialog";
-    wcTutorial.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(1));
-    wcTutorial.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+    wcTutorial.hIcon = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED);
+    wcTutorial.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_SHARED);
     
     if (!RegisterClassExW(&wcTutorial)) {
         MessageBoxW(NULL, L"Tutorial Dialog Registration Failed!", L"Error", MB_ICONEXCLAMATION | MB_OK);
@@ -3385,8 +3520,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wcFolderList.hCursor = LoadCursor(NULL, IDC_ARROW);
     wcFolderList.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
     wcFolderList.lpszClassName = L"BttbWin32FolderListDialog";
-    wcFolderList.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(1));
-    wcFolderList.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+    wcFolderList.hIcon = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED);
+    wcFolderList.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_SHARED);
     
     if (!RegisterClassExW(&wcFolderList)) {
         MessageBoxW(NULL, L"Folder List Dialog Registration Failed!", L"Error", MB_ICONEXCLAMATION | MB_OK);
@@ -3402,8 +3537,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wcVerify.hCursor = LoadCursor(NULL, IDC_ARROW);
     wcVerify.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
     wcVerify.lpszClassName = L"BttbWin32VerifyDialog";
-    wcVerify.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(1));
-    wcVerify.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+    wcVerify.hIcon = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED);
+    wcVerify.hIconSm = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_SHARED);
     
     if (!RegisterClassExW(&wcVerify)) {
         MessageBoxW(NULL, L"Verify Dialog Registration Failed!", L"Error", MB_ICONEXCLAMATION | MB_OK);
