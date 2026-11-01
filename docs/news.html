@@ -323,6 +323,27 @@
         <div class="news-container">
 
 
+            <!-- News Item 4.8.0 -->
+            <div class="news-card">
+                <div class="news-date">November 1, 2026</div>
+                <h2>Version 4.8.0 Released: Exact Blu-ray Capacities, BD Defect Management &amp; PAR-Aware Volume Packing</h2>
+                <p>
+                    Today we are thrilled to announce **Burn to the Brim 4.8.0**, a major release introducing exact optical sector counts for Blu-ray media, support for Blu-ray Defect Management (~780 MB Spare Area reservation), and PAR redundancy-aware subset-sum volume packing.
+                </p>
+                <p>
+                    <strong>Exact Blu-ray Media Geometries:</strong> Corrected Blu-ray disc capacities across standard single-layer (BD 25GB), dual-layer (BD DL 50GB), triple-layer (BD XL 100GB), and quad-layer (BD XL 128GB) based on exact 2048-byte physical sector counts, preventing overburn overflows in optical burning software.
+                </p>
+                <p>
+                    <strong>Blu-ray Defect Management Support:</strong> Added a dedicated Defect Management toggle in Preferences (GTK4 switch on Linux and Win32 checkbox on Windows). When enabled, BTTB accurately subtracts the standard optical spare area (393,216 sectors / 768 MiB / ~780 MB for BD-25; 786,432 sectors for BD-50; 1,572,864 sectors for BD-100/128), perfectly matching the usable disc capacity in mastering tools like Nero Burning ROM (23,098 MB) and ImgBurn.
+                </p>
+                <p>
+                    <strong>PAR-Aware Solver &amp; Volume Packing:</strong> When PAR3 parity protection is enabled, BTTB's recursive backtracking solver, branch pruning, slack tolerance, and greedy fallback dynamically factor in parity overhead. The volume size and item manifests accurately reflect the generated .par3 file, guaranteeing that volumes fit onto the media without exceeding disc limits.
+                </p>
+                <p>
+                    <strong>High-Resolution Application Icons:</strong> Rebuilt the Windows application icon (<code>bttb.ico</code>) to place high-resolution 256x256, 128x128, 64x64, 48x48, 32x32, 24x24, and 16x16 frames in descending resolution order, preventing Windows Shell from choosing low-res icons in taskbars or desktop views.
+                </p>
+            </div>
+
             <!-- News Item 4.7.0 -->
             <div class="news-card">
                 <div class="news-date">June 12, 2026</div>
