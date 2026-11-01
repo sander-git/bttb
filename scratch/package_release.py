@@ -5,6 +5,7 @@ import subprocess
 import glob
 
 base_dir = "/home/sander/src/antigravity/project1/bttb_cpp"
+os.chdir(base_dir)
 build_dir = os.path.join(base_dir, "build")
 version = "4.8.0"
 
