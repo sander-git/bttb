@@ -1855,7 +1855,8 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             if (wmId == ID_PREF_EDIT_CAP && wmEvent == EN_CHANGE) {
                 char buf[128] = {0};
                 GetWindowText(g_editPrefCap, buf, sizeof(buf));
-                int64_t bytes = bttb::parseHumanSize(buf);
+                bool isDm = (SendMessage(g_chkPrefDefectMgmt, BM_GETCHECK, 0, 0) == BST_CHECKED);
+                int64_t bytes = bttb::parseHumanSize(buf, isDm);
                 double mb = (double)bytes / (1024.0 * 1024.0);
                 char labelBuf[128];
                 snprintf(labelBuf, sizeof(labelBuf), "(%.2f MB)", mb);
@@ -1972,7 +1973,8 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
                 if (strlen(name) > 0) {
                     char capText[128];
                     GetWindowText(g_editPrefCap, capText, 128);
-                    int64_t capacity = bttb::parseHumanSize(capText);
+                    bool dm = (SendMessage(g_chkPrefDefectMgmt, BM_GETCHECK, 0, 0) == BST_CHECKED);
+                    int64_t capacity = bttb::parseHumanSize(capText, dm);
                     
                     char clusText[64];
                     GetWindowText(g_editPrefClus, clusText, 64);
@@ -2039,7 +2041,7 @@ LRESULT CALLBACK PrefWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
                 } else { // Custom Size (15)
                     char capText[128];
                     GetWindowText(g_editPrefCap, capText, 128);
-                    g_solver.mediumInfo.capacityBytes = bttb::parseHumanSize(capText);
+                    g_solver.mediumInfo.capacityBytes = bttb::parseHumanSize(capText, dm);
                     g_solver.enableAutoVolume = false;
                 }
                 
@@ -2968,9 +2970,19 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                     break;
                 }
                 
-                // Get the source directory from the main window to pre-populate
+                // Get the source directory from the main window to pre-populate (preferring solved destination volume)
                 char srcDir[MAX_PATH] = {0};
-                GetWindowText(g_editSrc, srcDir, MAX_PATH);
+                char destDir[MAX_PATH] = {0};
+                GetWindowText(g_editDest, destDir, MAX_PATH);
+                if (strlen(destDir) > 0 && std::filesystem::exists(destDir)) {
+                    if (g_solver.spanMultipleVolumes && std::filesystem::exists(std::filesystem::path(destDir) / "Volume_1")) {
+                        strncpy(srcDir, (std::filesystem::path(destDir) / "Volume_1").string().c_str(), MAX_PATH - 1);
+                    } else {
+                        strncpy(srcDir, destDir, MAX_PATH - 1);
+                    }
+                } else {
+                    GetWindowText(g_editSrc, srcDir, MAX_PATH);
+                }
                 
                 // Disable main window
                 EnableWindow(hwnd, FALSE);

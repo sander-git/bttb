@@ -328,25 +328,25 @@
             <!-- v4.8.0 -->
             <div class="timeline-card major">
                 <div class="version-title">
-                    <span>v4.8.0 &mdash; Exact Blu-ray Capacities, Defect Management &amp; PAR-Aware Volume Packing</span>
+                    <span>v4.8.0 &mdash; Blu-ray Media Capacities, Defect Management &amp; PAR-Aware Sizing</span>
                     <span class="version-date">November 1, 2026</span>
                 </div>
                 <ul class="changes-list">
                     <li class="change-item">
                         <span class="change-type plus">+</span>
-                        <div><strong>Exact Blu-ray Media Geometries:</strong> Implemented exact optical sector geometry and byte counts for BD-25 (12,219,392 sectors), BD-50 DL (24,438,784 sectors), BDXL-100 (48,877,568 sectors), and BDXL-128 (62,562,304 sectors) based on physical 2,048-byte sector counts.</div>
+                        <div><strong>Exact Blu-ray Capacities:</strong> Standardized physical sector counts for BD-25, BD-50 DL, BDXL-100, and BDXL-128.</div>
                     </li>
                     <li class="change-item">
                         <span class="change-type plus">+</span>
-                        <div><strong>Blu-ray Defect Management Toggle:</strong> Added Defect Management support across Linux GTK4 and Windows Win32. Accurately deducts the standard optical spare area (768 MiB / ~780 MB user-visible for BD-25; 1,536 MiB for BD-50; 3,072 MiB for BDXL), guaranteeing disc capacity matches mastering tools like Nero Burning ROM (23,098 MB) and ImgBurn without overburn errors.</div>
+                        <div><strong>Blu-ray Defect Management:</strong> Added setting to reserve standard spare area, aligning disc capacity with burning tools.</div>
                     </li>
                     <li class="change-item">
                         <span class="change-type plus">+</span>
-                        <div><strong>PAR-Aware Solver Packing:</strong> Updated recursive subset-sum backtracking solver, branch pruning, early slack termination, and greedy fallback to account for PAR3 redundancy percentages dynamically during volume packing.</div>
+                        <div><strong>PAR-Aware Volume Sizing:</strong> Solver and packing pipeline strictly enforce volume limits including PAR parity data.</div>
                     </li>
                     <li class="change-item">
                         <span class="change-type star">*</span>
-                        <div><strong>High-Resolution Icon Ordering:</strong> Re-ordered <code>bttb.ico</code> frames in descending resolution order so Windows Shell always picks the crispest high-DPI icon frame.</div>
+                        <div><strong>Application Icon:</strong> Re-ordered Windows icon frames for high-DPI displays.</div>
                     </li>
                 </ul>
             </div>

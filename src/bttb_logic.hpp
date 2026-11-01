@@ -192,8 +192,8 @@ private:
 // Utility function to convert glob string (*.mp3) to std::regex
 std::regex globToRegex(const std::string& glob);
 
-// Parse human-readable sizes like 512MB, 2.5GB, 1.5TB
-int64_t parseHumanSize(const std::string& input);
+// Parse human-readable sizes like 512MB, 2.5GB, 1.5TB, with BD and Defect Management support
+int64_t parseHumanSize(const std::string& input, bool defectManagement = false);
 
 // Cleanly format bytes to human-readable size
 std::string formatHumanSize(int64_t bytes);

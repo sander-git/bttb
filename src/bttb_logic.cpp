@@ -130,25 +130,30 @@ std::regex globToRegex(const std::string& glob) {
 }
 
 // Parse human-readable sizes like 512MB, 2.5GB, 1.5TB
-int64_t parseHumanSize(const std::string& input) {
+int64_t parseHumanSize(const std::string& input, bool defectManagement) {
     std::string s = input;
     s.erase(std::remove_if(s.begin(), s.end(), ::isspace), s.end());
     if (s.empty()) return 0;
     
-    // Check for optical Blu-ray presets
+    // Check for optical Blu-ray presets and exact media sizes
     std::string lowerInput = s;
     std::transform(lowerInput.begin(), lowerInput.end(), lowerInput.begin(), ::tolower);
-    if (lowerInput.find("bd128") != std::string::npos || lowerInput.find("bdql") != std::string::npos) {
-        return BDXL128_CAPACITY_BYTES;
+    if (lowerInput.find("bd128") != std::string::npos || lowerInput.find("bdql") != std::string::npos ||
+        lowerInput == "128gb" || lowerInput == "128g" || lowerInput.find("119.33") != std::string::npos || lowerInput.find("116.33") != std::string::npos) {
+        return defectManagement ? BDXL128_DM_CAPACITY_BYTES : BDXL128_CAPACITY_BYTES;
     }
-    if (lowerInput.find("bd100") != std::string::npos || lowerInput.find("bdtl") != std::string::npos || lowerInput.find("bdxl") != std::string::npos) {
-        return BDXL100_CAPACITY_BYTES;
+    if (lowerInput.find("bd100") != std::string::npos || lowerInput.find("bdtl") != std::string::npos || lowerInput.find("bdxl") != std::string::npos ||
+        lowerInput == "100gb" || lowerInput == "100g" || lowerInput.find("93.23") != std::string::npos || lowerInput.find("90.23") != std::string::npos) {
+        return defectManagement ? BDXL100_DM_CAPACITY_BYTES : BDXL100_CAPACITY_BYTES;
     }
-    if (lowerInput.find("bd50") != std::string::npos || lowerInput.find("bddl") != std::string::npos) {
-        return BD50_CAPACITY_BYTES;
+    if (lowerInput.find("bd50") != std::string::npos || lowerInput.find("bddl") != std::string::npos ||
+        lowerInput == "50gb" || lowerInput == "50g" || lowerInput.find("46.61") != std::string::npos || lowerInput.find("45.11") != std::string::npos) {
+        return defectManagement ? BD50_DM_CAPACITY_BYTES : BD50_CAPACITY_BYTES;
     }
-    if (lowerInput.find("bd25") != std::string::npos || lowerInput == "bd") {
-        return BD25_CAPACITY_BYTES;
+    if (lowerInput.find("bd25") != std::string::npos || lowerInput == "bd" ||
+        lowerInput == "25gb" || lowerInput == "25g" || lowerInput == "25.0gb" || lowerInput == "25.0g" ||
+        lowerInput.find("23.31") != std::string::npos || lowerInput.find("22.56") != std::string::npos || lowerInput.find("22.55") != std::string::npos) {
+        return defectManagement ? BD25_DM_CAPACITY_BYTES : BD25_CAPACITY_BYTES;
     }
     
     // Replace commas with dots for locale independence
@@ -454,6 +459,21 @@ void BttbSolver::loadSettings() {
         }
     }
 
+    // Ensure BD preset capacities strictly adhere to exact geometry and defect management
+    if (lastSelectedVolumeIndex == 4 || mediumInfo.capacityBytes == 26843545600LL || mediumInfo.capacityBytes == 25000000000LL ||
+        mediumInfo.capacityBytes == BD25_CAPACITY_BYTES || mediumInfo.capacityBytes == BD25_DM_CAPACITY_BYTES) {
+        if (lastSelectedVolumeIndex == 4 || mediumInfo.capacityBytes == 26843545600LL) {
+            mediumInfo.capacityBytes = enableDefectManagement ? BD25_DM_CAPACITY_BYTES : BD25_CAPACITY_BYTES;
+        }
+    }
+    if (lastSelectedVolumeIndex == 5) {
+        mediumInfo.capacityBytes = enableDefectManagement ? BD50_DM_CAPACITY_BYTES : BD50_CAPACITY_BYTES;
+    } else if (lastSelectedVolumeIndex == 6) {
+        mediumInfo.capacityBytes = enableDefectManagement ? BDXL100_DM_CAPACITY_BYTES : BDXL100_CAPACITY_BYTES;
+    } else if (lastSelectedVolumeIndex == 7) {
+        mediumInfo.capacityBytes = enableDefectManagement ? BDXL128_DM_CAPACITY_BYTES : BDXL128_CAPACITY_BYTES;
+    }
+
     if (language == "auto") {
         BttbLocale::getInstance().load(BttbLocale::getInstance().detectSystemLanguage());
     } else {
@@ -727,6 +747,14 @@ bool BttbSolver::ThreadSearchState::checkLimitsAndLog(int64_t currentSectors, in
     return false;
 }
 
+static inline int64_t estimatePar3Bytes(int64_t testBytes, int64_t blockSize, int redundancyPercent, int64_t fileCount) {
+    if (redundancyPercent <= 0 || testBytes <= 0) return 0;
+    int64_t blk = blockSize > 0 ? blockSize : 2048;
+    int64_t inputBlocks = (testBytes + blk - 1) / blk;
+    int64_t recBlocks = (inputBlocks * redundancyPercent + 99) / 100;
+    return (recBlocks * blk) + 4096 + (512 * (fileCount + 1));
+}
+
 void BttbSolver::ThreadSearchState::handleNewSelection(int64_t testSectors, int64_t par3Sectors) {
     int64_t globalBest = solver->currentBestSectors.load();
     if (testSectors >= globalBest) {
@@ -780,7 +808,7 @@ bool BttbSolver::ThreadSearchState::findAWay(int64_t currentSectors, int poz, in
     int64_t par3Sectors = 0;
     if (solver->enablePar3) {
         int64_t testBytes = testSectors * solver->mediumInfo.sectorSize;
-        int64_t par3Bytes = (testBytes * solver->par3RedundancyPercent / 100) + 65536 + (4096 * (selectedFileCount + 1));
+        int64_t par3Bytes = estimatePar3Bytes(testBytes, solver->par3BlockSize, solver->par3RedundancyPercent, selectedFileCount);
         par3Sectors = (par3Bytes + solver->mediumInfo.sectorSize - 1) / solver->mediumInfo.sectorSize;
     }
 
@@ -873,7 +901,7 @@ bool BttbSolver::findAWay(int64_t currentSectors, int poz, int selectedFileCount
     int64_t par3Sectors = 0;
     if (enablePar3) {
         int64_t testBytes = testSectors * mediumInfo.sectorSize;
-        int64_t par3Bytes = (testBytes * par3RedundancyPercent / 100) + 65536 + (4096 * (selectedFileCount + 1));
+        int64_t par3Bytes = estimatePar3Bytes(testBytes, par3BlockSize, par3RedundancyPercent, selectedFileCount);
         par3Sectors = (par3Bytes + mediumInfo.sectorSize - 1) / mediumInfo.sectorSize;
     }
 
@@ -1211,16 +1239,6 @@ void BttbSolver::run() {
         
         logNotify(_T("log_finished_solving_1", "Finished solving. Elapsed time: ") + std::to_string(elapsed) + _T("log_finished_solving_2", " ms"), 1);
         
-        if (!spanMultipleVolumes) {
-            logNotify(_T("log_single_vol_sol_forcing", "Single volume solution: forcing selection of all files to guarantee 100% inclusion..."), 1);
-            bestSelectionIndices.clear();
-            currentBestSectors = 0;
-            for (size_t i = 0; i < itemsToSplit.size(); ++i) {
-                bestSelectionIndices.push_back(i);
-                currentBestSectors += itemsToSplit[i]->sectorCount;
-            }
-        }
-        
         if (bestSelectionIndices.empty()) {
             logNotify(_T("log_backtracking_failed_fallback_greedy", "Backtracking solver did not find a fit (or timed out). Falling back to greedy allocation to ensure all remaining files are included..."), 2);
             int64_t currentSectors = 0;
@@ -1230,7 +1248,7 @@ void BttbSolver::run() {
                 int64_t par3Sectors = 0;
                 if (enablePar3) {
                     int64_t testBytes = nextSectors * mediumInfo.sectorSize;
-                    int64_t par3Bytes = (testBytes * par3RedundancyPercent / 100) + 65536 + (4096 * (fileCount + 1));
+                    int64_t par3Bytes = estimatePar3Bytes(testBytes, par3BlockSize, par3RedundancyPercent, fileCount);
                     par3Sectors = (par3Bytes + mediumInfo.sectorSize - 1) / mediumInfo.sectorSize;
                 }
                 if (nextSectors + par3Sectors <= maxSectors) {
@@ -1239,18 +1257,41 @@ void BttbSolver::run() {
                     fileCount++;
                 }
             }
-            if (bestSelectionIndices.empty()) {
-                logNotify(_T("log_forcing_progress_exceeds_cap_1", "Forcing progress: packing remaining item larger than medium capacity (") + itemsToSplit[0]->relativePath + ")", 2);
-                bestSelectionIndices.push_back(0);
-                currentSectors = itemsToSplit[0]->sectorCount;
-            }
             currentBestSectors = currentSectors;
+        }
+
+        // Strictly guarantee that the total volume (items + PAR3) fits within maxSectors, NO EXCEPTIONS!
+        while (!bestSelectionIndices.empty()) {
+            int64_t selSectors = 0;
+            int64_t selFileCount = 0;
+            for (int idx : bestSelectionIndices) {
+                selSectors += itemsToSplit[idx]->sectorCount;
+                selFileCount += std::max<int64_t>(1, itemsToSplit[idx]->groupedPaths.size());
+            }
+            int64_t parSectors = 0;
+            if (enablePar3) {
+                int64_t testBytes = selSectors * mediumInfo.sectorSize;
+                int64_t parBytes = estimatePar3Bytes(testBytes, par3BlockSize, par3RedundancyPercent, selFileCount);
+                parSectors = (parBytes + mediumInfo.sectorSize - 1) / mediumInfo.sectorSize;
+            }
+            if (selSectors + parSectors <= maxSectors) {
+                currentBestSectors = selSectors;
+                break;
+            }
+            // Trim the last selected item to strictly guarantee fit
+            logNotify("Warning: Volume items plus PAR3 protection exceeded capacity (" + std::to_string(selSectors + parSectors) + " > " + std::to_string(maxSectors) + " sectors). Trimming selection to guarantee complete fit...", 2);
+            bestSelectionIndices.pop_back();
+        }
+        
+        if (bestSelectionIndices.empty()) {
+            logNotify(_T("log_no_items_fit_in_volume", "No remaining items fit within the target volume capacity. Terminating volume allocation."), 2);
+            break;
         }
         
         int64_t finalPar3Sectors = 0;
         if (enablePar3) {
             int64_t testBytes = currentBestSectors * mediumInfo.sectorSize;
-            int64_t par3Bytes = (testBytes * par3RedundancyPercent / 100) + 65536 + (4096 * (int64_t)bestSelectionIndices.size());
+            int64_t par3Bytes = estimatePar3Bytes(testBytes, par3BlockSize, par3RedundancyPercent, (int64_t)bestSelectionIndices.size());
             finalPar3Sectors = (par3Bytes + mediumInfo.sectorSize - 1) / mediumInfo.sectorSize;
         }
         int64_t totalSectorsUsed = currentBestSectors + finalPar3Sectors;
@@ -1290,7 +1331,7 @@ void BttbSolver::run() {
         
         if (enablePar3 && (testOnlyMode || targetDirectory.empty())) {
             std::string parBaseName = spanMultipleVolumes ? ("Volume_" + std::to_string(volumeIndex)) : "Volume";
-            int64_t par3EstBytes = (vol.totalBytes * par3RedundancyPercent / 100) + 65536 + (4096 * (int64_t)vol.itemPaths.size());
+            int64_t par3EstBytes = estimatePar3Bytes(vol.totalBytes, par3BlockSize, par3RedundancyPercent, (int64_t)vol.itemPaths.size());
             vol.itemPaths.push_back(parBaseName + ".par3");
             vol.itemOriginalPaths.push_back("[PAR3 Parity]");
             vol.itemSizes.push_back(par3EstBytes);

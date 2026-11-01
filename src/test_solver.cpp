@@ -821,6 +821,39 @@ void run_test9() {
     
     // Clean up
     std::filesystem::remove_all(test_dir);
+    
+    // 4. Test single volume with PAR 10% strictly fitting within capacity
+    {
+        std::string test_dir2 = "test_bd25_dm_sandbox";
+        std::filesystem::remove_all(test_dir2);
+        std::filesystem::create_directories(test_dir2 + "/source");
+        // Create 10 files of 20 KB = 200 KB total data
+        for (int i = 0; i < 10; ++i) {
+            std::ofstream f(test_dir2 + "/source/data_" + std::to_string(i) + ".bin", std::ios::binary);
+            std::vector<char> buf(20 * 1024, (char)i);
+            f.write(buf.data(), buf.size());
+        }
+        bttb::BttbSolver singleSolver;
+        singleSolver.sourceDirectories.push_back(test_dir2 + "/source");
+        singleSolver.targetDirectory = test_dir2 + "/target";
+        singleSolver.moveFiles = false;
+        singleSolver.createSymlinks = false;
+        singleSolver.spanMultipleVolumes = false; // Single volume mode!
+        singleSolver.enableDefectManagement = true;
+        singleSolver.mediumInfo.capacityBytes = 100 * 1024; // 100 KB capacity limit
+        singleSolver.mediumInfo.sectorSize = 2048;
+        singleSolver.enablePar3 = true;
+        singleSolver.par3RedundancyPercent = 10; // 10% PAR
+        singleSolver.run();
+        
+        assert(singleSolver.packedVolumes.size() == 1);
+        std::cout << "Single volume totalBytes=" << singleSolver.packedVolumes[0].totalBytes 
+                  << " (Capacity=" << singleSolver.mediumInfo.capacityBytes << ")" << std::endl;
+        assert(singleSolver.packedVolumes[0].totalBytes <= singleSolver.mediumInfo.capacityBytes);
+        std::filesystem::remove_all(test_dir2);
+        std::cout << "SUCCESS: Single volume strictly respects capacity with PAR3 enabled!" << std::endl;
+    }
+    
     std::cout << "SUCCESS: BD volume and PAR3 redundancy packing test completed successfully!" << std::endl;
 }
 

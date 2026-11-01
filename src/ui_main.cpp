@@ -405,7 +405,12 @@ MainWindow::MainWindow(GtkApplication* app, const std::string& initialFolder) {
     
     g_signal_connect(iso_btn, "clicked", G_CALLBACK(+[](GtkWidget* btn, gpointer user_data) {
         auto* self = static_cast<MainWindow*>(user_data);
-        std::string src = gtk_editable_get_text(GTK_EDITABLE(self->source_entry));
+        std::string src = gtk_editable_get_text(GTK_EDITABLE(self->target_entry));
+        if (src.empty() || !std::filesystem::exists(src)) {
+            src = gtk_editable_get_text(GTK_EDITABLE(self->source_entry));
+        } else if (self->solver.spanMultipleVolumes && std::filesystem::exists(std::filesystem::path(src) / "Volume_1")) {
+            src = (std::filesystem::path(src) / "Volume_1").string();
+        }
         IsoDialog::run(GTK_WINDOW(self->window), src);
     }), this);
 

@@ -238,7 +238,8 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
         
         CustomVolume cv;
         cv.name = name;
-        cv.capacityBytes = parseHumanSize(gtk_editable_get_text(GTK_EDITABLE(data->capacity_entry)));
+        bool dm = gtk_switch_get_active(GTK_SWITCH(data->defect_mgmt_switch));
+        cv.capacityBytes = parseHumanSize(gtk_editable_get_text(GTK_EDITABLE(data->capacity_entry)), dm);
         cv.sectorSize = std::stoll(gtk_editable_get_text(GTK_EDITABLE(data->cluster_entry)));
         cv.slackBytes = std::stoll(gtk_editable_get_text(GTK_EDITABLE(data->slack_entry)));
         
@@ -533,7 +534,8 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
             gtk_label_set_text(GTK_LABEL(data->capacity_mb_label), "(Auto-Sized)");
             return;
         }
-        int64_t bytes = parseHumanSize(text ? text : "");
+        bool dm = gtk_switch_get_active(GTK_SWITCH(data->defect_mgmt_switch));
+        int64_t bytes = parseHumanSize(text ? text : "", dm);
         double mb = (double)bytes / (1024.0 * 1024.0);
         char buf[128];
         snprintf(buf, sizeof(buf), "(%.2f MB)", mb);
@@ -608,7 +610,7 @@ void SettingsDialog::run(GtkWindow* parent, BttbSolver& solver) {
             data->solver->enableAutoVolume = false;
         } else { // Custom Size (15)
             const char* cap_txt = gtk_editable_get_text(GTK_EDITABLE(data->capacity_entry));
-            data->solver->mediumInfo.capacityBytes = parseHumanSize(cap_txt);
+            data->solver->mediumInfo.capacityBytes = parseHumanSize(cap_txt, dm);
             data->solver->enableAutoVolume = false;
         }
         data->solver->mediumInfo.sectorSize = std::stoll(gtk_editable_get_text(GTK_EDITABLE(data->cluster_entry)));
