@@ -152,7 +152,7 @@ int64_t parseHumanSize(const std::string& input, bool defectManagement) {
     }
     if (lowerInput.find("bd25") != std::string::npos || lowerInput == "bd" ||
         lowerInput == "25gb" || lowerInput == "25g" || lowerInput == "25.0gb" || lowerInput == "25.0g" ||
-        lowerInput.find("23.31") != std::string::npos || lowerInput.find("22.56") != std::string::npos || lowerInput.find("22.55") != std::string::npos) {
+        lowerInput.find("23.31") != std::string::npos || lowerInput.find("22.56") != std::string::npos || lowerInput.find("22.55") != std::string::npos || lowerInput.find("22.54") != std::string::npos) {
         return defectManagement ? BD25_DM_CAPACITY_BYTES : BD25_CAPACITY_BYTES;
     }
     
@@ -461,8 +461,8 @@ void BttbSolver::loadSettings() {
 
     // Ensure BD preset capacities strictly adhere to exact geometry and defect management
     if (lastSelectedVolumeIndex == 4 || mediumInfo.capacityBytes == 26843545600LL || mediumInfo.capacityBytes == 25000000000LL ||
-        mediumInfo.capacityBytes == BD25_CAPACITY_BYTES || mediumInfo.capacityBytes == BD25_DM_CAPACITY_BYTES) {
-        if (lastSelectedVolumeIndex == 4 || mediumInfo.capacityBytes == 26843545600LL) {
+        mediumInfo.capacityBytes == BD25_CAPACITY_BYTES || mediumInfo.capacityBytes == BD25_DM_CAPACITY_BYTES || mediumInfo.capacityBytes == 24220008448LL) {
+        if (lastSelectedVolumeIndex == 4 || mediumInfo.capacityBytes == 26843545600LL || mediumInfo.capacityBytes == 24220008448LL) {
             mediumInfo.capacityBytes = enableDefectManagement ? BD25_DM_CAPACITY_BYTES : BD25_CAPACITY_BYTES;
         }
     }
@@ -755,7 +755,7 @@ static inline int64_t estimatePar3Bytes(int64_t testBytes, int64_t blockSize, in
     return (recBlocks * blk) + 4096 + (512 * (fileCount + 1));
 }
 
-void BttbSolver::ThreadSearchState::handleNewSelection(int64_t testSectors, int64_t par3Sectors) {
+void BttbSolver::ThreadSearchState::handleNewSelection(int64_t testSectors) {
     int64_t globalBest = solver->currentBestSectors.load();
     if (testSectors >= globalBest) {
         std::lock_guard<std::mutex> lock(solver->solverMutex);
@@ -764,11 +764,10 @@ void BttbSolver::ThreadSearchState::handleNewSelection(int64_t testSectors, int6
                 solver->currentBestSectors = testSectors;
                 solver->minNumberOfClusters = INT_MAX;
                 
-                int64_t totalEffectiveSectors = testSectors + par3Sectors;
-                double percentage = (double)totalEffectiveSectors / solver->maxSectors * 100.0;
+                double percentage = (double)testSectors / solver->maxSectors * 100.0;
                 solver->logNotify(_T("log_new_best_space_utilization", "New best space utilization: ") + std::to_string(percentage) + "%", 3);
 
-                if (totalEffectiveSectors >= solver->maxSectors - solver->slackSectors) {
+                if (testSectors >= solver->maxSectors - solver->slackSectors) {
                     solver->searchTimedOut = true;
                     solver->logNotify(_T("log_selection_within_slack_1", "Selection within slack tolerance (") + std::to_string(percentage) + _T("log_selection_within_slack_2", "%) found. Terminating search early."), 1);
                 }
@@ -795,7 +794,7 @@ void BttbSolver::ThreadSearchState::handleNewSelection(int64_t testSectors, int6
     }
 }
 
-bool BttbSolver::ThreadSearchState::findAWay(int64_t currentSectors, int poz, int selectedFileCount) {
+bool BttbSolver::ThreadSearchState::findAWay(int64_t currentSectors, int poz) {
     if (checkLimitsAndLog(currentSectors, poz)) return false;
     
     int64_t currentBest = solver->currentBestSectors.load();
@@ -804,26 +803,19 @@ bool BttbSolver::ThreadSearchState::findAWay(int64_t currentSectors, int poz, in
     }
     
     int64_t testSectors = currentSectors + items[poz]->sectorCount;
-    
-    int64_t par3Sectors = 0;
-    if (solver->enablePar3) {
-        int64_t testBytes = testSectors * solver->mediumInfo.sectorSize;
-        int64_t par3Bytes = estimatePar3Bytes(testBytes, solver->par3BlockSize, solver->par3RedundancyPercent, selectedFileCount);
-        par3Sectors = (par3Bytes + solver->mediumInfo.sectorSize - 1) / solver->mediumInfo.sectorSize;
-    }
 
-    if (testSectors + par3Sectors <= solver->maxSectors) {
+    if (testSectors <= solver->maxSectors) {
         items[poz]->isSelected = true;
         
-        if (!findAWay(testSectors, poz - 1, selectedFileCount + 1)) {
-            handleNewSelection(testSectors, par3Sectors);
+        if (!findAWay(testSectors, poz - 1)) {
+            handleNewSelection(testSectors);
         }
         
         items[poz]->isSelected = false;
-        findAWay(currentSectors, poz - 1, selectedFileCount);
+        findAWay(currentSectors, poz - 1);
         return true;
     } else {
-        return findAWay(currentSectors, poz - 1, selectedFileCount);
+        return findAWay(currentSectors, poz - 1);
     }
 }
 
@@ -857,18 +849,17 @@ bool BttbSolver::checkLimitsAndLog(int64_t currentSectors, int poz) {
     return false;
 }
 
-void BttbSolver::handleNewSelection(int64_t testSectors, int64_t par3Sectors) {
+void BttbSolver::handleNewSelection(int64_t testSectors) {
     if (testSectors >= currentBestSectors) {
         if (testSectors > currentBestSectors) {
             currentBestSectors = testSectors;
             minNumberOfClusters = INT_MAX;
             
-            int64_t totalEffectiveSectors = testSectors + par3Sectors;
-            double percentage = (double)totalEffectiveSectors / maxSectors * 100.0;
+            double percentage = (double)testSectors / maxSectors * 100.0;
             logNotify(_T("log_new_best_space_utilization", "New best space utilization: ") + std::to_string(percentage) + "%", 3);
 
             // Check for early termination if within slack tolerance
-            if (totalEffectiveSectors >= maxSectors - slackSectors) {
+            if (testSectors >= maxSectors - slackSectors) {
                 searchTimedOut = true;
                 logNotify(_T("log_selection_within_slack_1", "Selection within slack tolerance (") + std::to_string(percentage) + _T("log_selection_within_slack_2", "%) found. Terminating search early."), 1);
             }
@@ -889,7 +880,7 @@ void BttbSolver::handleNewSelection(int64_t testSectors, int64_t par3Sectors) {
     }
 }
 
-bool BttbSolver::findAWay(int64_t currentSectors, int poz, int selectedFileCount) {
+bool BttbSolver::findAWay(int64_t currentSectors, int poz) {
     if (checkLimitsAndLog(currentSectors, poz)) return false;
     
     if (poz < 0 || (itemsToSplit[poz]->prefixSumSectors + currentSectors < currentBestSectors)) {
@@ -897,26 +888,19 @@ bool BttbSolver::findAWay(int64_t currentSectors, int poz, int selectedFileCount
     }
     
     int64_t testSectors = currentSectors + itemsToSplit[poz]->sectorCount;
-    
-    int64_t par3Sectors = 0;
-    if (enablePar3) {
-        int64_t testBytes = testSectors * mediumInfo.sectorSize;
-        int64_t par3Bytes = estimatePar3Bytes(testBytes, par3BlockSize, par3RedundancyPercent, selectedFileCount);
-        par3Sectors = (par3Bytes + mediumInfo.sectorSize - 1) / mediumInfo.sectorSize;
-    }
 
-    if (testSectors + par3Sectors <= maxSectors) {
+    if (testSectors <= maxSectors) {
         itemsToSplit[poz]->isSelected = true;
         
-        if (!findAWay(testSectors, poz - 1, selectedFileCount + 1)) {
-            handleNewSelection(testSectors, par3Sectors);
+        if (!findAWay(testSectors, poz - 1)) {
+            handleNewSelection(testSectors);
         }
         
         itemsToSplit[poz]->isSelected = false;
-        findAWay(currentSectors, poz - 1, selectedFileCount);
+        findAWay(currentSectors, poz - 1);
         return true;
     } else {
-        return findAWay(currentSectors, poz - 1, selectedFileCount);
+        return findAWay(currentSectors, poz - 1);
     }
 }
 
@@ -1030,8 +1014,24 @@ void BttbSolver::run() {
     
     if (stopRequested) return;
     
-    // Convert capacities to sectors
-    maxSectors = mediumInfo.capacityBytes / mediumInfo.sectorSize;
+    // Determine virtual volume capacity for matching process:
+    // Virtually deduct the PAR archive percentage from the volume before starting the matching process
+    // so that the total of items + PAR3 will strictly fit within the target volume capacity (no exceptions).
+    // E.g. for BD25 DM (24,207,189,981 bytes) with PAR 10%:
+    // 24,207,189,981 / 1.10 = approx 22,006,536,346 bytes (or slightly less with safety headroom).
+    int64_t virtualTargetBytes = mediumInfo.capacityBytes;
+    if (enablePar3 && par3RedundancyPercent > 0) {
+        double parFactor = 1.0 + ((double)par3RedundancyPercent / 100.0);
+        // Reserve 2 MB headroom for PAR3 headers, metadata packets, and index blocks
+        int64_t parHeaderReserve = 2 * 1024 * 1024;
+        int64_t baseCap = mediumInfo.capacityBytes > parHeaderReserve ? (mediumInfo.capacityBytes - parHeaderReserve) : mediumInfo.capacityBytes;
+        virtualTargetBytes = static_cast<int64_t>(std::floor((double)baseCap / parFactor));
+        // Align down to sector boundary
+        virtualTargetBytes = (virtualTargetBytes / mediumInfo.sectorSize) * mediumInfo.sectorSize;
+    }
+
+    // Convert capacities to sectors for solver matching
+    maxSectors = virtualTargetBytes / mediumInfo.sectorSize;
     slackSectors = mediumInfo.slackBytes / mediumInfo.sectorSize;
     
     exploredStates = 0;
@@ -1044,16 +1044,17 @@ void BttbSolver::run() {
     }
     double totalMB = (double)totalBytes / (1024.0 * 1024.0);
     double mediumMB = (double)mediumInfo.capacityBytes / (1024.0 * 1024.0);
-    int64_t totalBytesWithPar = totalBytes;
-    if (enablePar3) {
-        totalBytesWithPar = (int64_t)(totalBytes * (1.0 + (double)par3RedundancyPercent / 100.0)) + 65536 + (4096 * (int64_t)itemsToSplit.size());
-    }
-    int estimatedVolumes = std::max<int>(1, std::ceil((double)totalBytesWithPar / mediumInfo.capacityBytes));
+    int64_t effectiveVolumeCap = virtualTargetBytes > 0 ? virtualTargetBytes : mediumInfo.capacityBytes;
+    int estimatedVolumes = std::max<int>(1, (int)std::ceil((double)totalBytes / effectiveVolumeCap));
     
     logNotify(_T("log_volume_packing_estimation_header", "--- Volume Packing Estimation ---"), 3);
     logNotify("Total items found: " + std::to_string(itemsToSplit.size()), 0);
     logNotify(_T("log_total_dataset_size_1", "Total dataset size: ") + std::to_string(totalBytes) + _T("log_total_dataset_size_2", " bytes (") + std::to_string(totalMB) + " MB)", 0);
     logNotify(_T("log_target_volume_cap_1", "Target volume capacity: ") + std::to_string(mediumInfo.capacityBytes) + _T("log_target_volume_cap_2", " bytes (") + std::to_string(mediumMB) + " MB)", 0);
+    if (enablePar3 && par3RedundancyPercent > 0) {
+        double virtMB = (double)virtualTargetBytes / (1024.0 * 1024.0);
+        logNotify("Virtual volume capacity for file matching (after -" + std::to_string(par3RedundancyPercent) + "% PAR3 reservation): " + std::to_string(virtualTargetBytes) + " bytes (" + std::to_string(virtMB) + " MB)", 1);
+    }
     logNotify(_T("log_theoretical_min_vols", "Theoretical minimum volumes required: ") + std::to_string(estimatedVolumes), 1);
     
     if (enableTrace) {
@@ -1118,7 +1119,7 @@ void BttbSolver::run() {
         
         // Start recursion in backtracking (either single or multi-threaded)
         if (!enableMultiThreading || itemsToSplit.size() < 12) {
-            findAWay(0, itemsToSplit.size() - 1, 0);
+            findAWay(0, itemsToSplit.size() - 1);
         } else {
             unsigned int numThreads = std::thread::hardware_concurrency();
             if (numThreads == 0) numThreads = 4;
@@ -1133,7 +1134,6 @@ void BttbSolver::run() {
             
             struct SearchTask {
                 int64_t initialSectors;
-                int initialSelectedFileCount;
                 int initialPoz;
                 std::vector<bool> initialSelection;
             };
@@ -1143,7 +1143,6 @@ void BttbSolver::run() {
             int numConfigs = 1 << K;
             for (int mask = 0; mask < numConfigs; ++mask) {
                 int64_t sumSectors = 0;
-                int selectedCount = 0;
                 bool valid = true;
                 std::vector<bool> selection(K, false);
                 
@@ -1151,25 +1150,16 @@ void BttbSolver::run() {
                     if ((mask >> i) & 1) {
                         selection[i] = true;
                         sumSectors += itemsToSplit[N - 1 - i]->sectorCount;
-                        selectedCount++;
                     }
                 }
                 
-                int64_t par3Sectors = 0;
-                if (enablePar3) {
-                    int64_t testBytes = sumSectors * mediumInfo.sectorSize;
-                    int64_t par3Bytes = (testBytes * par3RedundancyPercent / 100) + 65536 + (4096 * (selectedCount));
-                    par3Sectors = (par3Bytes + mediumInfo.sectorSize - 1) / mediumInfo.sectorSize;
-                }
-                
-                if (sumSectors + par3Sectors > maxSectors) {
+                if (sumSectors > maxSectors) {
                     valid = false;
                 }
                 
                 if (valid) {
                     SearchTask task;
                     task.initialSectors = sumSectors;
-                    task.initialSelectedFileCount = selectedCount;
                     task.initialPoz = N - 1 - K;
                     task.initialSelection = selection;
                     tasks.push_back(task);
@@ -1221,7 +1211,7 @@ void BttbSolver::run() {
                             state.items[N - 1 - i]->isSelected = task.initialSelection[i];
                         }
                         
-                        state.findAWay(task.initialSectors, task.initialPoz, task.initialSelectedFileCount);
+                        state.findAWay(task.initialSectors, task.initialPoz);
                     }
                     
                     exploredStates += state.explored;
@@ -1242,44 +1232,34 @@ void BttbSolver::run() {
         if (bestSelectionIndices.empty()) {
             logNotify(_T("log_backtracking_failed_fallback_greedy", "Backtracking solver did not find a fit (or timed out). Falling back to greedy allocation to ensure all remaining files are included..."), 2);
             int64_t currentSectors = 0;
-            int fileCount = 0;
             for (size_t i = 0; i < itemsToSplit.size(); ++i) {
                 int64_t nextSectors = currentSectors + itemsToSplit[i]->sectorCount;
-                int64_t par3Sectors = 0;
-                if (enablePar3) {
-                    int64_t testBytes = nextSectors * mediumInfo.sectorSize;
-                    int64_t par3Bytes = estimatePar3Bytes(testBytes, par3BlockSize, par3RedundancyPercent, fileCount);
-                    par3Sectors = (par3Bytes + mediumInfo.sectorSize - 1) / mediumInfo.sectorSize;
-                }
-                if (nextSectors + par3Sectors <= maxSectors) {
+                if (nextSectors <= maxSectors) {
                     bestSelectionIndices.push_back(i);
                     currentSectors = nextSectors;
-                    fileCount++;
                 }
             }
             currentBestSectors = currentSectors;
         }
 
-        // Strictly guarantee that the total volume (items + PAR3) fits within maxSectors, NO EXCEPTIONS!
+        // Strictly guarantee that the total volume (items + PAR3) fits within mediumInfo.capacityBytes, NO EXCEPTIONS!
         while (!bestSelectionIndices.empty()) {
-            int64_t selSectors = 0;
+            int64_t selBytes = 0;
             int64_t selFileCount = 0;
             for (int idx : bestSelectionIndices) {
-                selSectors += itemsToSplit[idx]->sectorCount;
+                selBytes += itemsToSplit[idx]->sizeBytes;
                 selFileCount += std::max<int64_t>(1, itemsToSplit[idx]->groupedPaths.size());
             }
-            int64_t parSectors = 0;
+            int64_t parBytes = 0;
             if (enablePar3) {
-                int64_t testBytes = selSectors * mediumInfo.sectorSize;
-                int64_t parBytes = estimatePar3Bytes(testBytes, par3BlockSize, par3RedundancyPercent, selFileCount);
-                parSectors = (parBytes + mediumInfo.sectorSize - 1) / mediumInfo.sectorSize;
+                parBytes = estimatePar3Bytes(selBytes, par3BlockSize, par3RedundancyPercent, selFileCount);
             }
-            if (selSectors + parSectors <= maxSectors) {
-                currentBestSectors = selSectors;
+            if (selBytes + parBytes <= mediumInfo.capacityBytes) {
+                currentBestSectors = selBytes / mediumInfo.sectorSize;
                 break;
             }
             // Trim the last selected item to strictly guarantee fit
-            logNotify("Warning: Volume items plus PAR3 protection exceeded capacity (" + std::to_string(selSectors + parSectors) + " > " + std::to_string(maxSectors) + " sectors). Trimming selection to guarantee complete fit...", 2);
+            logNotify("Warning: Volume items plus PAR3 protection exceeded capacity (" + std::to_string(selBytes + parBytes) + " > " + std::to_string(mediumInfo.capacityBytes) + " bytes). Trimming selection to guarantee complete fit...", 2);
             bestSelectionIndices.pop_back();
         }
         

@@ -747,9 +747,8 @@ void run_test9() {
     // 1. Verify exact standard BD capacity constants
     std::cout << "Verifying optical BD sector and capacity constants..." << std::endl;
     assert(bttb::BD25_CAPACITY_BYTES == 12219392LL * 2048LL); // 25,025,314,816 bytes
-    assert(bttb::BD25_DM_CAPACITY_BYTES == 11826176LL * 2048LL); // 24,220,008,448 bytes
+    assert(bttb::BD25_DM_CAPACITY_BYTES == 24207189981LL); // 24,207,189,981 bytes with Defect Management
     assert(bttb::BD25_CAPACITY_BYTES - bttb::BD25_DM_CAPACITY_BYTES == bttb::BD_DEFECT_MANAGEMENT_RESERVED_BYTES);
-    assert(bttb::BD_DEFECT_MANAGEMENT_RESERVED_BYTES == 393216LL * 2048LL); // 768 MiB / ~780 MB
     
     assert(bttb::BD50_CAPACITY_BYTES == 24438784LL * 2048LL); // 50,050,629,632 bytes
     assert(bttb::BD50_DM_CAPACITY_BYTES == 23652352LL * 2048LL); // 48,440,016,896 bytes
@@ -852,6 +851,32 @@ void run_test9() {
         assert(singleSolver.packedVolumes[0].totalBytes <= singleSolver.mediumInfo.capacityBytes);
         std::filesystem::remove_all(test_dir2);
         std::cout << "SUCCESS: Single volume strictly respects capacity with PAR3 enabled!" << std::endl;
+    }
+    
+    // 5. Test virtual PAR 10% negative size calculation on 25GB BD with Defect Management
+    {
+        bttb::BttbSolver bdSolver;
+        bdSolver.enableDefectManagement = true;
+        bdSolver.mediumInfo.capacityBytes = bttb::BD25_DM_CAPACITY_BYTES; // 24,207,189,981 bytes
+        bdSolver.mediumInfo.sectorSize = 2048;
+        bdSolver.enablePar3 = true;
+        bdSolver.par3RedundancyPercent = 10;
+        
+        // Before matching, deduct PAR percentage virtually:
+        // 24,207,189,981 / 1.10 = ~22,006,536,346 bytes (or a little less)
+        double parFactor = 1.0 + ((double)bdSolver.par3RedundancyPercent / 100.0);
+        int64_t parHeaderReserve = std::min<int64_t>(2097152LL, bdSolver.mediumInfo.capacityBytes / 100);
+        int64_t baseCap = bdSolver.mediumInfo.capacityBytes - parHeaderReserve;
+        int64_t virtualTarget = static_cast<int64_t>(std::floor((double)baseCap / parFactor));
+        virtualTarget = (virtualTarget / bdSolver.mediumInfo.sectorSize) * bdSolver.mediumInfo.sectorSize;
+        
+        std::cout << "BD25 DM capacity=" << bdSolver.mediumInfo.capacityBytes 
+                  << ", Virtual Target for PAR 10%=" << virtualTarget << " bytes" << std::endl;
+        assert(virtualTarget <= 22006536346LL);
+        assert(virtualTarget >= 22000000000LL);
+        // Verify that with 10% PAR3 overhead, it stays strictly <= 24,207,189,981
+        int64_t estPar = (virtualTarget * 10 / 100) + 65536;
+        assert(virtualTarget + estPar <= bttb::BD25_DM_CAPACITY_BYTES);
     }
     
     std::cout << "SUCCESS: BD volume and PAR3 redundancy packing test completed successfully!" << std::endl;

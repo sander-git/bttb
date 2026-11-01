@@ -10,19 +10,20 @@
 #include <mutex>
 #include <thread>
 #include <set>
+#include <cmath>
 
 namespace bttb {
 
 // Optical disc standard capacities (sector size = 2048 bytes)
 constexpr int64_t BD25_CAPACITY_BYTES = 25025314816LL;           // 12,219,392 sectors (SL standard raw)
-constexpr int64_t BD25_DM_CAPACITY_BYTES = 24220008448LL;        // 11,826,176 sectors (SL with ~780 MB / 768 MiB defect management)
+constexpr int64_t BD25_DM_CAPACITY_BYTES = 24207189981LL;        // 25GB BD with Defect Management (~22.54 GiB / 24,207,189,981 bytes)
 constexpr int64_t BD50_CAPACITY_BYTES = 50050629632LL;           // 24,438,784 sectors (DL standard raw)
 constexpr int64_t BD50_DM_CAPACITY_BYTES = 48440016896LL;        // 23,652,352 sectors (DL with defect management)
 constexpr int64_t BDXL100_CAPACITY_BYTES = 100101259264LL;       // 48,877,568 sectors (TL standard raw)
 constexpr int64_t BDXL100_DM_CAPACITY_BYTES = 96879009792LL;     // 47,304,704 sectors (TL with defect management)
 constexpr int64_t BDXL128_CAPACITY_BYTES = 128127598592LL;       // 62,562,304 sectors (QL standard raw)
 constexpr int64_t BDXL128_DM_CAPACITY_BYTES = 124906373120LL;    // 60,989,440 sectors (QL with defect management)
-constexpr int64_t BD_DEFECT_MANAGEMENT_RESERVED_BYTES = 805306368LL; // 393,216 sectors (~780 MB / 768 MiB)
+constexpr int64_t BD_DEFECT_MANAGEMENT_RESERVED_BYTES = BD25_CAPACITY_BYTES - BD25_DM_CAPACITY_BYTES; // Defect Management spare area (~780 MB user-visible / 818 MB)
 
 struct CDInfo {
     std::string name;
@@ -161,9 +162,9 @@ public:
         std::vector<std::unique_ptr<DirEntry>> items;
         uint64_t explored = 0;
         uint64_t pruned = 0;
-        bool findAWay(int64_t currentSectors, int poz, int selectedFileCount);
+        bool findAWay(int64_t currentSectors, int poz);
         bool checkLimitsAndLog(int64_t currentSectors, int poz);
-        void handleNewSelection(int64_t testSectors, int64_t par3Sectors = 0);
+        void handleNewSelection(int64_t testSectors);
     };
 
     std::atomic<int64_t> currentBestSectors{0};
@@ -179,9 +180,9 @@ private:
     void addEntry(const std::string& relPath, const std::string& absPath, int64_t size, bool isDir);
     
     // Core subset-sum recursive backtracking search
-    bool findAWay(int64_t currentSectors, int poz, int selectedFileCount);
+    bool findAWay(int64_t currentSectors, int poz);
     bool checkLimitsAndLog(int64_t currentSectors, int poz);
-    void handleNewSelection(int64_t testSectors, int64_t par3Sectors = 0);
+    void handleNewSelection(int64_t testSectors);
     
     void saveBestSelection();
     int countClusters(const std::string& path);
