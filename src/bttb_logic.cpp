@@ -462,9 +462,7 @@ void BttbSolver::loadSettings() {
     // Ensure BD preset capacities strictly adhere to exact geometry and defect management
     if (lastSelectedVolumeIndex == 4 || mediumInfo.capacityBytes == 26843545600LL || mediumInfo.capacityBytes == 25000000000LL ||
         mediumInfo.capacityBytes == BD25_CAPACITY_BYTES || mediumInfo.capacityBytes == BD25_DM_CAPACITY_BYTES || mediumInfo.capacityBytes == 24220008448LL) {
-        if (lastSelectedVolumeIndex == 4 || mediumInfo.capacityBytes == 26843545600LL || mediumInfo.capacityBytes == 24220008448LL) {
-            mediumInfo.capacityBytes = enableDefectManagement ? BD25_DM_CAPACITY_BYTES : BD25_CAPACITY_BYTES;
-        }
+        mediumInfo.capacityBytes = enableDefectManagement ? BD25_DM_CAPACITY_BYTES : BD25_CAPACITY_BYTES;
     }
     if (lastSelectedVolumeIndex == 5) {
         mediumInfo.capacityBytes = enableDefectManagement ? BD50_DM_CAPACITY_BYTES : BD50_CAPACITY_BYTES;
@@ -752,7 +750,10 @@ static inline int64_t estimatePar3Bytes(int64_t testBytes, int64_t blockSize, in
     int64_t blk = blockSize > 0 ? blockSize : 2048;
     int64_t inputBlocks = (testBytes + blk - 1) / blk;
     int64_t recBlocks = (inputBlocks * redundancyPercent + 99) / 100;
-    return (recBlocks * blk) + 4096 + (512 * (fileCount + 1));
+    // Each recovery packet has an 88-byte header in libpar3 (88 + block_size)
+    // Plus 2 copies of common packets (index file + 1 copy in recovery file)
+    int64_t commonPacketsEst = 2 * (16384 + (256 * (fileCount + 1)));
+    return (recBlocks * (blk + 88)) + commonPacketsEst;
 }
 
 void BttbSolver::ThreadSearchState::handleNewSelection(int64_t testSectors) {
@@ -1021,9 +1022,11 @@ void BttbSolver::run() {
     // 24,207,189,981 / 1.10 = approx 22,006,536,346 bytes (or slightly less with safety headroom).
     int64_t virtualTargetBytes = mediumInfo.capacityBytes;
     if (enablePar3 && par3RedundancyPercent > 0) {
-        double parFactor = 1.0 + ((double)par3RedundancyPercent / 100.0);
-        // Reserve 2 MB headroom for PAR3 headers, metadata packets, and index blocks
-        int64_t parHeaderReserve = 2 * 1024 * 1024;
+        int64_t blk = par3BlockSize > 0 ? par3BlockSize : 2048;
+        // In libpar3 each recovery block packet contains an 88-byte header (88 + block_size)
+        double parFactor = 1.0 + (((double)par3RedundancyPercent / 100.0) * ((double)(blk + 88) / blk));
+        // Reserve 16 MB headroom for PAR3 headers, common metadata packets, and index blocks
+        int64_t parHeaderReserve = 16 * 1024 * 1024;
         int64_t baseCap = mediumInfo.capacityBytes > parHeaderReserve ? (mediumInfo.capacityBytes - parHeaderReserve) : mediumInfo.capacityBytes;
         virtualTargetBytes = static_cast<int64_t>(std::floor((double)baseCap / parFactor));
         // Align down to sector boundary
@@ -1408,20 +1411,53 @@ void BttbSolver::run() {
                 std::string err;
                 if (createVolumePar3(toUtf8Str(volDestDir), parBaseName, par3BlockSize, par3RedundancyPercent, err)) {
                     logNotify(_T("log_success_par3_for_volume_1", "Successfully created PAR3 parity protection for Volume ") + std::to_string(volumeIndex), 1);
-                    std::filesystem::path parPath = volDestDir / (parBaseName + ".par3");
-                    if (std::filesystem::exists(parPath)) {
-                        int64_t parSize = (int64_t)std::filesystem::file_size(parPath);
-                        packedVolumes.back().itemPaths.push_back(parBaseName + ".par3");
-                        packedVolumes.back().itemOriginalPaths.push_back(toUtf8Str(parPath));
-                        packedVolumes.back().itemSizes.push_back(parSize);
-                        packedVolumes.back().itemGroupedPaths.push_back({});
-                        packedVolumes.back().itemOriginalGroupedPaths.push_back({});
-                        packedVolumes.back().itemDates.push_back(getFileLastWriteTime(toUtf8Str(parPath)));
-                        packedVolumes.back().totalBytes += parSize;
+                    int64_t totalParBytesInVol = 0;
+                    for (const auto& entry : std::filesystem::directory_iterator(volDestDir)) {
+                        if (entry.is_regular_file() && entry.path().extension() == ".par3") {
+                            std::string fname = entry.path().filename().string();
+                            int64_t fsz = (int64_t)entry.file_size();
+                            totalParBytesInVol += fsz;
+                            logNotify("  [PAR3] Generated file: " + fname + " (" + std::to_string(fsz) + " bytes)", 1);
+                            packedVolumes.back().itemPaths.push_back(fname);
+                            packedVolumes.back().itemOriginalPaths.push_back(toUtf8Str(entry.path()));
+                            packedVolumes.back().itemSizes.push_back(fsz);
+                            packedVolumes.back().itemGroupedPaths.push_back({});
+                            packedVolumes.back().itemOriginalGroupedPaths.push_back({});
+                            packedVolumes.back().itemDates.push_back(getFileLastWriteTime(toUtf8Str(entry.path())));
+                        }
                     }
+                    packedVolumes.back().totalBytes += totalParBytesInVol;
+                    logNotify("Total PAR3 protection bytes in Volume " + std::to_string(volumeIndex) + ": " + std::to_string(totalParBytesInVol) + " bytes", 1);
                 } else {
                     logNotify(_T("log_failed_par3_creation", "PAR3 creation failed: ") + err, 2);
                 }
+            }
+
+            // Post-Volume Destination Directory Audit
+            int64_t actualVolBytesOnDisk = 0;
+            int actualVolFilesCount = 0;
+            logNotify("\r\n=== [DISK AUDIT] Volume " + std::to_string(volumeIndex) + " Files on Disk ===", 3);
+            try {
+                for (const auto& entry : std::filesystem::recursive_directory_iterator(volDestDir)) {
+                    if (entry.is_regular_file()) {
+                        int64_t fsz = (int64_t)entry.file_size();
+                        actualVolBytesOnDisk += fsz;
+                        actualVolFilesCount++;
+                        std::string relP = std::filesystem::relative(entry.path(), volDestDir).string();
+                        logNotify("  - " + relP + " : " + std::to_string(fsz) + " bytes", 0);
+                    }
+                }
+            } catch (const std::exception& e) {
+                logNotify("Error during volume directory audit: " + std::string(e.what()), 2);
+            }
+            logNotify("=== [DISK AUDIT] Volume " + std::to_string(volumeIndex) + " Total on Disk: " + std::to_string(actualVolBytesOnDisk) + " bytes (" + std::to_string(actualVolFilesCount) + " files) ===", 3);
+            logNotify("=== [DISK AUDIT] Target Volume Capacity: " + std::to_string(mediumInfo.capacityBytes) + " bytes ===", 3);
+            if (actualVolBytesOnDisk > mediumInfo.capacityBytes) {
+                int64_t overflow = actualVolBytesOnDisk - mediumInfo.capacityBytes;
+                logNotify("!!! [DISK AUDIT WARNING] Volume " + std::to_string(volumeIndex) + " EXCEEDS medium capacity by " + std::to_string(overflow) + " bytes! !!!", 2);
+            } else {
+                int64_t headroom = mediumInfo.capacityBytes - actualVolBytesOnDisk;
+                logNotify("=== [DISK AUDIT SUCCESS] Volume " + std::to_string(volumeIndex) + " FITS within medium capacity with " + std::to_string(headroom) + " bytes headroom. ===", 1);
             }
         }
         
@@ -1944,6 +1980,7 @@ bool createVolumePar3(const std::string& volumePath, const std::string& parBaseN
     par3_ctx->redundancy_size = redundancyPercent;
     par3_ctx->recovery_file_scheme = -1; // Uniform files
     par3_ctx->ecc_method = 8; // Use high-performance Leopard-RS FFT-based Reed-Solomon by default
+    par3_ctx->repetition_limit = 1; // Prevent duplicate multi-gigabyte packet repetition in recovery files
     
     // Save current working directory
     char curDir[4096];

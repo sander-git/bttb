@@ -7,6 +7,7 @@
 #include <thread>
 #include <chrono>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <clocale>
 #include "bttb_logic.hpp"
@@ -665,6 +666,13 @@ void AppendTextToLog(HWND hEdit, const std::string& text) {
     SendMessage(hEdit, EM_SETSEL, len, len);
     // Replace selection with new text (appends it)
     SendMessage(hEdit, EM_REPLACESEL, FALSE, reinterpret_cast<LPARAM>((text + "\r\n").c_str()));
+
+    if (hEdit == g_editLog) {
+        std::ofstream logFile("bttb_solver.log", std::ios::app);
+        if (logFile.is_open()) {
+            logFile << text << "\n";
+        }
+    }
 }
 
 // Shell directory browser dialog helper
@@ -2827,6 +2835,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 g_solver.testOnlyMode = (wmId == ID_BTN_TEST);
                 
                 // Clear old logs and tree
+                {
+                    std::ofstream logInit("bttb_solver.log", std::ios::trunc);
+                    if (logInit.is_open()) {
+                        logInit << "=== BTTB Diagnostics Log Started ===\n";
+                    }
+                }
                 SetWindowText(g_editLog, "");
                 TreeView_DeleteAllItems(g_hwndTreeView);
                 SetWindowText(g_labelTimeLeft, "Estimated Time Left: Calculating...");
@@ -3097,6 +3111,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             if (g_solver_thread.joinable()) {
                 g_solver_thread.join();
             }
+
+            if (!g_solver.targetDirectory.empty()) {
+                try {
+                    std::filesystem::path targetLog = std::filesystem::path(utf8Path(g_solver.targetDirectory)) / "bttb_solver.log";
+                    std::filesystem::copy_file("bttb_solver.log", targetLog, std::filesystem::copy_options::overwrite_existing);
+                } catch (...) {}
+            }
             
             StartWin32TreeViewRendering(g_hwndTreeView, true, "Fitted");
             break;
@@ -3322,6 +3343,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             KillTimer(hwnd, 1);
             if (g_solver_thread.joinable()) {
                 g_solver_thread.join();
+            }
+
+            if (!g_solver.targetDirectory.empty()) {
+                try {
+                    std::filesystem::path targetLog = std::filesystem::path(utf8Path(g_solver.targetDirectory)) / "bttb_solver.log";
+                    std::filesystem::copy_file("bttb_solver.log", targetLog, std::filesystem::copy_options::overwrite_existing);
+                } catch (...) {}
             }
             PostQuitMessage(0);
             break;
